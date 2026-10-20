@@ -1,0 +1,50 @@
+# Production stack: Caddy (HTTPS, public) -> game server -> Postgres.
+# Only Caddy publishes ports; the server and the database are reachable inside this network only.
+# Usage: see README.md in this folder.
+name: dg-village-prod
+services:
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DG_DOMAIN: ${DG_DOMAIN:?set DG_DOMAIN in deploy/.env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data   # TLS certificates; losing this means re-issuing (rate limited)
+      - caddy-config:/config
+    depends_on:
+      server:
+        condition: service_healthy
+
+  server:
+    build: ../python
+    restart: unless-stopped
+    environment:
+      DG_DATABASE_URL: postgresql+asyncpg://dg_village:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}@postgres:5432/dg_village
+      DG_JWT_SECRET: ${DG_JWT_SECRET:?set DG_JWT_SECRET in deploy/.env}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dg_village
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}
+      POSTGRES_DB: dg_village
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dg_village"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+volumes:
+  postgres-data:
+  caddy-data:
+  caddy-config:

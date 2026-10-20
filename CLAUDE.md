@@ -13,7 +13,8 @@ Solo hobby project (weekends + spare time). Owner is strong on Python/server, ne
 ```
 dg-village/
 ├── unity/    # Game client (Unity 6, URP, Universal 3D template)
-└── python/   # WebSocket server (FastAPI, uv)
+├── python/   # WebSocket server (FastAPI, uv) + Dockerfile
+└── deploy/   # Production docker compose (Caddy + server + Postgres), README.md = runbook
 ```
 
 Single git repo at the root, one `.gitignore` covering both.
@@ -134,7 +135,7 @@ Scripts (`Assets/_Project/Scripts/`, namespace `DgVillage`):
 - Migrations: change `db.py` → `uv run alembic revision --autogenerate -m "..."` → review the file in `migrations/versions/` → `uv run alembic upgrade head`. Generated files are auto-formatted by ruff (post-write hook). `uv run alembic check` = models vs DB drift.
 - Protocol: client sends `join {room, token}` first (`room` = channel id hex; unknown → `error` "unknown channel" + close 1008) (name/character come from the account), then `move {x, z, facing, moving}` (`facing` = `down|up|left|right`) and `chat {text}` (whitespace collapsed, ≤200 chars, 0.5s rate limit). Server sends `welcome {id, players}`, `player_joined`, `player_left`, `state {players}`, `chat {id, name, text}` (to whole room incl. sender), `error`.
 - Rooms/positions are in memory; accounts and channels are in Postgres. Reset local DB: `docker compose down -v` (clients then silently create new anonymous accounts).
-- Deploy plan: single VPS in **Seoul region** (Lightsail/Vultr, ~2GB RAM) + Caddy (TLS, `wss://` needed for WebGL). Buy only when external testing starts.
+- Deploy: single VPS in **Seoul region** (Lightsail/Vultr, ~2GB RAM, not bought yet). `deploy/compose.yaml` (project `dg-village-prod`): Caddy publishes 80/443 and reverse-proxies (WS included) to `server:8000`; server and Postgres are internal only. `python/Dockerfile` runs `alembic upgrade head` then a **single** uvicorn process (rooms are in memory). Secrets/host in `deploy/.env` (gitignored; template `.env.example`, `DG_DOMAIN` = `<ip-dashes>.sslip.io` for free HTTPS without a domain, or `http://localhost` to try the stack locally). Runbook: `deploy/README.md`.
 - Local multiplayer test: Postgres + server running + macOS build (Build And Run into `unity/Builds/`, gitignored, windowed mode) + editor Play.
 - Tests share helpers via `tests/conftest.py` (`client` fixture, `signup(client, name)` → token); ruff isort knows `conftest` as local.
 - Test gotcha: Starlette `TestClient` cancels the server task when a `websocket_connect` block exits; call `ws.close()` inside the block to test disconnect handling.

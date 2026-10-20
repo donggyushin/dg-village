@@ -10,6 +10,7 @@
 dg-village/
 ├── unity/         # 게임 클라이언트 (Unity 6 · URP)
 ├── python/        # 게임 서버 (FastAPI) — 계정 HTTP API + WebSocket
+├── deploy/        # 운영 서버 구성 (Caddy + 서버 + Postgres) — deploy/README.md
 └── compose.yaml   # 로컬 PostgreSQL
 ```
 
