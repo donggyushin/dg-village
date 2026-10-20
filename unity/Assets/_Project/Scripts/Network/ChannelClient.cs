@@ -23,6 +23,10 @@ namespace DgVillage
 
         public static string CurrentId => Current != null ? Current.id : DefaultChannelId;
 
+        // Domain Reload 가 꺼져 있어 static 이 다음 Play 까지 남는다. 마을 씬 바로 Play = 광장이 되도록 비운다
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetOnPlay() => Current = null;
+
         public static void Select(ChannelInfo channel) => Current = channel;
 
         /// <summary>광장이 맨 앞, 나머지는 사람 많은 순 (서버가 정렬해서 보낸다).</summary>

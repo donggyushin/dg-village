@@ -106,7 +106,8 @@ Scripts (`Assets/_Project/Scripts/`, namespace `DgVillage`):
 | `UI/ChannelSelect` | Channel list scene: `GET /channels` → one `ChannelListItem` per channel (Instantiate of the inactive template into the ScrollView Content); click → `ChannelClient.Select` → village. Name input + Create (Enter) → `POST /channels` → join it (409 → "3개까지"). Refresh button; Back / Esc → CharacterSelect |
 | `UI/ChannelListItem` | One list row: Button + Name + PlayerCount texts, `Bind(channel, onClick)` |
 | `UI/ChannelHud` | Village: shows current channel name, Leave button → `LoadScene(ChannelSelect)` (NetworkClient's OnDestroy closes the socket → server sends `player_left`) |
-| `Network/ServerConfig` | Server URLs (`http://localhost:8000`, `ws://localhost:8000/ws`) — change here for deploy |
+| `Network/ServerConfig` | Static. Resolves the server URL once per Play: `-server <url>` command-line arg > `ServerSettings` (editor → `EditorUsesProduction`, builds → `BuildsUseProduction`) > `http://localhost:8000`. `WebSocketUrl` derived (http→ws, https→wss, + `/ws`) |
+| `Network/ServerSettings` | ScriptableObject at `Assets/_Project/Resources/ServerSettings.asset` (loaded via `Resources.Load`): `LocalUrl`, `ProductionUrl` (empty until the VPS exists), two "use production" toggles. Defaults: editor = local, builds = production |
 | `Network/AccountClient` | Static. `LoginAsync` (stored credential → `/auth/login`, else/401 → `/auth/anonymous`; then `GET /me`), `UpdateProfileAsync`, `AccessToken`, `Profile`, `NormalizeDisplayName`/`NormalizeName`. `internal SendAsync` = shared HTTP helper (adds the token). UnityWebRequest + `Awaitable` (WebGL-safe). Throws `AccountException` (Status 0 = unreachable) |
 | `Network/ChannelClient` | Static. `ListAsync`, `CreateAsync`, `Select`/`Current` (survives scene loads), `CurrentId` (falls back to `DefaultChannelId` = plaza). Constants mirror the server (name ≤24, 3 per user) |
 | `Network/NetworkMessages` | JsonUtility DTOs mirroring `protocol.py` and `api.py` (camelCase public fields, exception to naming rule) + `FacingWire`. JsonUtility sends null strings as `""`, so `ProfileUpdate` always fills both fields |
@@ -123,6 +124,7 @@ Scripts (`Assets/_Project/Scripts/`, namespace `DgVillage`):
 | `Editor/CharacterSelectSceneBuilder` | Menu **DgVillage → Create Character Select Scene**: builds/wires/saves `CharacterSelect.unity` (overwrites after confirm) |
 | `Editor/ChannelSelectSceneBuilder` | Menu **DgVillage → Create Channel Select Scene**: same for `ChannelSelect.unity` (ScrollView + VerticalLayoutGroup + ContentSizeFitter list) |
 | `Editor/SceneUIBuilder` | Shared helpers for the scene builders: camera + EventSystem, 1280x720 canvas, default UI sprites, `Place`/`CreateText`/`CreateButton` |
+| `Editor/ServerSettingsMenu` | Menu **DgVillage → Server Settings** (selects/creates the asset). `IPreprocessBuildWithReport`: fails the build if builds use production but `ProductionUrl` is empty — uncheck `BuildsUseProduction` for local-only test builds |
 | `Editor/DynamicFontCleaner` | Clears dynamic TMP font atlases in `Fonts/` on returning to Edit mode (also menu **DgVillage → Clear Dynamic Font Data**) |
 
 ## Server (`python/`)
@@ -136,6 +138,7 @@ Scripts (`Assets/_Project/Scripts/`, namespace `DgVillage`):
 - Protocol: client sends `join {room, token}` first (`room` = channel id hex; unknown → `error` "unknown channel" + close 1008) (name/character come from the account), then `move {x, z, facing, moving}` (`facing` = `down|up|left|right`) and `chat {text}` (whitespace collapsed, ≤200 chars, 0.5s rate limit). Server sends `welcome {id, players}`, `player_joined`, `player_left`, `state {players}`, `chat {id, name, text}` (to whole room incl. sender), `error`.
 - Rooms/positions are in memory; accounts and channels are in Postgres. Reset local DB: `docker compose down -v` (clients then silently create new anonymous accounts).
 - Deploy: single VPS in **Seoul region** (Lightsail/Vultr, ~2GB RAM, not bought yet). `deploy/compose.yaml` (project `dg-village-prod`): Caddy publishes 80/443 and reverse-proxies (WS included) to `server:8000`; server and Postgres are internal only. `python/Dockerfile` runs `alembic upgrade head` then a **single** uvicorn process (rooms are in memory). Secrets/host in `deploy/.env` (gitignored; template `.env.example`, `DG_DOMAIN` = `<ip-dashes>.sslip.io` for free HTTPS without a domain, or `http://localhost` to try the stack locally). Runbook: `deploy/README.md`.
+- Trying the production stack locally: `deploy/` up with `DG_DOMAIN=http://localhost`, ServerSettings `ProductionUrl = http://localhost` (+ `EditorUsesProduction` for the editor). Put the settings back afterwards.
 - Local multiplayer test: Postgres + server running + macOS build (Build And Run into `unity/Builds/`, gitignored, windowed mode) + editor Play.
 - Tests share helpers via `tests/conftest.py` (`client` fixture, `signup(client, name)` → token); ruff isort knows `conftest` as local.
 - Test gotcha: Starlette `TestClient` cancels the server task when a `websocket_connect` block exits; call `ws.close()` inside the block to test disconnect handling.
@@ -166,6 +169,7 @@ Reference character: `Sprites/Characters/girl01/` (pink-haired chibi girl). Futu
 - Editor scripts: `EditorSceneManager.NewScene(..., Single)` unloads assets not referenced by the new scene — load assets you want to wire **after** creating the scene, or the reference becomes a fake null (field saved as None).
 - Don't use **Create → …** (CreateAssetMenu) for `CharacterDefinition` — it makes an empty asset; use the folder right-click menu.
 - `ProjectSettings.asset` `preloadedAssets` (Input System actions) flips on/off around builds — noise, commit whichever state. The file itself must stay tracked.
+- **Domain Reload is off** (Enter Play Mode Options), so static fields survive between Play sessions. Reset statics that must start fresh with `[RuntimeInitializeOnLoadMethod(SubsystemRegistration)]` (done for `ServerConfig`, `ChannelClient.Current`; `AccountClient` intentionally stays logged in).
 - Unity editor log is `unity/Logs/Editor.log` (not `~/Library/Logs/Unity`). Grep `error CS` there to check compile results.
 - Editing `Packages/manifest.json` while the editor is open is **not** picked up automatically — install via Package Manager "Add package from git URL" (or restart the editor).
 - **Import race**: when a new/changed `AssetPostprocessor` and new assets land in the same refresh, assets may import before the script recompiles. Commit the importer first or fix `.meta` (`alignment: 9`, `spritePivot`) afterwards — reimport alone won't re-apply because of the first-import-only guard.
