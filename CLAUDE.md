@@ -48,8 +48,8 @@ Single git repo at the root, one `.gitignore` covering both.
 3. ~~Name tags → text chat + speech bubbles.~~ **Done 2026-10-20** (Korean via Galmuri fallback font).
 4. ~~Player character selection.~~ **Done 2026-10-20** (CharacterSelect scene + `characterId` sync). Characters: `girl01` (default), `boy01` (black hoodie, green cargo pants, laptop).
 5. ~~Accounts + DB (phase 1: anonymous accounts).~~ **Done 2026-10-20** (verified with build + editor as two accounts).
-6. **Next**: Create/join channels (`channels` table, owner = `users.id`).
-7. Deploy (Seoul VPS) for external testing.
+6. ~~Create/join channels.~~ **Done 2026-10-20** (ChannelSelect scene, `channels` table, leave button in the village).
+7. **Next**: Deploy (Seoul VPS) for external testing.
 8. Social login (Google/Discord OAuth).
 9. Art pass (map tiles, buildings — the floor currently looks flat/2D because it's a plain ortho plane).
 10. Voice.
@@ -65,7 +65,9 @@ Character system: each character is a `CharacterDefinition` asset (`Assets/_Proj
 
 ## Current state (as of 2026-10-20)
 
-Scenes (Build Profiles → Scene List, order matters): `0 Assets/Scenes/CharacterSelect.unity` (start screen) → `1 Assets/Scenes/SampleScene.unity` (village). Playing SampleScene directly still works — `NetworkClient` logs in itself and uses the saved profile.
+Scenes (Build Profiles → Scene List, order matters): `0 Assets/Scenes/CharacterSelect.unity` (start screen) → `1 Assets/Scenes/ChannelSelect.unity` (channel list) → `2 Assets/Scenes/SampleScene.unity` (village). Playing ChannelSelect or SampleScene directly still works — they log in themselves; SampleScene without a picked channel joins the plaza.
+
+`ChannelSelect.unity` (built by **DgVillage → Create Channel Select Scene**): Main Camera, EventSystem, `ChannelCanvas` + `ChannelSelect` (Title, BackButton, RefreshButton, `ChannelList` ScrollView whose Content holds the inactive `ChannelItemTemplate` (`ChannelListItem`), NameInput, CreateButton, StatusText).
 
 `CharacterSelect.unity` (built by **DgVillage → Create Character Select Scene**): Main Camera (solid bg), EventSystem, `SelectCanvas` + `CharacterSelect` (Title, Preview, Previous/Next, CharacterName, NameInput, EnterButton, StatusText).
 
@@ -77,9 +79,11 @@ Ground        Plane, scale (2,1,2) → 20x20 units. No bounds/collision yet (pla
 Player        empty root, movement only               + PlayerMovement
 └── Visual    SpriteRenderer, rot X 35 (faces camera) + DirectionalSpriteAnimator(character = girl01, replaced at runtime)
 Network       empty at origin                         + NetworkClient(localPlayer = Player, characters = registry) + RemotePlayerSpawner(prefab = RemotePlayer, characters = registry)
-ChatCanvas    Screen Space Overlay, 1280x720 scaler   + ChatBubbleSpawner(prefab = ChatBubble, root = Bubbles)
+ChatCanvas    Screen Space Overlay, 1280x720 scaler   + ChatBubbleSpawner(prefab = ChatBubble, root = Bubbles) + ChannelHud
 ├── Bubbles   full-stretch container (first child → drawn under the input)
-└── ChatInput TMP_InputField, bottom center           + ChatInput
+├── ChatInput TMP_InputField, bottom center           + ChatInput
+├── LeaveButton  top-left "채널 나가기" (hand-placed)
+└── ChannelName  top-left TMP text, right of the button
 EventSystem   + InputSystemUIInputModule
 ```
 
@@ -97,11 +101,15 @@ Scripts (`Assets/_Project/Scripts/`, namespace `DgVillage`):
 | `DirectionalSpriteAnimator` | Plays idle/walk sprites of its `CharacterDefinition` from parent `ICharacterMotion`. Left = Right with `flipX`. `SetCharacter()` swaps at runtime |
 | `CharacterDefinition` | ScriptableObject: `Id`, `DisplayName`, per-direction `Idle` + `Walk[]`, `Get(Facing)`, `Preview` (down idle) |
 | `CharacterRegistry` | ScriptableObject list of definitions; `Find(id)` falls back to first entry |
-| `UI/CharacterSelect` | Select scene: on Start `AccountClient.LoginAsync` (status text while busy; failure → Enter retries), prefills from profile; ◀▶ / ←→ / A·D cycle, animated down-walk preview, nickname (≤16, empty = keep current); Enter → `PATCH /me` → `LoadScene(SampleScene)` |
+| `UI/CharacterSelect` | Select scene: on Start `AccountClient.LoginAsync` (status text while busy; failure → Enter retries), prefills from profile; ◀▶ / ←→ / A·D cycle, animated down-walk preview, nickname (≤16, empty = keep current); Enter → `PATCH /me` → `LoadScene(ChannelSelect)` |
+| `UI/ChannelSelect` | Channel list scene: `GET /channels` → one `ChannelListItem` per channel (Instantiate of the inactive template into the ScrollView Content); click → `ChannelClient.Select` → village. Name input + Create (Enter) → `POST /channels` → join it (409 → "3개까지"). Refresh button; Back / Esc → CharacterSelect |
+| `UI/ChannelListItem` | One list row: Button + Name + PlayerCount texts, `Bind(channel, onClick)` |
+| `UI/ChannelHud` | Village: shows current channel name, Leave button → `LoadScene(ChannelSelect)` (NetworkClient's OnDestroy closes the socket → server sends `player_left`) |
 | `Network/ServerConfig` | Server URLs (`http://localhost:8000`, `ws://localhost:8000/ws`) — change here for deploy |
-| `Network/AccountClient` | Static. `LoginAsync` (stored credential → `/auth/login`, else/401 → `/auth/anonymous`; then `GET /me`), `UpdateProfileAsync`, `AccessToken`, `Profile`, `NormalizeDisplayName`. UnityWebRequest + `Awaitable` (WebGL-safe). Throws `AccountException` (Status 0 = unreachable) |
+| `Network/AccountClient` | Static. `LoginAsync` (stored credential → `/auth/login`, else/401 → `/auth/anonymous`; then `GET /me`), `UpdateProfileAsync`, `AccessToken`, `Profile`, `NormalizeDisplayName`/`NormalizeName`. `internal SendAsync` = shared HTTP helper (adds the token). UnityWebRequest + `Awaitable` (WebGL-safe). Throws `AccountException` (Status 0 = unreachable) |
+| `Network/ChannelClient` | Static. `ListAsync`, `CreateAsync`, `Select`/`Current` (survives scene loads), `CurrentId` (falls back to `DefaultChannelId` = plaza). Constants mirror the server (name ≤24, 3 per user) |
 | `Network/NetworkMessages` | JsonUtility DTOs mirroring `protocol.py` and `api.py` (camelCase public fields, exception to naming rule) + `FacingWire`. JsonUtility sends null strings as `""`, so `ProfileUpdate` always fills both fields |
-| `Network/NetworkClient` | On Start: logs in if not yet (direct Play of SampleScene), applies profile character (via registry) + name to the local player, then NativeWebSocket connect → `join {room, token}` → sends `move` at 10Hz only when changed; `SendChat`; raises C# events per server message. Sets `runInBackground` |
+| `Network/NetworkClient` | On Start: logs in if not yet (direct Play of SampleScene), applies profile character (via registry) + name to the local player, then NativeWebSocket connect → `join {room = ChannelClient.CurrentId, token}` → sends `move` at 10Hz only when changed; `SendChat`; raises C# events per server message. Sets `runInBackground` |
 | `Network/RemotePlayerSpawner` | Subscribes to `NetworkClient` events; Instantiate/ApplyState/Destroy `RemotePlayer`s, skips own id, resolves `characterId` via registry |
 | `Network/RemotePlayer` | `Init(state, character)`; exponential lerp toward server position, snaps if > 5 units |
 | `NameTag` | World-space TMP under `Visual` (inherits camera tilt). `Reset()` sets default look; rich text off |
@@ -112,6 +120,8 @@ Scripts (`Assets/_Project/Scripts/`, namespace `DgVillage`):
 | `Editor/PixelSpriteImporter` | Auto pixel import settings for `Sprites/` (Point, no compression, 32 PPU). `Sprites/Characters/` gets foot pivot (0.5, 10/64). **Only applies on first import** (`importSettingsMissing`) |
 | `Editor/CharacterDefinitionBuilder` | Project window: right-click a character sprite folder → **DgVillage → Create Character Definition** — creates/updates `Characters/{folder}.asset` by filename convention and registers it |
 | `Editor/CharacterSelectSceneBuilder` | Menu **DgVillage → Create Character Select Scene**: builds/wires/saves `CharacterSelect.unity` (overwrites after confirm) |
+| `Editor/ChannelSelectSceneBuilder` | Menu **DgVillage → Create Channel Select Scene**: same for `ChannelSelect.unity` (ScrollView + VerticalLayoutGroup + ContentSizeFitter list) |
+| `Editor/SceneUIBuilder` | Shared helpers for the scene builders: camera + EventSystem, 1280x720 canvas, default UI sprites, `Place`/`CreateText`/`CreateButton` |
 | `Editor/DynamicFontCleaner` | Clears dynamic TMP font atlases in `Fonts/` on returning to Edit mode (also menu **DgVillage → Clear Dynamic Font Data**) |
 
 ## Server (`python/`)
@@ -120,9 +130,10 @@ Scripts (`Assets/_Project/Scripts/`, namespace `DgVillage`):
 - Env: `DG_DATABASE_URL` (default = compose Postgres), `DG_JWT_SECRET` (dev default logs a warning — **must** be set when deployed).
 - `protocol.py` (pydantic WS schemas, camelCase on the wire, `normalize_display_name`), `room.py` (in-memory `RoomManager`/`Room`, 10Hz tick broadcasts `state` only for rooms that changed; one session per player id), `config.py` (`Settings.from_env`), `db.py` (models + engine), `auth.py` (`AuthProvider`s, JWT), `api.py` (HTTP routes), `main.py` (app factory `create_app(settings, create_tables=)` + `/ws` handler)
 - HTTP: `POST /auth/anonymous` → `{userId, credential, accessToken}`; `POST /auth/login {provider, credential}` → `{userId, accessToken}`; `GET /me`, `PATCH /me {displayName?, characterId?}` with `Authorization: Bearer`. Errors are FastAPI `{detail}`.
+- Channels: `channels` table (`id` uuid, `name` ≤24, `owner_id` → users, NULL = system, `ON DELETE SET NULL`). The plaza "광장" has the fixed id `00000000-0000-0000-0000-000000000001` and is created at startup (`ensure_default_channel`) if missing. `GET /channels` → `{channels: [{id (hex), name, ownerId, playerCount}]}` (wrapped — JsonUtility can't parse top-level arrays; plaza first, then busiest; counts come from `RoomManager`). `POST /channels {name}` → 201, max `MAX_CHANNELS_PER_USER` = 3 per owner (409). Empty channels are kept (MVP). No delete/rename/private channels yet.
 - Migrations: change `db.py` → `uv run alembic revision --autogenerate -m "..."` → review the file in `migrations/versions/` → `uv run alembic upgrade head`. Generated files are auto-formatted by ruff (post-write hook). `uv run alembic check` = models vs DB drift.
-- Protocol: client sends `join {room, token}` first (name/character come from the account), then `move {x, z, facing, moving}` (`facing` = `down|up|left|right`) and `chat {text}` (whitespace collapsed, ≤200 chars, 0.5s rate limit). Server sends `welcome {id, players}`, `player_joined`, `player_left`, `state {players}`, `chat {id, name, text}` (to whole room incl. sender), `error`.
-- Rooms/positions are in memory; only accounts are in Postgres. Reset local DB: `docker compose down -v` (clients then silently create new anonymous accounts).
+- Protocol: client sends `join {room, token}` first (`room` = channel id hex; unknown → `error` "unknown channel" + close 1008) (name/character come from the account), then `move {x, z, facing, moving}` (`facing` = `down|up|left|right`) and `chat {text}` (whitespace collapsed, ≤200 chars, 0.5s rate limit). Server sends `welcome {id, players}`, `player_joined`, `player_left`, `state {players}`, `chat {id, name, text}` (to whole room incl. sender), `error`.
+- Rooms/positions are in memory; accounts and channels are in Postgres. Reset local DB: `docker compose down -v` (clients then silently create new anonymous accounts).
 - Deploy plan: single VPS in **Seoul region** (Lightsail/Vultr, ~2GB RAM) + Caddy (TLS, `wss://` needed for WebGL). Buy only when external testing starts.
 - Local multiplayer test: Postgres + server running + macOS build (Build And Run into `unity/Builds/`, gitignored, windowed mode) + editor Play.
 - Tests share helpers via `tests/conftest.py` (`client` fixture, `signup(client, name)` → token); ruff isort knows `conftest` as local.
@@ -157,6 +168,7 @@ Reference character: `Sprites/Characters/girl01/` (pink-haired chibi girl). Futu
 - Unity editor log is `unity/Logs/Editor.log` (not `~/Library/Logs/Unity`). Grep `error CS` there to check compile results.
 - Editing `Packages/manifest.json` while the editor is open is **not** picked up automatically — install via Package Manager "Add package from git URL" (or restart the editor).
 - **Import race**: when a new/changed `AssetPostprocessor` and new assets land in the same refresh, assets may import before the script recompiles. Commit the importer first or fix `.meta` (`alignment: 9`, `spritePivot`) afterwards — reimport alone won't re-apply because of the first-import-only guard.
+- `uvicorn --reload` restarting on a `db.py` change **before** `alembic upgrade head` dies at startup (missing table) and then hangs every request. Run the migration, then touch a server file (or restart) to reload.
 - Mesh Collider warning on Ground ("missing pre-baked triangle collision") is harmless for now.
 
 ## Unity conventions

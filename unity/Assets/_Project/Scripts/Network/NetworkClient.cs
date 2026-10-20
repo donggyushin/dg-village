@@ -6,13 +6,12 @@ using UnityEngine;
 namespace DgVillage
 {
     /// <summary>
-    /// 서버와 WebSocket 으로 연결해 방에 들어가고, 내 위치를 보내고, 받은 메시지를 이벤트로 알린다.
+    /// 서버와 WebSocket 으로 연결해 채널 방(ChannelClient.Current, 안 골랐으면 광장)에 들어가고,
+    /// 내 위치를 보내고, 받은 메시지를 이벤트로 알린다.
     /// 다른 플레이어를 화면에 그리는 일은 RemotePlayerSpawner 가 이 이벤트를 구독해서 한다.
     /// </summary>
     public class NetworkClient : MonoBehaviour
     {
-        [SerializeField] private string _room = "lobby";
-
         [Tooltip("위치를 보낼 내 캐릭터 (씬의 Player)")]
         [SerializeField] private PlayerMovement _localPlayer;
 
@@ -108,9 +107,10 @@ namespace DgVillage
         private void OnOpen()
         {
             Profile profile = AccountClient.Profile;
-            Debug.Log($"NetworkClient: 연결됨. '{_room}' 방에 {profile.displayName}({profile.characterId}) 로 입장", this);
-            // 이름 · 캐릭터는 서버가 계정에서 읽는다. 여기서는 토큰만 보낸다
-            Send(new JoinMessage { room = _room, token = AccountClient.AccessToken });
+            string room = ChannelClient.CurrentId;
+            Debug.Log($"NetworkClient: 연결됨. 채널 {room} 에 {profile.displayName}({profile.characterId}) 로 입장", this);
+            // 이름 · 캐릭터는 서버가 계정에서 읽는다. 여기서는 채널과 토큰만 보낸다
+            Send(new JoinMessage { room = room, token = AccountClient.AccessToken });
         }
 
         private void OnClose(WebSocketCloseCode code)

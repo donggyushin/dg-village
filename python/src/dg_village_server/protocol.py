@@ -12,16 +12,25 @@ Facing = Literal["down", "up", "left", "right"]
 
 CHAT_MAX_LENGTH = 200
 DISPLAY_NAME_MAX_LENGTH = 16
+CHANNEL_NAME_MAX_LENGTH = 24
 
 
-def normalize_display_name(value: str) -> str:
-    """Collapse whitespace; 1-16 characters after that."""
+def _normalize_name(value: str, max_length: int) -> str:
+    """Collapse whitespace; 1-max_length characters after that."""
     value = " ".join(value.split())
     if not value:
         raise ValueError("empty name")
-    if len(value) > DISPLAY_NAME_MAX_LENGTH:
-        raise ValueError(f"name longer than {DISPLAY_NAME_MAX_LENGTH} characters")
+    if len(value) > max_length:
+        raise ValueError(f"name longer than {max_length} characters")
     return value
+
+
+def normalize_display_name(value: str) -> str:
+    return _normalize_name(value, DISPLAY_NAME_MAX_LENGTH)
+
+
+def normalize_channel_name(value: str) -> str:
+    return _normalize_name(value, CHANNEL_NAME_MAX_LENGTH)
 
 
 class CamelModel(BaseModel):
@@ -38,6 +47,7 @@ class JoinMessage(CamelModel):
     """Name and character come from the account (PATCH /me), not from this message."""
 
     type: Literal["join"]
+    # Channel id as 32 hex digits (GET /channels). Unknown ids are rejected.
     room: str = Field(min_length=1, max_length=32)
     # Access token from POST /auth/login or /auth/anonymous.
     token: str = Field(min_length=1, max_length=2048)

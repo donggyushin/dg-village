@@ -2,6 +2,7 @@ import asyncio
 import logging
 import math
 import time
+import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -11,7 +12,14 @@ from pydantic import ValidationError
 from . import api
 from .auth import AuthError, read_access_token
 from .config import Settings
-from .db import Base, User, create_engine, create_sessionmaker
+from .db import (
+    Base,
+    Channel,
+    User,
+    create_engine,
+    create_sessionmaker,
+    ensure_default_channel,
+)
 from .protocol import (
     ChatMessage,
     ErrorMessage,
@@ -40,6 +48,7 @@ def create_app(settings: Settings | None = None, *, create_tables: bool = False)
                 await conn.run_sync(Base.metadata.create_all)
         app.state.settings = settings
         app.state.sessionmaker = create_sessionmaker(engine)
+        await ensure_default_channel(app.state.sessionmaker)
         rooms = RoomManager()
         app.state.rooms = rooms
         tick_task = asyncio.create_task(rooms.run_tick_loop(1 / TICK_RATE_HZ))
@@ -76,14 +85,22 @@ def create_app(settings: Settings | None = None, *, create_tables: bool = False)
         except AuthError as e:
             await _reject(ws, str(e))
             return
+        try:
+            channel_id = uuid.UUID(hex=first.room)
+        except ValueError:
+            channel_id = None
         async with ws.app.state.sessionmaker() as session:
             user = await session.get(User, user_id)
+            channel = await session.get(Channel, channel_id) if channel_id else None
         if user is None:
             await _reject(ws, "unknown user")
             return
+        if channel is None:
+            await _reject(ws, "unknown channel")
+            return
 
         room, me = await rooms.join(
-            first.room, user.id.hex, user.display_name, user.character_id, ws
+            channel.id.hex, user.id.hex, user.display_name, user.character_id, ws
         )
         last_chat_at = -math.inf
         try:

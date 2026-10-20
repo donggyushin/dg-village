@@ -2,9 +2,8 @@ using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
+using static DgVillage.Editor.SceneUIBuilder;
 
 namespace DgVillage.Editor
 {
@@ -22,8 +21,6 @@ namespace DgVillage.Editor
         private const string ScenePath = "Assets/Scenes/CharacterSelect.unity";
         private const string RegistryPath = "Assets/_Project/Characters/CharacterRegistry.asset";
         private const string Title = "Create Character Select Scene";
-
-        private static readonly Color BackgroundColor = new(0.13f, 0.11f, 0.19f);
 
         [MenuItem("DgVillage/Create Character Select Scene")]
         private static void Create()
@@ -54,29 +51,9 @@ namespace DgVillage.Editor
             // NewScene 이 이전 씬을 닫으며 참조 없는 에셋을 내려버리므로 (registry 가 "가짜 null" 이 된다) 다시 불러온다
             registry = AssetDatabase.LoadAssetAtPath<CharacterRegistry>(RegistryPath);
 
-            var cameraGo = new GameObject("Main Camera", typeof(Camera), typeof(AudioListener));
-            cameraGo.tag = "MainCamera";
-            var camera = cameraGo.GetComponent<Camera>();
-            camera.clearFlags = CameraClearFlags.SolidColor;
-            camera.backgroundColor = BackgroundColor;
-            camera.orthographic = true;
-
-            new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
-
-            var resources = new TMP_DefaultControls.Resources
-            {
-                standard = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd"),
-                background = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Background.psd"),
-                inputField = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/InputFieldBackground.psd"),
-            };
-
-            // 채팅 UI 와 같은 1280x720 기준 스케일. 아래 좌표는 모두 화면 가운데 기준
-            var canvasGo = new GameObject("SelectCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-            canvasGo.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
-            var scaler = canvasGo.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1280f, 720f);
-            scaler.matchWidthOrHeight = 0.5f;
+            CreateCameraAndEventSystem();
+            TMP_DefaultControls.Resources resources = DefaultResources();
+            GameObject canvasGo = CreateCanvas("SelectCanvas");
             var root = (RectTransform)canvasGo.transform;
 
             TMP_Text title = CreateText(root, "Title", "캐릭터 선택", 40f, new Vector2(0f, 280f), new Vector2(600f, 60f));
@@ -127,41 +104,6 @@ namespace DgVillage.Editor
             EditorSceneManager.SaveScene(scene, ScenePath);
             Selection.activeGameObject = canvasGo;
             Debug.Log($"{ScenePath} 생성 완료. File → Build Profiles → Scene List 에 이 씬을 0번으로 넣을 것.", canvasGo);
-        }
-
-        private static void Place(RectTransform rect, RectTransform parent, Vector2 position, Vector2 size)
-        {
-            rect.SetParent(parent, false);
-            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.anchoredPosition = position;
-            rect.sizeDelta = size;
-        }
-
-        private static TMP_Text CreateText(RectTransform parent, string name, string text, float fontSize, Vector2 position, Vector2 size)
-        {
-            var go = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI));
-            var tmp = go.GetComponent<TextMeshProUGUI>();
-            Place(tmp.rectTransform, parent, position, size);
-            tmp.text = text;
-            tmp.fontSize = fontSize;
-            tmp.color = Color.white;
-            tmp.alignment = TextAlignmentOptions.Center;
-            tmp.richText = false;
-            tmp.raycastTarget = false;
-            return tmp;
-        }
-
-        private static Button CreateButton(RectTransform parent, TMP_DefaultControls.Resources resources,
-            string name, string label, Vector2 position, Vector2 size, float fontSize)
-        {
-            GameObject go = TMP_DefaultControls.CreateButton(resources);
-            go.name = name;
-            Place((RectTransform)go.transform, parent, position, size);
-            var text = go.GetComponentInChildren<TMP_Text>();
-            text.text = label;
-            text.fontSize = fontSize;
-            text.color = new Color(0.15f, 0.12f, 0.15f);
-            return go.GetComponent<Button>();
         }
     }
 }

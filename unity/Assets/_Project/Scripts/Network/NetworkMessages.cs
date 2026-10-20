@@ -133,6 +133,30 @@ namespace DgVillage
         public string characterId;
     }
 
+    /// <summary>GET /channels 의 한 줄. id(32자리 hex)를 WebSocket join 의 room 으로 보낸다.</summary>
+    [Serializable]
+    public class ChannelInfo
+    {
+        public string id;
+        public string name;
+        /// <summary>만든 사람 계정 id. 기본 채널(광장)은 서버가 null 을 보내는데 JsonUtility 가 "" 로 읽는다.</summary>
+        public string ownerId;
+        public int playerCount;
+    }
+
+    /// <summary>JsonUtility 는 맨 바깥이 배열인 JSON 을 못 읽어서 서버가 {"channels": [...]} 로 감싸 보낸다.</summary>
+    [Serializable]
+    public class ChannelList
+    {
+        public ChannelInfo[] channels;
+    }
+
+    [Serializable]
+    public class ChannelCreate
+    {
+        public string name;
+    }
+
     /// <summary>FastAPI 에러 본문 {"detail": "..."}. 422 는 detail 이 배열이라 파싱되지 않는다.</summary>
     [Serializable]
     public class HttpError

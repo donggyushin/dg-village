@@ -28,3 +28,14 @@ def signup(client: TestClient, name: str, character_id: str = "girl01") -> str:
     )
     assert response.status_code == 200, response.text
     return token
+
+
+def auth(token: str) -> dict[str, str]:
+    return {"Authorization": f"Bearer {token}"}
+
+
+def create_channel(client: TestClient, token: str, name: str) -> str:
+    """New channel owned by the token's account; returns its id (the WebSocket `room`)."""
+    response = client.post("/channels", json={"name": name}, headers=auth(token))
+    assert response.status_code == 201, response.text
+    return response.json()["id"]

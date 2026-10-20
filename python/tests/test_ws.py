@@ -2,10 +2,14 @@ import pytest
 from fastapi.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 
-from conftest import signup
+from dg_village_server.db import DEFAULT_CHANNEL_ID
+
+from conftest import create_channel, signup
+
+PLAZA = DEFAULT_CHANNEL_ID.hex
 
 
-def join(ws, token: str, room: str = "lobby") -> dict:
+def join(ws, token: str, room: str = PLAZA) -> dict:
     ws.send_json({"type": "join", "room": room, "token": token})
     welcome = ws.receive_json()
     assert welcome["type"] == "welcome", welcome
@@ -65,8 +69,9 @@ def test_leave_is_broadcast(client: TestClient) -> None:
 
 def test_rooms_are_isolated(client: TestClient) -> None:
     with client.websocket_connect("/ws") as a, client.websocket_connect("/ws") as b:
-        join(a, signup(client, "alice"), room="r1")
-        welcome_b = join(b, signup(client, "bob"), room="r2")
+        alice, bob = signup(client, "alice"), signup(client, "bob")
+        join(a, alice, room=create_channel(client, alice, "r1"))
+        welcome_b = join(b, bob, room=create_channel(client, bob, "r2"))
         assert len(welcome_b["players"]) == 1
 
 
@@ -117,7 +122,7 @@ def test_chat_rate_limit(client: TestClient) -> None:
 
 def test_join_with_bad_token_is_rejected(client: TestClient) -> None:
     with client.websocket_connect("/ws") as ws:
-        ws.send_json({"type": "join", "room": "lobby", "token": "nope"})
+        ws.send_json({"type": "join", "room": PLAZA, "token": "nope"})
         assert ws.receive_json() == {"type": "error", "message": "invalid token"}
         with pytest.raises(WebSocketDisconnect):
             ws.receive_json()
@@ -146,3 +151,12 @@ def test_same_account_joining_again_kicks_the_old_session(client: TestClient) ->
             assert receive_until(other, "player_left")["id"] == welcome["id"]
             assert receive_until(other, "player_joined")["player"]["id"] == welcome["id"]
             assert sorted(p["name"] for p in welcome["players"]) == ["alice", "bob"]
+
+
+@pytest.mark.parametrize("room", ["0" * 32, "lobby"])
+def test_join_unknown_channel_is_rejected(client: TestClient, room: str) -> None:
+    with client.websocket_connect("/ws") as ws:
+        ws.send_json({"type": "join", "room": room, "token": signup(client, "alice")})
+        assert ws.receive_json() == {"type": "error", "message": "unknown channel"}
+        with pytest.raises(WebSocketDisconnect):
+            ws.receive_json()

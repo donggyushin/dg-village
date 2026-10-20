@@ -9,7 +9,7 @@ namespace DgVillage
     /// <summary>
     /// CharacterSelect 씬(첫 화면)의 캐릭터 선택. 뜨자마자 서버에 로그인(없으면 익명 계정 생성)하고
     /// 계정 프로필의 닉네임 · 캐릭터로 미리 채운다. ◀ ▶ (← → / A D) 로 캐릭터를 고르고 닉네임을 고친 뒤
-    /// 입장 버튼(또는 Enter)을 누르면 프로필을 서버에 저장(PATCH /me)하고 마을 씬을 연다.
+    /// 입장 버튼(또는 Enter)을 누르면 프로필을 서버에 저장(PATCH /me)하고 채널 목록 씬을 연다.
     /// 씬은 메뉴 DgVillage → Create Character Select Scene 으로 만든다.
     /// </summary>
     public class CharacterSelect : MonoBehaviour
@@ -17,7 +17,7 @@ namespace DgVillage
         [SerializeField] private CharacterRegistry _characters;
 
         [Tooltip("입장하면 열 씬 이름 (Build Profiles 의 Scene List 에 들어 있어야 한다)")]
-        [SerializeField] private string _villageScene = "SampleScene";
+        [SerializeField] private string _channelSelectScene = "ChannelSelect";
 
         [Header("UI")]
         [SerializeField] private Image _preview;
@@ -169,7 +169,7 @@ namespace DgVillage
                 SetBusy(false, e.Message);
                 return;
             }
-            SceneManager.LoadScene(_villageScene);
+            SceneManager.LoadScene(_channelSelectScene);
         }
 
         private void SetBusy(bool busy, string status)

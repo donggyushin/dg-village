@@ -9,6 +9,9 @@ EditorBuildSettings:
     path: Assets/Scenes/CharacterSelect.unity
     guid: c07e03c9f74cd44ff88109977fb7ce07
   - enabled: 1
+    path: Assets/Scenes/ChannelSelect.unity
+    guid: 3ade8cebe66cc4d4e8c9aa46e758935c
+  - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
   m_configObjects:

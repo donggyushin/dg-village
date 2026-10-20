@@ -88,6 +88,10 @@ class RoomManager:
         logger.info("%s (%s) joined room %r", name, player_id, room_name)
         return room, state
 
+    def player_count(self, room_name: str) -> int:
+        room = self.rooms.get(room_name)
+        return len(room.players) if room else 0
+
     async def leave(self, room: Room, player_id: str, connection: Connection) -> None:
         player = room.players.get(player_id)
         # Already kicked and replaced by a newer session of the same account: leave that one be.

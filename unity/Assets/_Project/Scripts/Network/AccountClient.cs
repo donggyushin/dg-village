@@ -79,14 +79,18 @@ namespace DgVillage
         }
 
         /// <summary>서버 normalize_display_name 과 같은 규칙: 공백을 하나로 줄이고 1~16자. 안 맞으면 null.</summary>
-        public static string NormalizeDisplayName(string value)
+        public static string NormalizeDisplayName(string value) => NormalizeName(value, DisplayNameMaxLength);
+
+        /// <summary>서버 _normalize_name 과 같은 규칙: 공백을 하나로 줄이고 1~maxLength 자. 안 맞으면 null.</summary>
+        public static string NormalizeName(string value, int maxLength)
         {
             string normalized = string.Join(" ",
                 (value ?? "").Split((char[])null, StringSplitOptions.RemoveEmptyEntries));
-            return normalized.Length is >= 1 and <= DisplayNameMaxLength ? normalized : null;
+            return normalized.Length >= 1 && normalized.Length <= maxLength ? normalized : null;
         }
 
-        private static async Awaitable<T> SendAsync<T>(string method, string path, object body)
+        /// <summary>서버 HTTP API 호출. 로그인했으면 AccessToken 을 붙인다. ChannelClient 도 이걸 쓴다.</summary>
+        internal static async Awaitable<T> SendAsync<T>(string method, string path, object body)
         {
             using var request = new UnityWebRequest(ServerConfig.HttpBaseUrl + path, method);
             request.downloadHandler = new DownloadHandlerBuffer();

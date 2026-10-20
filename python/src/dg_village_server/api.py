@@ -4,6 +4,8 @@ POST  /auth/anonymous  new account + device credential (client stores it) + acce
 POST  /auth/login      {provider, credential} -> access token
 GET   /me              own profile                      (Authorization: Bearer <token>)
 PATCH /me              change displayName / characterId (Authorization: Bearer <token>)
+GET   /channels        channel list with live player counts
+POST  /channels        {name} -> new channel owned by the caller (max MAX_CHANNELS_PER_USER)
 """
 
 import random
@@ -14,15 +16,23 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import Field, field_validator
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .auth import PROVIDERS, AnonymousProvider, AuthError, issue_access_token, read_access_token
 from .config import Settings
-from .db import CHARACTER_ID_MAX_LENGTH, AuthIdentity, User
-from .protocol import DISPLAY_NAME_MAX_LENGTH, CamelModel, normalize_display_name
+from .db import CHARACTER_ID_MAX_LENGTH, DEFAULT_CHANNEL_ID, AuthIdentity, Channel, User
+from .protocol import (
+    DISPLAY_NAME_MAX_LENGTH,
+    CamelModel,
+    normalize_channel_name,
+    normalize_display_name,
+)
+from .room import RoomManager
 
 router = APIRouter()
+
+MAX_CHANNELS_PER_USER = 3
 
 
 # ----- schemas -----
@@ -61,6 +71,27 @@ class ProfileUpdate(CamelModel):
         return None if value is None else normalize_display_name(value)
 
 
+class ChannelInfo(CamelModel):
+    id: str  # 32 hex digits, the value to send as `room` in the WebSocket join
+    name: str
+    owner_id: uuid.UUID | None
+    player_count: int
+
+
+class ChannelList(CamelModel):
+    # Wrapped in an object: Unity's JsonUtility cannot parse a top-level array.
+    channels: list[ChannelInfo]
+
+
+class ChannelCreate(CamelModel):
+    name: str = Field(max_length=64)
+
+    @field_validator("name")
+    @classmethod
+    def _normalize(cls, value: str) -> str:
+        return normalize_channel_name(value)
+
+
 # ----- dependencies -----
 
 
@@ -73,8 +104,13 @@ def get_settings(request: Request) -> Settings:
     return request.app.state.settings
 
 
+def get_rooms(request: Request) -> RoomManager:
+    return request.app.state.rooms
+
+
 Session = Annotated[AsyncSession, Depends(get_session)]
 AppSettings = Annotated[Settings, Depends(get_settings)]
+Rooms = Annotated[RoomManager, Depends(get_rooms)]
 
 _bearer = HTTPBearer(auto_error=False)
 
@@ -161,6 +197,43 @@ async def update_me(body: ProfileUpdate, user: CurrentUser, session: Session) ->
         user.character_id = body.character_id
     await session.commit()
     return to_profile(user)
+
+
+@router.get("/channels", response_model=ChannelList)
+async def list_channels(_: CurrentUser, session: Session, rooms: Rooms) -> ChannelList:
+    channels = [
+        to_channel_info(channel, rooms)
+        for channel in await session.scalars(select(Channel).order_by(Channel.created_at))
+    ]
+    # Plaza first, then busiest; ties keep creation order (sort is stable).
+    channels.sort(key=lambda c: (c.id != DEFAULT_CHANNEL_ID.hex, -c.player_count))
+    return ChannelList(channels=channels)
+
+
+@router.post("/channels", response_model=ChannelInfo, status_code=status.HTTP_201_CREATED)
+async def create_channel(
+    body: ChannelCreate, user: CurrentUser, session: Session, rooms: Rooms
+) -> ChannelInfo:
+    owned = await session.scalar(
+        select(func.count()).select_from(Channel).where(Channel.owner_id == user.id)
+    )
+    if owned >= MAX_CHANNELS_PER_USER:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, f"you can own at most {MAX_CHANNELS_PER_USER} channels"
+        )
+    channel = Channel(name=body.name, owner_id=user.id)
+    session.add(channel)
+    await session.commit()
+    return to_channel_info(channel, rooms)
+
+
+def to_channel_info(channel: Channel, rooms: RoomManager) -> ChannelInfo:
+    return ChannelInfo(
+        id=channel.id.hex,
+        name=channel.name,
+        owner_id=channel.owner_id,
+        player_count=rooms.player_count(channel.id.hex),
+    )
 
 
 def to_profile(user: User) -> Profile:
