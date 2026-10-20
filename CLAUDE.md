@@ -44,8 +44,8 @@ Single git repo at the root, one `.gitignore` covering both.
 1. ~~Make a reference character → get it moving in Unity.~~ **Done 2026-10-20** (girl01, 3-direction walk).
 2. ~~Server + multiple clients seeing each other move in one room.~~ **Done 2026-10-20** (verified with macOS build + editor).
 3. ~~Name tags → text chat + speech bubbles.~~ **Done 2026-10-20** (Korean via Galmuri fallback font).
-4. **Next**: Player character selection (see below).
-5. Accounts + DB (see below).
+4. ~~Player character selection.~~ **Done 2026-10-20** (CharacterSelect scene + `characterId` sync). Second character `boy01` (black hoodie + laptop) in progress.
+5. **Next**: Accounts + DB (see below).
 6. Create/join channels.
 7. Deploy (Seoul VPS) for external testing.
 8. Social login (Google/Discord OAuth).
@@ -59,9 +59,13 @@ Accounts plan (owner request, 2026-10-20: "eventually log in, create an account,
 - Auth provider (self-issued tokens vs Supabase Auth etc.) decided then; the game server only verifies a token either way.
 - Keep now: `name` is display-only (not unique, never an identity) — identify by server-issued `id`. Entry stays a single `join` message; accounts will just add a `token` field to it.
 
-Planned feature (owner request, 2026-10-20): **player chooses their character.** Plan: move sprite sets out of `DirectionalSpriteAnimator`'s inline fields into a `CharacterDefinition` ScriptableObject (id + per-direction idle/walk sprites), one asset per character, collected in a registry. The animator reads the currently selected definition at runtime. In multiplayer, the server only syncs `characterId`; each client resolves it locally. The editor-only "Fill From Character Folder" menu should then fill a `CharacterDefinition` asset instead of the component. Do this before adding a second character.
+Character system: each character is a `CharacterDefinition` asset (`Assets/_Project/Characters/{id}.asset`, id = sprite folder name) listed in `CharacterRegistry.asset` (first entry = default/fallback). The server only syncs `characterId`; each client resolves it via the registry. Selection is passed between scenes by `PlayerSession` (PlayerPrefs-backed — moves server-side with accounts).
 
 ## Current state (as of 2026-10-20)
+
+Scenes (Build Profiles → Scene List, order matters): `0 Assets/Scenes/CharacterSelect.unity` (start screen) → `1 Assets/Scenes/SampleScene.unity` (village). Playing SampleScene directly still works — it joins with the last saved selection.
+
+`CharacterSelect.unity` (built by **DgVillage → Create Character Select Scene**): Main Camera (solid bg), EventSystem, `SelectCanvas` + `CharacterSelect` (Title, Preview, Previous/Next, CharacterName, NameInput, EnterButton).
 
 Scene `Assets/Scenes/SampleScene.unity`:
 
@@ -69,8 +73,8 @@ Scene `Assets/Scenes/SampleScene.unity`:
 Main Camera   Orthographic, Size 5, pos (0, 8, -11.5), rot X 35  + CameraFollow(target = Player)
 Ground        Plane, scale (2,1,2) → 20x20 units. No bounds/collision yet (player can walk off)
 Player        empty root, movement only               + PlayerMovement
-└── Visual    SpriteRenderer, rot X 35 (faces camera) + DirectionalSpriteAnimator(girl01)
-Network       empty at origin                         + NetworkClient(localPlayer = Player) + RemotePlayerSpawner(prefab = RemotePlayer)
+└── Visual    SpriteRenderer, rot X 35 (faces camera) + DirectionalSpriteAnimator(character = girl01, replaced at runtime)
+Network       empty at origin                         + NetworkClient(localPlayer = Player, characters = registry) + RemotePlayerSpawner(prefab = RemotePlayer, characters = registry)
 ChatCanvas    Screen Space Overlay, 1280x720 scaler   + ChatBubbleSpawner(prefab = ChatBubble, root = Bubbles)
 ├── Bubbles   full-stretch container (first child → drawn under the input)
 └── ChatInput TMP_InputField, bottom center           + ChatInput
@@ -88,18 +92,24 @@ Scripts (`Assets/_Project/Scripts/`, namespace `DgVillage`):
 | `PlayerMovement` | XZ movement from Input System `Player/Move` (project-wide actions). Exposes `Facing` (Down/Up/Left/Right), `IsMoving`, and `InputBlocked` (set by chat) |
 | `CameraFollow` | Keeps the scene-authored offset to target, SmoothDamp in LateUpdate |
 | `ICharacterMotion` | `Facing` + `IsMoving`. Implemented by `PlayerMovement` (local input) and `RemotePlayer` (server data) |
-| `DirectionalSpriteAnimator` | Picks idle/walk sprites from parent `ICharacterMotion`. Left = Right with `flipX` |
+| `DirectionalSpriteAnimator` | Plays idle/walk sprites of its `CharacterDefinition` from parent `ICharacterMotion`. Left = Right with `flipX`. `SetCharacter()` swaps at runtime |
+| `CharacterDefinition` | ScriptableObject: `Id`, `DisplayName`, per-direction `Idle` + `Walk[]`, `Get(Facing)`, `Preview` (down idle) |
+| `CharacterRegistry` | ScriptableObject list of definitions; `Find(id)` falls back to first entry |
+| `PlayerSession` | Static, PlayerPrefs-backed `PlayerName` / `CharacterId` handed from select scene to village |
+| `UI/CharacterSelect` | Select scene: ◀▶ / ←→ / A·D cycle, animated down-walk preview, nickname (≤16), Enter → `PlayerSession.Save` → `LoadScene(SampleScene)` |
 | `Network/NetworkMessages` | JsonUtility DTOs mirroring `protocol.py` (camelCase public fields, exception to naming rule) + `FacingWire` |
-| `Network/NetworkClient` | NativeWebSocket connect → `join` → sends `move` at 10Hz only when changed; `SendChat`; raises C# events per server message. Sets `runInBackground` and the local player's name tag (random `guestNNNN` if name empty) |
-| `Network/RemotePlayerSpawner` | Subscribes to `NetworkClient` events; Instantiate/ApplyState/Destroy `RemotePlayer`s, skips own id |
-| `Network/RemotePlayer` | Exponential lerp toward server position, snaps if > 5 units |
+| `Network/NetworkClient` | On Start: applies `PlayerSession` character (via registry) + name (random `guestNNNN` if empty, ≤16) to the local player, then NativeWebSocket connect → `join` → sends `move` at 10Hz only when changed; `SendChat`; raises C# events per server message. Sets `runInBackground` |
+| `Network/RemotePlayerSpawner` | Subscribes to `NetworkClient` events; Instantiate/ApplyState/Destroy `RemotePlayer`s, skips own id, resolves `characterId` via registry |
+| `Network/RemotePlayer` | `Init(state, character)`; exponential lerp toward server position, snaps if > 5 units |
 | `NameTag` | World-space TMP under `Visual` (inherits camera tilt). `Reset()` sets default look; rich text off |
 | `Chat/ChatInput` | Enter opens/sends, Esc cancels; visible only while typing (CanvasGroup alpha, not SetActive — Update must keep running); sets `PlayerMovement.InputBlocked` while focused |
 | `Chat/ChatBubble` | Screen-space bubble sized via `GetPreferredValues`, follows anchor (name tag) each LateUpdate, self-destroys after 3–8s |
 | `Chat/ChatBubbleSpawner` | `NetworkClient.ChatReceived` → bubble over speaker (own bubble comes from the server echo) |
 | `Editor/ChatUIBuilder` | Menu **DgVillage → Create Chat UI**: builds/wires canvas, input, EventSystem, ChatBubble prefab |
 | `Editor/PixelSpriteImporter` | Auto pixel import settings for `Sprites/` (Point, no compression, 32 PPU). `Sprites/Characters/` gets foot pivot (0.5, 10/64). **Only applies on first import** (`importSettingsMissing`) |
-| `Editor/DirectionalSpriteAnimatorFiller` | Component ⋮ menu "Fill From Character Folder" — fills sprites by filename convention |
+| `Editor/CharacterDefinitionBuilder` | Project window: right-click a character sprite folder → **DgVillage → Create Character Definition** — creates/updates `Characters/{folder}.asset` by filename convention and registers it |
+| `Editor/CharacterSelectSceneBuilder` | Menu **DgVillage → Create Character Select Scene**: builds/wires/saves `CharacterSelect.unity` (overwrites after confirm) |
+| `Editor/DynamicFontCleaner` | Clears dynamic TMP font atlases in `Fonts/` on returning to Edit mode (also menu **DgVillage → Clear Dynamic Font Data**) |
 
 ## Server (`python/`)
 
@@ -118,8 +128,9 @@ Reference character: `Sprites/Characters/girl01/` (pink-haired chibi girl). Futu
 - PixelLab → Characters → Create from Text: Humanoid, **v3**, **Low Top-Down**, **48×48**, Detail "Highly detailed". Prompt style: "cute chibi, 2.5 heads tall, classic Korean MMORPG style like Ragnarok Online, bright saturated colors, clean dark outline, soft cel shading".
 - Walk: Add Animation → Template motion **Skeleton v3 → Walking → Walk** (6 frames). Template motion keeps outfit/colors identical per frame. Generate South, East, North only (West = flipped East).
 - Export → **ZIP (all frames)**. Idle rotations are 48×48, animation frames are **64×64** (centered padding). Pad idle to 64×64 centered (`sips -p 64 64`) so feet line up — both end up with 10px empty below the feet.
-- File naming: `{name}_idle_{south|north|east}.png`, `{name}_walk_{south|north|east}_{0..5}.png` → put in `Sprites/Characters/{name}/` → Visual's animator ⋮ → Fill From Character Folder.
-- Free plan: 1 concurrent job, ~8–10 min per walk direction. Check credits/pricing on the site.
+- File naming: `{name}_idle_{south|north|east}.png`, `{name}_walk_{south|north|east}_{0..5}.png` → put in `Sprites/Characters/{name}/` → right-click the folder → **DgVillage → Create Character Definition** (auto-registers; shows up in the select screen).
+- Free plan: 1 concurrent job ("Too many animations generating" otherwise), ~8–10 min per walk direction. Character = 2 generations, each walk direction = 3 ("Generate in Background"). Check credits/pricing on the site.
+- Browser flow: Characters → type prompt in top bar → Create (opens form with prompt) → defaults already match (v3, Low Top-Down, 48px, Highly detailed). Animation: Add Animation → pick Direction radio on the left → Template motion Skeleton v3 → Walking (expand) → **Walk** → Generate.
 
 ## Working with the owner
 
@@ -131,7 +142,9 @@ Reference character: `Sprites/Characters/girl01/` (pink-haired chibi girl). Futu
 
 ## Gotchas
 
-- Fonts: TMP default (LiberationSans) has no Hangul. `Fonts/Galmuri11 SDF` (Dynamic, multi-atlas, OFL — keep `Galmuri-OFL.txt`) is registered in **TMP Settings → Fallback Font Assets**, so Korean works everywhere without per-component changes. Latin still renders in LiberationSans.
+- Fonts: TMP default (LiberationSans) has no Hangul. `Fonts/Galmuri11 SDF` (Dynamic, multi-atlas, OFL — keep `Galmuri-OFL.txt`) is registered in **TMP Settings → Fallback Font Assets**, so Korean works everywhere without per-component changes. Latin still renders in LiberationSans. Dynamic glyphs get baked into the asset during Play (~1MB diff) — `DynamicFontCleaner` reverts it; if the font asset still shows as modified, run **DgVillage → Clear Dynamic Font Data**, don't commit it.
+- Build Profiles Scene List edits live in memory until **File → Save Project** writes `ProjectSettings/EditorBuildSettings.asset`.
+- Don't use **Create → …** (CreateAssetMenu) for `CharacterDefinition` — it makes an empty asset; use the folder right-click menu.
 - `ProjectSettings.asset` `preloadedAssets` (Input System actions) flips on/off around builds — noise, commit whichever state. The file itself must stay tracked.
 - Unity editor log is `unity/Logs/Editor.log` (not `~/Library/Logs/Unity`). Grep `error CS` there to check compile results.
 - Editing `Packages/manifest.json` while the editor is open is **not** picked up automatically — install via Package Manager "Add package from git URL" (or restart the editor).
