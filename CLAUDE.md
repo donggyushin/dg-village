@@ -48,6 +48,8 @@ Single git repo at the root, one `.gitignore` covering both.
 5. Art pass (map tiles, buildings — the floor currently looks flat/2D because it's a plain ortho plane).
 6. Voice.
 
+Planned feature (owner request, 2026-10-20): **player chooses their character.** Plan: move sprite sets out of `DirectionalSpriteAnimator`'s inline fields into a `CharacterDefinition` ScriptableObject (id + per-direction idle/walk sprites), one asset per character, collected in a registry. The animator reads the currently selected definition at runtime. In multiplayer, the server only syncs `characterId`; each client resolves it locally. The editor-only "Fill From Character Folder" menu should then fill a `CharacterDefinition` asset instead of the component. Do this before adding a second character.
+
 ## Current state (as of 2026-10-20)
 
 Scene `Assets/Scenes/SampleScene.unity`:
