@@ -41,6 +41,8 @@ sysinfo.txt
 crashlytics-build.properties
 
 # 빌드 산출물
+*_BackUpThisFolder_ButDontShipItWithYourGame/
+*_BurstDebugInformation_DoNotShip/
 *.apk
 *.aab
 *.unitypackage
