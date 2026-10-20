@@ -20,19 +20,25 @@ namespace DgVillage
 
         private Vector3 _targetPosition;
         private NameTag _nameTag;
+        private DirectionalSpriteAnimator _animator;
 
         private void Awake()
         {
             _nameTag = GetComponentInChildren<NameTag>();
+            _animator = GetComponentInChildren<DirectionalSpriteAnimator>();
         }
 
-        public void Init(PlayerState state)
+        public void Init(PlayerState state, CharacterDefinition character)
         {
             PlayerId = state.id;
             gameObject.name = $"Remote {state.name}";
             if (_nameTag != null)
             {
                 _nameTag.SetName(state.name);
+            }
+            if (_animator != null && character != null)
+            {
+                _animator.SetCharacter(character);
             }
             ApplyState(state);
             transform.position = _targetPosition;

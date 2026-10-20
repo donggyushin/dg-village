@@ -17,8 +17,6 @@ namespace DgVillage
         [Tooltip("비워두면 guest1234 같은 임시 이름을 쓴다")]
         [SerializeField] private string _playerName = "";
 
-        [SerializeField] private string _characterId = "girl01";
-
         [Tooltip("위치를 보낼 내 캐릭터 (씬의 Player)")]
         [SerializeField] private PlayerMovement _localPlayer;
 
@@ -39,6 +37,7 @@ namespace DgVillage
         public string LocalPlayerId { get; private set; }
 
         private WebSocket _socket;
+        private DirectionalSpriteAnimator _localAnimator;
         private float _sendTimer;
         private MoveMessage _lastSent;
 
@@ -68,6 +67,15 @@ namespace DgVillage
                 localNameTag.SetName(_playerName);
             }
 
+            // 내 캐릭터 id 는 Player 의 animator 가 들고 있는 CharacterDefinition 이 기준
+            _localAnimator = _localPlayer.GetComponentInChildren<DirectionalSpriteAnimator>();
+            if (_localAnimator == null || _localAnimator.Character == null)
+            {
+                Debug.LogError("NetworkClient: Player/Visual 의 DirectionalSpriteAnimator 에 Character 가 비어 있다.", this);
+                enabled = false;
+                return;
+            }
+
             // NativeWebSocket 은 생성한 스레드(메인)로 이벤트를 넘겨주므로 핸들러에서 Unity API 를 써도 된다
             _socket = new WebSocket(_serverUrl);
             _socket.OnOpen += OnOpen;
@@ -87,8 +95,9 @@ namespace DgVillage
 
         private void OnOpen()
         {
-            Debug.Log($"NetworkClient: 연결됨. '{_room}' 방에 {_playerName} 로 입장", this);
-            Send(new JoinMessage { room = _room, name = _playerName, characterId = _characterId });
+            string characterId = _localAnimator.Character.Id;
+            Debug.Log($"NetworkClient: 연결됨. '{_room}' 방에 {_playerName}({characterId}) 로 입장", this);
+            Send(new JoinMessage { room = _room, name = _playerName, characterId = characterId });
         }
 
         private void OnClose(WebSocketCloseCode code)

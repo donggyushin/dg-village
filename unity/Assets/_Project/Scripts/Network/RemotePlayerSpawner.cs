@@ -12,13 +12,16 @@ namespace DgVillage
         [SerializeField] private NetworkClient _client;
         [SerializeField] private RemotePlayer _remotePlayerPrefab;
 
+        [Tooltip("서버가 보낸 characterId 로 스프라이트를 찾을 목록")]
+        [SerializeField] private CharacterRegistry _characters;
+
         private readonly Dictionary<string, RemotePlayer> _players = new();
 
         private void Awake()
         {
-            if (_client == null || _remotePlayerPrefab == null)
+            if (_client == null || _remotePlayerPrefab == null || _characters == null)
             {
-                Debug.LogError("RemotePlayerSpawner: Client 또는 Remote Player Prefab 이 비어 있다.", this);
+                Debug.LogError("RemotePlayerSpawner: Client, Remote Player Prefab, Characters 중 비어 있는 칸이 있다.", this);
                 enabled = false;
             }
         }
@@ -85,7 +88,8 @@ namespace DgVillage
             }
 
             RemotePlayer player = Instantiate(_remotePlayerPrefab, transform);
-            player.Init(state);
+            // 모르는 id(아직 내 빌드에 없는 캐릭터)면 레지스트리 기본 캐릭터로 대신한다
+            player.Init(state, _characters.Find(state.characterId));
             _players.Add(state.id, player);
         }
 

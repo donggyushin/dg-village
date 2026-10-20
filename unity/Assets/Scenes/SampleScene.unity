@@ -326,6 +326,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DgVillage.RemotePlayerSpawner
   _client: {fileID: 165079888}
   _remotePlayerPrefab: {fileID: 5352026829569415875, guid: 129adc9f8328c47668eda0f575eb8d39, type: 3}
+  _characters: {fileID: 11400000, guid: 7d3c7cc30e4604412872401125027ab1, type: 2}
 --- !u!114 &165079888
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -341,7 +342,6 @@ MonoBehaviour:
   _serverUrl: ws://localhost:8000/ws
   _room: lobby
   _playerName: 
-  _characterId: girl01
   _localPlayer: {fileID: 399283812}
   _sendRate: 10
 --- !u!1 &274801603
