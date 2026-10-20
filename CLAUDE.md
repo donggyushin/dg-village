@@ -43,8 +43,8 @@ Single git repo at the root, one `.gitignore` covering both.
 
 1. ~~Make a reference character → get it moving in Unity.~~ **Done 2026-10-20** (girl01, 3-direction walk).
 2. ~~Server + multiple clients seeing each other move in one room.~~ **Done 2026-10-20** (verified with macOS build + editor).
-3. **Next**: Name tags → text chat + speech bubbles.
-4. Player character selection (see below).
+3. ~~Name tags → text chat + speech bubbles.~~ **Done 2026-10-20** (Korean via Galmuri fallback font).
+4. **Next**: Player character selection (see below).
 5. Accounts + DB (see below).
 6. Create/join channels.
 7. Deploy (Seoul VPS) for external testing.
@@ -71,9 +71,15 @@ Ground        Plane, scale (2,1,2) → 20x20 units. No bounds/collision yet (pla
 Player        empty root, movement only               + PlayerMovement
 └── Visual    SpriteRenderer, rot X 35 (faces camera) + DirectionalSpriteAnimator(girl01)
 Network       empty at origin                         + NetworkClient(localPlayer = Player) + RemotePlayerSpawner(prefab = RemotePlayer)
+ChatCanvas    Screen Space Overlay, 1280x720 scaler   + ChatBubbleSpawner(prefab = ChatBubble, root = Bubbles)
+├── Bubbles   full-stretch container (first child → drawn under the input)
+└── ChatInput TMP_InputField, bottom center           + ChatInput
+EventSystem   + InputSystemUIInputModule
 ```
 
-Prefab `Assets/_Project/Prefabs/RemotePlayer.prefab`: copy of Player with `RemotePlayer` instead of `PlayerMovement`. Spawned remote players are parented under `Network`.
+`Player/Visual/NameTag` and `RemotePlayer/Visual/NameTag`: world-space TextMeshPro + `NameTag`.
+
+Prefabs: `RemotePlayer` (copy of Player with `RemotePlayer` instead of `PlayerMovement`, spawned under `Network`), `ChatBubble` (Image + TMP text, built by the Create Chat UI menu).
 
 Scripts (`Assets/_Project/Scripts/`, namespace `DgVillage`):
 
@@ -87,6 +93,11 @@ Scripts (`Assets/_Project/Scripts/`, namespace `DgVillage`):
 | `Network/NetworkClient` | NativeWebSocket connect → `join` → sends `move` at 10Hz only when changed; raises C# events per server message. Sets `runInBackground` |
 | `Network/RemotePlayerSpawner` | Subscribes to `NetworkClient` events; Instantiate/ApplyState/Destroy `RemotePlayer`s, skips own id |
 | `Network/RemotePlayer` | Exponential lerp toward server position, snaps if > 5 units |
+| `NameTag` | World-space TMP under `Visual` (inherits camera tilt). `Reset()` sets default look; rich text off |
+| `Chat/ChatInput` | Enter opens/sends, Esc cancels; sets `PlayerMovement.InputBlocked` while focused |
+| `Chat/ChatBubble` | Screen-space bubble sized via `GetPreferredValues`, follows anchor (name tag) each LateUpdate, self-destroys after 3–8s |
+| `Chat/ChatBubbleSpawner` | `NetworkClient.ChatReceived` → bubble over speaker (own bubble comes from the server echo) |
+| `Editor/ChatUIBuilder` | Menu **DgVillage → Create Chat UI**: builds/wires canvas, input, EventSystem, ChatBubble prefab |
 | `Editor/PixelSpriteImporter` | Auto pixel import settings for `Sprites/` (Point, no compression, 32 PPU). `Sprites/Characters/` gets foot pivot (0.5, 10/64). **Only applies on first import** (`importSettingsMissing`) |
 | `Editor/DirectionalSpriteAnimatorFiller` | Component ⋮ menu "Fill From Character Folder" — fills sprites by filename convention |
 
@@ -94,7 +105,7 @@ Scripts (`Assets/_Project/Scripts/`, namespace `DgVillage`):
 
 - `uv sync` → `uv run uvicorn dg_village_server.main:app --reload` (port 8000, WS at `/ws`, `GET /health`). Tests: `uv run pytest`, lint: `uv run ruff check .`
 - `protocol.py` (pydantic message schemas, camelCase on the wire), `room.py` (in-memory `RoomManager`/`Room`, 10Hz tick broadcasts `state` only for rooms that changed), `main.py` (app factory + `/ws` handler)
-- Protocol: client sends `join {room, name, characterId}` first, then `move {x, z, facing, moving}` (`facing` = `down|up|left|right`). Server sends `welcome {id, players}`, `player_joined`, `player_left`, `state {players}`, `error`.
+- Protocol: client sends `join {room, name, characterId}` first, then `move {x, z, facing, moving}` (`facing` = `down|up|left|right`) and `chat {text}` (whitespace collapsed, ≤200 chars, 0.5s rate limit). Server sends `welcome {id, players}`, `player_joined`, `player_left`, `state {players}`, `chat {id, name, text}` (to whole room incl. sender), `error`.
 - No DB yet — all state in memory. Postgres arrives with channels (roadmap 4), as a separate container in the same docker compose.
 - Deploy plan: single VPS in **Seoul region** (Lightsail/Vultr, ~2GB RAM) + Caddy (TLS, `wss://` needed for WebGL). Buy only when external testing starts.
 - Test gotcha: Starlette `TestClient` cancels the server task when a `websocket_connect` block exits; call `ws.close()` inside the block to test disconnect handling.
@@ -118,6 +129,9 @@ Reference character: `Sprites/Characters/girl01/` (pink-haired chibi girl). Futu
 - Background/decision history lives in the owner's wiki: `~/Documents/llm_wiki/wiki/sources/social-pixel-game-feasibility-2026-10-20.md` and `.../sources/dg-village-day1-2026-10-20.md`.
 
 ## Gotchas
+
+- Fonts: TMP default (LiberationSans) has no Hangul. `Fonts/Galmuri11 SDF` (Dynamic, multi-atlas, OFL — keep `Galmuri-OFL.txt`) is registered in **TMP Settings → Fallback Font Assets**, so Korean works everywhere without per-component changes. Latin still renders in LiberationSans.
+- `ProjectSettings.asset` `preloadedAssets` (Input System actions) flips on/off around builds — noise, commit whichever state.
 
 - Unity editor log is `unity/Logs/Editor.log` (not `~/Library/Logs/Unity`). Grep `error CS` there to check compile results.
 - Editing `Packages/manifest.json` while the editor is open is **not** picked up automatically — install via Package Manager "Add package from git URL" (or restart the editor).
