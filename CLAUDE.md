@@ -13,7 +13,7 @@ Solo hobby project (weekends + spare time). Owner is strong on Python/server, ne
 ```
 dg-village/
 ├── unity/    # Game client (Unity 6, URP, Universal 3D template)
-└── python/   # WebSocket server (not started yet)
+└── python/   # WebSocket server (FastAPI, uv)
 ```
 
 Single git repo at the root, one `.gitignore` covering both.
@@ -70,6 +70,15 @@ Scripts (`Assets/_Project/Scripts/`, namespace `DgVillage`):
 | `DirectionalSpriteAnimator` | Picks idle/walk sprites from `Facing`/`IsMoving`. Left = Right with `flipX` |
 | `Editor/PixelSpriteImporter` | Auto pixel import settings for `Sprites/` (Point, no compression, 32 PPU). `Sprites/Characters/` gets foot pivot (0.5, 10/64). **Only applies on first import** (`importSettingsMissing`) |
 | `Editor/DirectionalSpriteAnimatorFiller` | Component ⋮ menu "Fill From Character Folder" — fills sprites by filename convention |
+
+## Server (`python/`)
+
+- `uv sync` → `uv run uvicorn dg_village_server.main:app --reload` (port 8000, WS at `/ws`, `GET /health`). Tests: `uv run pytest`, lint: `uv run ruff check .`
+- `protocol.py` (pydantic message schemas, camelCase on the wire), `room.py` (in-memory `RoomManager`/`Room`, 10Hz tick broadcasts `state` only for rooms that changed), `main.py` (app factory + `/ws` handler)
+- Protocol: client sends `join {room, name, characterId}` first, then `move {x, z, facing, moving}` (`facing` = `down|up|left|right`). Server sends `welcome {id, players}`, `player_joined`, `player_left`, `state {players}`, `error`.
+- No DB yet — all state in memory. Postgres arrives with channels (roadmap 4), as a separate container in the same docker compose.
+- Deploy plan: single VPS in **Seoul region** (Lightsail/Vultr, ~2GB RAM) + Caddy (TLS, `wss://` needed for WebGL). Buy only when external testing starts.
+- Test gotcha: Starlette `TestClient` cancels the server task when a `websocket_connect` block exits; call `ws.close()` inside the block to test disconnect handling.
 
 ## Character art pipeline (PixelLab)
 
