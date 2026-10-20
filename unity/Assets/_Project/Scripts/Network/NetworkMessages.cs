@@ -33,7 +33,23 @@ namespace DgVillage
         public bool moving;
     }
 
+    [Serializable]
+    public class ChatMessage
+    {
+        public string type = "chat";
+        public string text;
+    }
+
     // ----- server -> client -----
+
+    /// <summary>방 안 누군가(나 포함)의 채팅 한 줄. 서버가 공백 정리 · 길이 검사를 마친 텍스트.</summary>
+    [Serializable]
+    public class ChatBroadcastMessage
+    {
+        public string id;
+        public string name;
+        public string text;
+    }
 
     [Serializable]
     public class PlayerState

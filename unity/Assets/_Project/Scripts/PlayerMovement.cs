@@ -27,6 +27,9 @@ namespace DgVillage
         public Facing Facing { get; private set; } = Facing.Down;
         public bool IsMoving { get; private set; }
 
+        /// <summary>true 면 이동 입력을 무시한다 (채팅 입력 중 WASD 가 캐릭터를 움직이지 않게)</summary>
+        public bool InputBlocked { get; set; }
+
         private void Awake()
         {
             _moveAction = _moveActionReference != null
@@ -45,6 +48,12 @@ namespace DgVillage
 
         private void Update()
         {
+            if (InputBlocked)
+            {
+                IsMoving = false;
+                return;
+            }
+
             Vector2 input = Vector2.ClampMagnitude(_moveAction.ReadValue<Vector2>(), 1f);
             IsMoving = input.sqrMagnitude > 0.01f;
 

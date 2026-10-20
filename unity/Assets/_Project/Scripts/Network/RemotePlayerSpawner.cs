@@ -49,6 +49,9 @@ namespace DgVillage
             _client.Disconnected -= DespawnAll;
         }
 
+        public bool TryGetPlayer(string playerId, out RemotePlayer player) =>
+            _players.TryGetValue(playerId, out player);
+
         private void OnWelcomed(WelcomeMessage welcome)
         {
             DespawnAll();

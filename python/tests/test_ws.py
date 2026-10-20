@@ -93,3 +93,31 @@ def test_invalid_message_after_join_keeps_connection(client: TestClient) -> None
         assert receive_until(ws, "error")["message"].startswith("invalid message")
         ws.send_json({"type": "move", "x": 1, "z": 1, "facing": "up", "moving": False})
         assert receive_until(ws, "state")["type"] == "state"
+
+
+def test_chat_is_broadcast_to_everyone_including_sender(client: TestClient) -> None:
+    with client.websocket_connect("/ws") as a, client.websocket_connect("/ws") as b:
+        welcome_a = join(a, "alice")
+        join(b, "bob")
+
+        a.send_json({"type": "chat", "text": "  hello\n\n  world  "})
+        expected = {"type": "chat", "id": welcome_a["id"], "name": "alice", "text": "hello world"}
+        for ws in (a, b):
+            assert receive_until(ws, "chat") == expected
+
+
+@pytest.mark.parametrize("text", ["", "   \n ", "x" * 201])
+def test_invalid_chat_is_rejected(client: TestClient, text: str) -> None:
+    with client.websocket_connect("/ws") as ws:
+        join(ws, "alice")
+        ws.send_json({"type": "chat", "text": text})
+        assert receive_until(ws, "error")["message"].startswith("invalid message")
+
+
+def test_chat_rate_limit(client: TestClient) -> None:
+    with client.websocket_connect("/ws") as ws:
+        join(ws, "alice")
+        ws.send_json({"type": "chat", "text": "one"})
+        ws.send_json({"type": "chat", "text": "two"})
+        assert receive_until(ws, "chat")["text"] == "one"
+        assert receive_until(ws, "error")["message"] == "chatting too fast"

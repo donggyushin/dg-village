@@ -5,10 +5,12 @@ Keys are camelCase on the wire (Unity convention), snake_case in Python.
 
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, field_validator
 from pydantic.alias_generators import to_camel
 
 Facing = Literal["down", "up", "left", "right"]
+
+CHAT_MAX_LENGTH = 200
 
 
 class CamelModel(BaseModel):
@@ -36,7 +38,21 @@ class MoveMessage(CamelModel):
     moving: bool
 
 
-ClientMessage = Annotated[JoinMessage | MoveMessage, Field(discriminator="type")]
+class ChatMessage(CamelModel):
+    type: Literal["chat"]
+    text: str = Field(max_length=CHAT_MAX_LENGTH)
+
+    @field_validator("text")
+    @classmethod
+    def _normalize_whitespace(cls, value: str) -> str:
+        # Newlines/tabs/repeated spaces collapse to single spaces so a bubble can't be stretched.
+        value = " ".join(value.split())
+        if not value:
+            raise ValueError("empty chat message")
+        return value
+
+
+ClientMessage = Annotated[JoinMessage | MoveMessage | ChatMessage, Field(discriminator="type")]
 client_message_adapter: TypeAdapter[ClientMessage] = TypeAdapter(ClientMessage)
 
 
@@ -76,6 +92,15 @@ class StateMessage(CamelModel):
 
     type: Literal["state"] = "state"
     players: list[PlayerState]
+
+
+class ChatBroadcastMessage(CamelModel):
+    """A chat line, sent to everyone in the room including the sender."""
+
+    type: Literal["chat"] = "chat"
+    id: str
+    name: str
+    text: str
 
 
 class ErrorMessage(CamelModel):

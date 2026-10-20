@@ -1,5 +1,7 @@
 import asyncio
 import logging
+import math
+import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -7,6 +9,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, status
 from pydantic import ValidationError
 
 from .protocol import (
+    ChatMessage,
     ErrorMessage,
     JoinMessage,
     MoveMessage,
@@ -16,6 +19,7 @@ from .protocol import (
 from .room import RoomManager
 
 TICK_RATE_HZ = 10
+CHAT_MIN_INTERVAL_SECONDS = 0.5
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +57,7 @@ def create_app() -> FastAPI:
             return
 
         room, me = await rooms.join(first.room, first.name, first.character_id, ws)
+        last_chat_at = -math.inf
         try:
             await ws.send_text(WelcomeMessage(id=me.id, players=room.snapshot()).to_json())
             async for text in ws.iter_text():
@@ -63,6 +68,13 @@ def create_app() -> FastAPI:
                     continue
                 if isinstance(msg, MoveMessage):
                     room.apply_move(me.id, msg)
+                elif isinstance(msg, ChatMessage):
+                    now = time.monotonic()
+                    if now - last_chat_at < CHAT_MIN_INTERVAL_SECONDS:
+                        await _send_error(ws, "chatting too fast")
+                        continue
+                    last_chat_at = now
+                    await room.chat(me.id, msg.text)
                 else:
                     await _send_error(ws, "already joined")
         except WebSocketDisconnect:

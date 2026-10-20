@@ -29,7 +29,11 @@ namespace DgVillage
         public event Action<PlayerState> PlayerJoined;
         public event Action<string> PlayerLeft;
         public event Action<StateMessage> StateReceived;
+        public event Action<ChatBroadcastMessage> ChatReceived;
         public event Action Disconnected;
+
+        /// <summary>서버 CHAT_MAX_LENGTH 와 같게 유지</summary>
+        public const int ChatMaxLength = 200;
 
         /// <summary>서버가 정해준 내 id. 방에 들어가기 전이나 연결이 끊기면 null.</summary>
         public string LocalPlayerId { get; private set; }
@@ -150,6 +154,9 @@ namespace DgVillage
                 case "state":
                     StateReceived?.Invoke(JsonUtility.FromJson<StateMessage>(json));
                     break;
+                case "chat":
+                    ChatReceived?.Invoke(JsonUtility.FromJson<ChatBroadcastMessage>(json));
+                    break;
                 case "error":
                     Debug.LogWarning($"NetworkClient: 서버 에러 - {JsonUtility.FromJson<ErrorMessage>(json).message}", this);
                     break;
@@ -157,6 +164,23 @@ namespace DgVillage
                     Debug.LogWarning($"NetworkClient: 모르는 메시지 - {json}", this);
                     break;
             }
+        }
+
+        /// <summary>
+        /// 채팅을 보낸다. 말풍선은 서버가 되돌려준 chat 메시지를 받았을 때 띄운다 (내 것도 마찬가지).
+        /// </summary>
+        public void SendChat(string text)
+        {
+            text = text?.Trim();
+            if (string.IsNullOrEmpty(text) || LocalPlayerId == null)
+            {
+                return;
+            }
+            if (text.Length > ChatMaxLength)
+            {
+                text = text.Substring(0, ChatMaxLength);
+            }
+            Send(new ChatMessage { text = text });
         }
 
         private void Send(object message)

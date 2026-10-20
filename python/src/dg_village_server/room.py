@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from typing import Protocol
 
 from .protocol import (
+    ChatBroadcastMessage,
     MoveMessage,
     PlayerJoinedMessage,
     PlayerLeftMessage,
@@ -51,6 +52,10 @@ class Room:
         state.x, state.z = move.x, move.z
         state.facing, state.moving = move.facing, move.moving
         self.dirty = True
+
+    async def chat(self, player_id: str, text: str) -> None:
+        name = self.players[player_id].state.name
+        await self.broadcast(ChatBroadcastMessage(id=player_id, name=name, text=text).to_json())
 
     def snapshot(self) -> list[PlayerState]:
         return [p.state for p in self.players.values()]
