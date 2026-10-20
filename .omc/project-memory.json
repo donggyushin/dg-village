@@ -1,0 +1,60 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1792495480574,
+  "projectRoot": "/Users/sindong-gyu/Documents/dg-village",
+  "techStack": {
+    "languages": [],
+    "frameworks": [],
+    "packageManager": null,
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "python": {
+      "path": "python",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1792495480560,
+      "keyFiles": []
+    },
+    "unity": {
+      "path": "unity",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1792495480561,
+      "keyFiles": []
+    },
+    "unity/Assets": {
+      "path": "unity/Assets",
+      "purpose": "Static assets",
+      "fileCount": 8,
+      "lastAccessed": 1792495480562,
+      "keyFiles": [
+        "InputSystem_Actions.inputactions",
+        "InputSystem_Actions.inputactions.meta",
+        "Readme.asset"
+      ]
+    }
+  },
+  "hotPaths": [],
+  "userDirectives": []
+}
