@@ -19,8 +19,7 @@ namespace DgVillage
     {
         public string type = "join";
         public string room;
-        public string name;
-        public string characterId;
+        public string token;
     }
 
     [Serializable]
@@ -92,6 +91,53 @@ namespace DgVillage
     public class ErrorMessage
     {
         public string message;
+    }
+
+    // ----- HTTP (python/src/dg_village_server/api.py) -----
+
+    [Serializable]
+    public class SignupResponse
+    {
+        public string userId;
+        public string credential;
+        public string accessToken;
+    }
+
+    [Serializable]
+    public class LoginRequest
+    {
+        public string provider;
+        public string credential;
+    }
+
+    [Serializable]
+    public class LoginResponse
+    {
+        public string userId;
+        public string accessToken;
+    }
+
+    [Serializable]
+    public class Profile
+    {
+        public string id;
+        public string displayName;
+        public string characterId;
+    }
+
+    /// <summary>JsonUtility 는 null 을 "" 로 보내므로 두 칸 모두 채워서 보낸다.</summary>
+    [Serializable]
+    public class ProfileUpdate
+    {
+        public string displayName;
+        public string characterId;
+    }
+
+    /// <summary>FastAPI 에러 본문 {"detail": "..."}. 422 는 detail 이 배열이라 파싱되지 않는다.</summary>
+    [Serializable]
+    public class HttpError
+    {
+        public string detail;
     }
 
     /// <summary>Facing enum ↔ 서버 문자열("down" 등) 변환.</summary>

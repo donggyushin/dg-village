@@ -1,22 +1,14 @@
-from collections.abc import Iterator
-
 import pytest
 from fastapi.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 
-from dg_village_server.main import create_app
+from conftest import signup
 
 
-@pytest.fixture
-def client() -> Iterator[TestClient]:
-    with TestClient(create_app()) as c:
-        yield c
-
-
-def join(ws, name: str, room: str = "lobby") -> dict:
-    ws.send_json({"type": "join", "room": room, "name": name, "characterId": "girl01"})
+def join(ws, token: str, room: str = "lobby") -> dict:
+    ws.send_json({"type": "join", "room": room, "token": token})
     welcome = ws.receive_json()
-    assert welcome["type"] == "welcome"
+    assert welcome["type"] == "welcome", welcome
     return welcome
 
 
@@ -35,11 +27,11 @@ def test_health(client: TestClient) -> None:
 
 def test_join_returns_own_id_and_existing_players(client: TestClient) -> None:
     with client.websocket_connect("/ws") as a:
-        welcome_a = join(a, "alice")
+        welcome_a = join(a, signup(client, "alice"))
         assert [p["id"] for p in welcome_a["players"]] == [welcome_a["id"]]
 
         with client.websocket_connect("/ws") as b:
-            welcome_b = join(b, "bob")
+            welcome_b = join(b, signup(client, "bob"))
             names = {p["name"] for p in welcome_b["players"]}
             assert names == {"alice", "bob"}
             assert welcome_b["players"][0]["characterId"] == "girl01"
@@ -50,8 +42,8 @@ def test_join_returns_own_id_and_existing_players(client: TestClient) -> None:
 
 def test_move_is_broadcast_in_state(client: TestClient) -> None:
     with client.websocket_connect("/ws") as a, client.websocket_connect("/ws") as b:
-        join(a, "alice")
-        welcome_b = join(b, "bob")
+        join(a, signup(client, "alice"))
+        welcome_b = join(b, signup(client, "bob"))
 
         b.send_json({"type": "move", "x": 1.5, "z": -2.0, "facing": "left", "moving": True})
         state = receive_until(a, "state")
@@ -61,9 +53,9 @@ def test_move_is_broadcast_in_state(client: TestClient) -> None:
 
 def test_leave_is_broadcast(client: TestClient) -> None:
     with client.websocket_connect("/ws") as a:
-        join(a, "alice")
+        join(a, signup(client, "alice"))
         with client.websocket_connect("/ws") as b:
-            welcome_b = join(b, "bob")
+            welcome_b = join(b, signup(client, "bob"))
             # Close explicitly: leaving the `with` block cancels the server task
             # instead of delivering a disconnect like a real client would.
             b.close()
@@ -73,8 +65,8 @@ def test_leave_is_broadcast(client: TestClient) -> None:
 
 def test_rooms_are_isolated(client: TestClient) -> None:
     with client.websocket_connect("/ws") as a, client.websocket_connect("/ws") as b:
-        join(a, "alice", room="r1")
-        welcome_b = join(b, "bob", room="r2")
+        join(a, signup(client, "alice"), room="r1")
+        welcome_b = join(b, signup(client, "bob"), room="r2")
         assert len(welcome_b["players"]) == 1
 
 
@@ -88,7 +80,7 @@ def test_first_message_must_be_join(client: TestClient) -> None:
 
 def test_invalid_message_after_join_keeps_connection(client: TestClient) -> None:
     with client.websocket_connect("/ws") as ws:
-        join(ws, "alice")
+        join(ws, signup(client, "alice"))
         ws.send_text("not json")
         assert receive_until(ws, "error")["message"].startswith("invalid message")
         ws.send_json({"type": "move", "x": 1, "z": 1, "facing": "up", "moving": False})
@@ -97,8 +89,8 @@ def test_invalid_message_after_join_keeps_connection(client: TestClient) -> None
 
 def test_chat_is_broadcast_to_everyone_including_sender(client: TestClient) -> None:
     with client.websocket_connect("/ws") as a, client.websocket_connect("/ws") as b:
-        welcome_a = join(a, "alice")
-        join(b, "bob")
+        welcome_a = join(a, signup(client, "alice"))
+        join(b, signup(client, "bob"))
 
         a.send_json({"type": "chat", "text": "  hello\n\n  world  "})
         expected = {"type": "chat", "id": welcome_a["id"], "name": "alice", "text": "hello world"}
@@ -109,15 +101,48 @@ def test_chat_is_broadcast_to_everyone_including_sender(client: TestClient) -> N
 @pytest.mark.parametrize("text", ["", "   \n ", "x" * 201])
 def test_invalid_chat_is_rejected(client: TestClient, text: str) -> None:
     with client.websocket_connect("/ws") as ws:
-        join(ws, "alice")
+        join(ws, signup(client, "alice"))
         ws.send_json({"type": "chat", "text": text})
         assert receive_until(ws, "error")["message"].startswith("invalid message")
 
 
 def test_chat_rate_limit(client: TestClient) -> None:
     with client.websocket_connect("/ws") as ws:
-        join(ws, "alice")
+        join(ws, signup(client, "alice"))
         ws.send_json({"type": "chat", "text": "one"})
         ws.send_json({"type": "chat", "text": "two"})
         assert receive_until(ws, "chat")["text"] == "one"
         assert receive_until(ws, "error")["message"] == "chatting too fast"
+
+
+def test_join_with_bad_token_is_rejected(client: TestClient) -> None:
+    with client.websocket_connect("/ws") as ws:
+        ws.send_json({"type": "join", "room": "lobby", "token": "nope"})
+        assert ws.receive_json() == {"type": "error", "message": "invalid token"}
+        with pytest.raises(WebSocketDisconnect):
+            ws.receive_json()
+
+
+def test_player_id_is_the_account_id(client: TestClient) -> None:
+    token = signup(client, "alice")
+    me = client.get("/me", headers={"Authorization": f"Bearer {token}"}).json()
+    with client.websocket_connect("/ws") as ws:
+        welcome = join(ws, token)
+    assert welcome["id"] == me["id"].replace("-", "")
+    assert welcome["players"][0]["name"] == "alice"
+
+
+def test_same_account_joining_again_kicks_the_old_session(client: TestClient) -> None:
+    token = signup(client, "alice")
+    with client.websocket_connect("/ws") as old, client.websocket_connect("/ws") as other:
+        join(old, token)
+        join(other, signup(client, "bob"))
+        with client.websocket_connect("/ws") as new:
+            welcome = join(new, token)
+            assert receive_until(old, "error")["message"] == "logged in from another session"
+            with pytest.raises(WebSocketDisconnect):
+                receive_until(old, "never")
+            # Bob sees alice leave and come back, and the room still has exactly one alice.
+            assert receive_until(other, "player_left")["id"] == welcome["id"]
+            assert receive_until(other, "player_joined")["player"]["id"] == welcome["id"]
+            assert sorted(p["name"] for p in welcome["players"]) == ["alice", "bob"]

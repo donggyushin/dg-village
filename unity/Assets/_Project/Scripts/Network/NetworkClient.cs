@@ -11,13 +11,12 @@ namespace DgVillage
     /// </summary>
     public class NetworkClient : MonoBehaviour
     {
-        [SerializeField] private string _serverUrl = "ws://localhost:8000/ws";
         [SerializeField] private string _room = "lobby";
 
         [Tooltip("위치를 보낼 내 캐릭터 (씬의 Player)")]
         [SerializeField] private PlayerMovement _localPlayer;
 
-        [Tooltip("PlayerSession 의 characterId 로 내 캐릭터를 찾을 목록")]
+        [Tooltip("계정 프로필의 characterId 로 내 캐릭터를 찾을 목록")]
         [SerializeField] private CharacterRegistry _characters;
 
         [Tooltip("초당 위치 전송 횟수. 서버 tick(10Hz)과 맞춘다")]
@@ -33,15 +32,10 @@ namespace DgVillage
         /// <summary>서버 CHAT_MAX_LENGTH 와 같게 유지</summary>
         public const int ChatMaxLength = 200;
 
-        /// <summary>서버 JoinMessage.name max_length 와 같게 유지</summary>
-        public const int NameMaxLength = 16;
-
-        /// <summary>서버가 정해준 내 id. 방에 들어가기 전이나 연결이 끊기면 null.</summary>
+        /// <summary>서버가 정해준 내 id (= 계정 id). 방에 들어가기 전이나 연결이 끊기면 null.</summary>
         public string LocalPlayerId { get; private set; }
 
         private WebSocket _socket;
-        private DirectionalSpriteAnimator _localAnimator;
-        private string _playerName;
         private float _sendTimer;
         private MoveMessage _lastSent;
 
@@ -51,7 +45,7 @@ namespace DgVillage
             Application.runInBackground = true;
         }
 
-        private void Start()
+        private async void Start()
         {
             if (_localPlayer == null || _characters == null)
             {
@@ -60,36 +54,42 @@ namespace DgVillage
                 return;
             }
 
-            _localAnimator = _localPlayer.GetComponentInChildren<DirectionalSpriteAnimator>();
-            if (_localAnimator == null)
+            var localAnimator = _localPlayer.GetComponentInChildren<DirectionalSpriteAnimator>();
+            if (localAnimator == null)
             {
                 Debug.LogError("NetworkClient: Player 아래에 DirectionalSpriteAnimator 가 없다.", this);
                 enabled = false;
                 return;
             }
 
-            // 캐릭터 선택 씬에서 고른 값. 이 씬을 바로 Play 하면 마지막 저장값 · 기본 캐릭터
-            CharacterDefinition character = _characters.Find(PlayerSession.CharacterId);
-            if (character != null)
+            // 보통은 캐릭터 선택 씬에서 이미 로그인했다. 이 씬을 에디터에서 바로 Play 한 경우만 여기서 로그인
+            if (!AccountClient.IsLoggedIn)
             {
-                _localAnimator.SetCharacter(character);
-            }
-            if (_localAnimator.Character == null)
-            {
-                Debug.LogError("NetworkClient: 쓸 캐릭터가 없다. CharacterRegistry 가 비어 있는지 확인할 것.", this);
-                enabled = false;
-                return;
+                try
+                {
+                    await AccountClient.LoginAsync();
+                }
+                catch (AccountException e)
+                {
+                    Debug.LogError($"NetworkClient: 로그인 실패 - {e.Message}", this);
+                    return;
+                }
             }
 
-            _playerName = SanitizeName(PlayerSession.PlayerName);
+            Profile profile = AccountClient.Profile;
+            CharacterDefinition character = _characters.Find(profile.characterId);
+            if (character != null)
+            {
+                localAnimator.SetCharacter(character);
+            }
             var localNameTag = _localPlayer.GetComponentInChildren<NameTag>();
             if (localNameTag != null)
             {
-                localNameTag.SetName(_playerName);
+                localNameTag.SetName(profile.displayName);
             }
 
             // NativeWebSocket 은 생성한 스레드(메인)로 이벤트를 넘겨주므로 핸들러에서 Unity API 를 써도 된다
-            _socket = new WebSocket(_serverUrl);
+            _socket = new WebSocket(ServerConfig.WebSocketUrl);
             _socket.OnOpen += OnOpen;
             _socket.OnMessage += bytes => HandleMessage(Encoding.UTF8.GetString(bytes));
             _socket.OnError += error => Debug.LogWarning($"NetworkClient: {error}", this);
@@ -97,30 +97,20 @@ namespace DgVillage
             Connect();
         }
 
-        /// <summary>앞뒤 공백 제거 · 길이 제한. 비어 있으면 guest1234 같은 임시 이름.</summary>
-        private static string SanitizeName(string playerName)
-        {
-            playerName = playerName?.Trim();
-            if (string.IsNullOrEmpty(playerName))
-            {
-                return $"guest{UnityEngine.Random.Range(1000, 10000)}";
-            }
-            return playerName.Length > NameMaxLength ? playerName.Substring(0, NameMaxLength) : playerName;
-        }
-
         // Connect() 는 연결이 끊길 때까지 끝나지 않는 Task 라서 기다리지 않고 흘려보낸다.
         // 연결 실패도 내부에서 OnError/OnClose 로 알려준다.
         private async void Connect()
         {
-            Debug.Log($"NetworkClient: {_serverUrl} 연결 시도", this);
+            Debug.Log($"NetworkClient: {ServerConfig.WebSocketUrl} 연결 시도", this);
             await _socket.Connect();
         }
 
         private void OnOpen()
         {
-            string characterId = _localAnimator.Character.Id;
-            Debug.Log($"NetworkClient: 연결됨. '{_room}' 방에 {_playerName}({characterId}) 로 입장", this);
-            Send(new JoinMessage { room = _room, name = _playerName, characterId = characterId });
+            Profile profile = AccountClient.Profile;
+            Debug.Log($"NetworkClient: 연결됨. '{_room}' 방에 {profile.displayName}({profile.characterId}) 로 입장", this);
+            // 이름 · 캐릭터는 서버가 계정에서 읽는다. 여기서는 토큰만 보낸다
+            Send(new JoinMessage { room = _room, token = AccountClient.AccessToken });
         }
 
         private void OnClose(WebSocketCloseCode code)

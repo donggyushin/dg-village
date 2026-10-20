@@ -24,7 +24,9 @@ Single git repo at the root, one `.gitignore` covering both.
 |---|---|
 | Client | Unity `6000.6.6f1` (Apple Silicon), URP 17, new Input System, NativeWebSocket 2.0.7 (`upm-2` branch pinned by commit hash in `manifest.json`) |
 | Server | Python 3.13 — FastAPI WebSocket + uvicorn, pydantic schemas, managed with `uv`. Hand-rolled; **no** Netcode for GameObjects / Mirror |
-| Protocol | JSON over WebSocket (rooms, position broadcast ~10Hz, chat) |
+| DB | Postgres 17 (docker compose, `compose.yaml` at repo root) + SQLAlchemy 2 async (asyncpg) + Alembic. Tests use in-memory SQLite |
+| Auth | Self-issued: anonymous device credential → JWT access token (HS256, 24h). Steam is the intended later provider |
+| Protocol | HTTP JSON for accounts (`/auth/*`, `/me`); JSON over WebSocket for the game (rooms, position broadcast ~10Hz, chat) |
 | Graphics | 2.5D: 3D map + 2D pixel sprite characters, **fixed camera** |
 | Platforms | Desktop first (Mac + Windows). WebGL later |
 | Voice | Later, via LiveKit or Vivox — never implement voice ourselves |
@@ -45,27 +47,27 @@ Single git repo at the root, one `.gitignore` covering both.
 2. ~~Server + multiple clients seeing each other move in one room.~~ **Done 2026-10-20** (verified with macOS build + editor).
 3. ~~Name tags → text chat + speech bubbles.~~ **Done 2026-10-20** (Korean via Galmuri fallback font).
 4. ~~Player character selection.~~ **Done 2026-10-20** (CharacterSelect scene + `characterId` sync). Characters: `girl01` (default), `boy01` (black hoodie, green cargo pants, laptop).
-5. **Next**: Accounts + DB (see below).
-6. Create/join channels.
+5. ~~Accounts + DB (phase 1: anonymous accounts).~~ **Done 2026-10-20** (verified with build + editor as two accounts).
+6. **Next**: Create/join channels (`channels` table, owner = `users.id`).
 7. Deploy (Seoul VPS) for external testing.
 8. Social login (Google/Discord OAuth).
 9. Art pass (map tiles, buildings — the floor currently looks flat/2D because it's a plain ortho plane).
 10. Voice.
 
-Accounts plan (owner request, 2026-10-20: "eventually log in, create an account, then enter channels"):
-- Start right before channels — channels need an owner (account id), and Postgres + Alembic arrive at the same time (`users` + `channels` designed together). Must exist before public deploy. Stay guest-only until then; login would just slow down testing.
-- Phase 1 = **anonymous accounts**: on first launch the server issues an account + token; client stores the token locally and reuses it, so nickname/character choice persist without a signup screen.
-- Phase 2 = link **social login** (Google/Discord OAuth) to the anonymous account. Desktop Unity OAuth needs a browser round-trip, so it comes last. No email/password (hashing, resets, email sending not worth it).
-- Auth provider (self-issued tokens vs Supabase Auth etc.) decided then; the game server only verifies a token either way.
-- Keep now: `name` is display-only (not unique, never an identity) — identify by server-issued `id`. Entry stays a single `join` message; accounts will just add a `token` field to it.
+Accounts (owner request 2026-10-20; "no signup screen like Steam games, but extensible"):
+- Phase 1 (**done**) = anonymous accounts. First launch: `POST /auth/anonymous` creates a user + a random device credential; the client keeps the credential in PlayerPrefs (`dgvillage.anonymousCredential`) and logs in with it afterwards. Losing it = losing the account (until a provider is linked).
+- Schema: `users` (profile only: `id` uuid, `display_name`, `character_id`, timestamps) + `auth_identities` (`provider`, `subject` unique pair → `user_id`). Anonymous subject = SHA-256 of the credential (raw credential never stored).
+- Adding a login method (Steam later, maybe Discord): implement an `AuthProvider` in `auth.py` (proof → stable subject), register it in `PROVIDERS`, add a "link" endpoint that attaches a new identity to the current user. `POST /auth/login {provider, credential}` and the game server stay unchanged — the WebSocket only checks the JWT.
+- Player id in rooms = account id (hex). `name` is display-only (not unique). Same account joining twice → the older session is kicked (`error` "logged in from another session", close 4000).
+- Editor and standalone builds have separate PlayerPrefs → separate accounts (handy for 2-client tests). Two copies of the same build share one account and kick each other.
 
-Character system: each character is a `CharacterDefinition` asset (`Assets/_Project/Characters/{id}.asset`, id = sprite folder name) listed in `CharacterRegistry.asset` (first entry = default/fallback). The server only syncs `characterId`; each client resolves it via the registry. Selection is passed between scenes by `PlayerSession` (PlayerPrefs-backed — moves server-side with accounts).
+Character system: each character is a `CharacterDefinition` asset (`Assets/_Project/Characters/{id}.asset`, id = sprite folder name) listed in `CharacterRegistry.asset` (first entry = default/fallback). The server only syncs `characterId`; each client resolves it via the registry. The chosen character/nickname live in the account profile on the server (`PATCH /me`), so they persist across launches and scenes.
 
 ## Current state (as of 2026-10-20)
 
-Scenes (Build Profiles → Scene List, order matters): `0 Assets/Scenes/CharacterSelect.unity` (start screen) → `1 Assets/Scenes/SampleScene.unity` (village). Playing SampleScene directly still works — it joins with the last saved selection.
+Scenes (Build Profiles → Scene List, order matters): `0 Assets/Scenes/CharacterSelect.unity` (start screen) → `1 Assets/Scenes/SampleScene.unity` (village). Playing SampleScene directly still works — `NetworkClient` logs in itself and uses the saved profile.
 
-`CharacterSelect.unity` (built by **DgVillage → Create Character Select Scene**): Main Camera (solid bg), EventSystem, `SelectCanvas` + `CharacterSelect` (Title, Preview, Previous/Next, CharacterName, NameInput, EnterButton).
+`CharacterSelect.unity` (built by **DgVillage → Create Character Select Scene**): Main Camera (solid bg), EventSystem, `SelectCanvas` + `CharacterSelect` (Title, Preview, Previous/Next, CharacterName, NameInput, EnterButton, StatusText).
 
 Scene `Assets/Scenes/SampleScene.unity`:
 
@@ -95,10 +97,11 @@ Scripts (`Assets/_Project/Scripts/`, namespace `DgVillage`):
 | `DirectionalSpriteAnimator` | Plays idle/walk sprites of its `CharacterDefinition` from parent `ICharacterMotion`. Left = Right with `flipX`. `SetCharacter()` swaps at runtime |
 | `CharacterDefinition` | ScriptableObject: `Id`, `DisplayName`, per-direction `Idle` + `Walk[]`, `Get(Facing)`, `Preview` (down idle) |
 | `CharacterRegistry` | ScriptableObject list of definitions; `Find(id)` falls back to first entry |
-| `PlayerSession` | Static, PlayerPrefs-backed `PlayerName` / `CharacterId` handed from select scene to village |
-| `UI/CharacterSelect` | Select scene: ◀▶ / ←→ / A·D cycle, animated down-walk preview, nickname (≤16), Enter → `PlayerSession.Save` → `LoadScene(SampleScene)` |
-| `Network/NetworkMessages` | JsonUtility DTOs mirroring `protocol.py` (camelCase public fields, exception to naming rule) + `FacingWire` |
-| `Network/NetworkClient` | On Start: applies `PlayerSession` character (via registry) + name (random `guestNNNN` if empty, ≤16) to the local player, then NativeWebSocket connect → `join` → sends `move` at 10Hz only when changed; `SendChat`; raises C# events per server message. Sets `runInBackground` |
+| `UI/CharacterSelect` | Select scene: on Start `AccountClient.LoginAsync` (status text while busy; failure → Enter retries), prefills from profile; ◀▶ / ←→ / A·D cycle, animated down-walk preview, nickname (≤16, empty = keep current); Enter → `PATCH /me` → `LoadScene(SampleScene)` |
+| `Network/ServerConfig` | Server URLs (`http://localhost:8000`, `ws://localhost:8000/ws`) — change here for deploy |
+| `Network/AccountClient` | Static. `LoginAsync` (stored credential → `/auth/login`, else/401 → `/auth/anonymous`; then `GET /me`), `UpdateProfileAsync`, `AccessToken`, `Profile`, `NormalizeDisplayName`. UnityWebRequest + `Awaitable` (WebGL-safe). Throws `AccountException` (Status 0 = unreachable) |
+| `Network/NetworkMessages` | JsonUtility DTOs mirroring `protocol.py` and `api.py` (camelCase public fields, exception to naming rule) + `FacingWire`. JsonUtility sends null strings as `""`, so `ProfileUpdate` always fills both fields |
+| `Network/NetworkClient` | On Start: logs in if not yet (direct Play of SampleScene), applies profile character (via registry) + name to the local player, then NativeWebSocket connect → `join {room, token}` → sends `move` at 10Hz only when changed; `SendChat`; raises C# events per server message. Sets `runInBackground` |
 | `Network/RemotePlayerSpawner` | Subscribes to `NetworkClient` events; Instantiate/ApplyState/Destroy `RemotePlayer`s, skips own id, resolves `characterId` via registry |
 | `Network/RemotePlayer` | `Init(state, character)`; exponential lerp toward server position, snaps if > 5 units |
 | `NameTag` | World-space TMP under `Visual` (inherits camera tilt). `Reset()` sets default look; rich text off |
@@ -113,12 +116,16 @@ Scripts (`Assets/_Project/Scripts/`, namespace `DgVillage`):
 
 ## Server (`python/`)
 
-- `uv sync` → `uv run uvicorn dg_village_server.main:app --reload` (port 8000, WS at `/ws`, `GET /health`). Tests: `uv run pytest`, lint: `uv run ruff check .`
-- `protocol.py` (pydantic message schemas, camelCase on the wire), `room.py` (in-memory `RoomManager`/`Room`, 10Hz tick broadcasts `state` only for rooms that changed), `main.py` (app factory + `/ws` handler)
-- Protocol: client sends `join {room, name, characterId}` first, then `move {x, z, facing, moving}` (`facing` = `down|up|left|right`) and `chat {text}` (whitespace collapsed, ≤200 chars, 0.5s rate limit). Server sends `welcome {id, players}`, `player_joined`, `player_left`, `state {players}`, `chat {id, name, text}` (to whole room incl. sender), `error`.
-- No DB yet — all state in memory. Postgres arrives with accounts (roadmap 5), as a separate container in the same docker compose.
+- Run: `docker compose up -d` (repo root, Postgres) → `cd python && uv sync && uv run alembic upgrade head` → `uv run uvicorn dg_village_server.main:app --reload` (port 8000, WS at `/ws`, `GET /health`). Tests: `uv run pytest` (no Docker needed), lint: `uv run ruff check .`
+- Env: `DG_DATABASE_URL` (default = compose Postgres), `DG_JWT_SECRET` (dev default logs a warning — **must** be set when deployed).
+- `protocol.py` (pydantic WS schemas, camelCase on the wire, `normalize_display_name`), `room.py` (in-memory `RoomManager`/`Room`, 10Hz tick broadcasts `state` only for rooms that changed; one session per player id), `config.py` (`Settings.from_env`), `db.py` (models + engine), `auth.py` (`AuthProvider`s, JWT), `api.py` (HTTP routes), `main.py` (app factory `create_app(settings, create_tables=)` + `/ws` handler)
+- HTTP: `POST /auth/anonymous` → `{userId, credential, accessToken}`; `POST /auth/login {provider, credential}` → `{userId, accessToken}`; `GET /me`, `PATCH /me {displayName?, characterId?}` with `Authorization: Bearer`. Errors are FastAPI `{detail}`.
+- Migrations: change `db.py` → `uv run alembic revision --autogenerate -m "..."` → review the file in `migrations/versions/` → `uv run alembic upgrade head`. Generated files are auto-formatted by ruff (post-write hook). `uv run alembic check` = models vs DB drift.
+- Protocol: client sends `join {room, token}` first (name/character come from the account), then `move {x, z, facing, moving}` (`facing` = `down|up|left|right`) and `chat {text}` (whitespace collapsed, ≤200 chars, 0.5s rate limit). Server sends `welcome {id, players}`, `player_joined`, `player_left`, `state {players}`, `chat {id, name, text}` (to whole room incl. sender), `error`.
+- Rooms/positions are in memory; only accounts are in Postgres. Reset local DB: `docker compose down -v` (clients then silently create new anonymous accounts).
 - Deploy plan: single VPS in **Seoul region** (Lightsail/Vultr, ~2GB RAM) + Caddy (TLS, `wss://` needed for WebGL). Buy only when external testing starts.
-- Local multiplayer test: server running + macOS build (Build And Run into `unity/Builds/`, gitignored, windowed mode) + editor Play.
+- Local multiplayer test: Postgres + server running + macOS build (Build And Run into `unity/Builds/`, gitignored, windowed mode) + editor Play.
+- Tests share helpers via `tests/conftest.py` (`client` fixture, `signup(client, name)` → token); ruff isort knows `conftest` as local.
 - Test gotcha: Starlette `TestClient` cancels the server task when a `websocket_connect` block exits; call `ws.close()` inside the block to test disconnect handling.
 
 ## Character art pipeline (PixelLab)
@@ -144,6 +151,7 @@ Reference character: `Sprites/Characters/girl01/` (pink-haired chibi girl). Futu
 
 - Fonts: TMP default (LiberationSans) has no Hangul. `Fonts/Galmuri11 SDF` (Dynamic, multi-atlas, OFL — keep `Galmuri-OFL.txt`) is registered in **TMP Settings → Fallback Font Assets**, so Korean works everywhere without per-component changes. Latin still renders in LiberationSans. Dynamic glyphs get baked into the asset during Play (~1MB diff) — `DynamicFontCleaner` reverts it; if the font asset still shows as modified, run **DgVillage → Clear Dynamic Font Data**, don't commit it.
 - Build Profiles Scene List edits live in memory until **File → Save Project** writes `ProjectSettings/EditorBuildSettings.asset`.
+- Editor scripts: `EditorSceneManager.NewScene(..., Single)` unloads assets not referenced by the new scene — load assets you want to wire **after** creating the scene, or the reference becomes a fake null (field saved as None).
 - Don't use **Create → …** (CreateAssetMenu) for `CharacterDefinition` — it makes an empty asset; use the folder right-click menu.
 - `ProjectSettings.asset` `preloadedAssets` (Input System actions) flips on/off around builds — noise, commit whichever state. The file itself must stay tracked.
 - Unity editor log is `unity/Logs/Editor.log` (not `~/Library/Logs/Unity`). Grep `error CS` there to check compile results.

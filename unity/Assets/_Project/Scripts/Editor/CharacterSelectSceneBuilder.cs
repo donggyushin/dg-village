@@ -14,7 +14,7 @@ namespace DgVillage.Editor
     ///   Main Camera     단색 배경
     ///   EventSystem     UI 입력
     ///   SelectCanvas    Screen Space Overlay + CharacterSelect
-    ///   ├── Title / Preview / Previous · Next / CharacterName / NameInput / EnterButton
+    ///   ├── Title / Preview / Previous · Next / CharacterName / NameInput / EnterButton / StatusText
     /// Build Profiles 의 Scene List 에 넣는 건 직접 한다 (이 씬이 0번 = 첫 화면).
     /// </summary>
     public static class CharacterSelectSceneBuilder
@@ -51,6 +51,8 @@ namespace DgVillage.Editor
             }
 
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            // NewScene 이 이전 씬을 닫으며 참조 없는 에셋을 내려버리므로 (registry 가 "가짜 null" 이 된다) 다시 불러온다
+            registry = AssetDatabase.LoadAssetAtPath<CharacterRegistry>(RegistryPath);
 
             var cameraGo = new GameObject("Main Camera", typeof(Camera), typeof(AudioListener));
             cameraGo.tag = "MainCamera";
@@ -106,6 +108,10 @@ namespace DgVillage.Editor
 
             Button enter = CreateButton(root, resources, "EnterButton", "입장", new Vector2(0f, -220f), new Vector2(200f, 56f), 26f);
 
+            // 서버 접속 중 · 에러 안내 (두 줄까지)
+            TMP_Text status = CreateText(root, "StatusText", "", 18f, new Vector2(0f, -295f), new Vector2(600f, 56f));
+            status.color = new Color(1f, 0.85f, 0.6f);
+
             var select = canvasGo.AddComponent<CharacterSelect>();
             var so = new SerializedObject(select);
             so.FindProperty("_characters").objectReferenceValue = registry;
@@ -115,6 +121,7 @@ namespace DgVillage.Editor
             so.FindProperty("_previousButton").objectReferenceValue = previous;
             so.FindProperty("_nextButton").objectReferenceValue = next;
             so.FindProperty("_enterButton").objectReferenceValue = enter;
+            so.FindProperty("_statusText").objectReferenceValue = status;
             so.ApplyModifiedPropertiesWithoutUndo();
 
             EditorSceneManager.SaveScene(scene, ScenePath);

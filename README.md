@@ -8,15 +8,18 @@
 
 ```
 dg-village/
-├── unity/    # 게임 클라이언트 (Unity 6 · URP)
-└── python/   # WebSocket 게임 서버 (FastAPI)
+├── unity/         # 게임 클라이언트 (Unity 6 · URP)
+├── python/        # 게임 서버 (FastAPI) — 계정 HTTP API + WebSocket
+└── compose.yaml   # 로컬 PostgreSQL
 ```
 
 | 영역 | 기술 |
 |---|---|
 | 클라이언트 | Unity `6000.6.6f1` · Universal Render Pipeline · Input System |
-| 서버 | Python 3.13 · FastAPI WebSocket · uv |
-| 통신 | WebSocket 위 JSON 메시지 |
+| 서버 | Python 3.13 · FastAPI (HTTP + WebSocket) · uv |
+| DB | PostgreSQL 17 (docker compose) · SQLAlchemy · Alembic |
+| 계정 | 회원가입 없는 익명 계정 (나중에 Steam 등 로그인 연결) |
+| 통신 | 계정은 HTTP, 게임은 WebSocket — 둘 다 JSON |
 | 그래픽 | 3D 맵 위에 2D 도트 캐릭터, 고정 카메라 |
 | 플랫폼 | Mac · Windows 데스크톱 우선, 웹(WebGL)은 나중에 |
 | 음성 | 나중에 LiveKit 또는 Vivox 연동 |
@@ -31,22 +34,27 @@ dg-village/
 처음 열 때 `Library/` 를 새로 만드느라 몇 분 걸린다.
 
 ### 서버
-1. [uv](https://docs.astral.sh/uv/) 설치 (`brew install uv`)
-2. 실행
+1. [uv](https://docs.astral.sh/uv/) · [Docker Desktop](https://www.docker.com/products/docker-desktop/) 설치 (`brew install uv`, `brew install --cask docker`)
+2. DB 띄우기 (저장소 루트에서)
+   ```bash
+   docker compose up -d          # PostgreSQL (localhost:5432)
+   ```
+3. 서버 실행
    ```bash
    cd python
    uv sync
-   uv run uvicorn dg_village_server.main:app --reload   # ws://localhost:8000/ws
+   uv run alembic upgrade head   # DB 테이블 만들기 · 갱신
+   uv run uvicorn dg_village_server.main:app --reload   # http://localhost:8000, ws://localhost:8000/ws
    ```
-3. 테스트: `uv run pytest`
+4. 테스트: `uv run pytest` (Docker 없이 돌아간다)
 
 ### 여럿이 접속해 보기 (로컬)
-1. 서버 실행
+1. DB + 서버 실행
 2. Unity → File → Build Profiles → macOS → Build And Run (저장 위치 `unity/Builds/`)
 3. 에디터에서도 `Assets/Scenes/CharacterSelect` 씬을 열고 ▶ Play
 4. 각 창에서 캐릭터(◀ ▶)와 닉네임을 고르고 Enter → 마을에서 서로의 캐릭터가 보이고, Enter 로 채팅할 수 있다
 
-마지막으로 고른 캐릭터 · 닉네임은 기억되므로, 마을 씬(`SampleScene`)을 바로 Play 해도 그 설정으로 들어간다.
+처음 실행하면 회원가입 없이 익명 계정이 자동으로 만들어지고, 고른 캐릭터 · 닉네임은 서버에 저장된다. 에디터와 빌드는 서로 다른 계정이 된다. 마을 씬(`SampleScene`)을 바로 Play 해도 저장된 설정으로 들어간다.
 
 ## 로드맵
 
@@ -54,7 +62,8 @@ dg-village/
 - [x] 서버 연결 — 한 방에서 여러 명이 서로 움직이는 게 보이기 (2026-10-20)
 - [x] 이름표 + 텍스트 채팅 + 말풍선, 한글 지원 (2026-10-20)
 - [x] 캐릭터 선택 화면 + 캐릭터별 모습 동기화 (2026-10-20)
-- [ ] 계정 (익명 계정 → 소셜 로그인) + DB
+- [x] 익명 계정 + DB — 회원가입 없이 자동 로그인 (2026-10-20)
+- [ ] Steam · 소셜 로그인 연결
 - [ ] 채널 만들기 / 입장
 - [ ] 서버 배포 (서울 리전) → 친구들과 테스트
 - [ ] 아트 입히기 (맵 · 건물)

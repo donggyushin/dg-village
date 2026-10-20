@@ -8,6 +8,10 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, status
 from pydantic import ValidationError
 
+from . import api
+from .auth import AuthError, read_access_token
+from .config import Settings
+from .db import Base, User, create_engine, create_sessionmaker
 from .protocol import (
     ChatMessage,
     ErrorMessage,
@@ -24,16 +28,27 @@ CHAT_MIN_INTERVAL_SECONDS = 0.5
 logger = logging.getLogger(__name__)
 
 
-def create_app() -> FastAPI:
+def create_app(settings: Settings | None = None, *, create_tables: bool = False) -> FastAPI:
+    """create_tables is for tests (in-memory SQLite); real databases use Alembic migrations."""
+    settings = settings or Settings.from_env()
+
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        engine = create_engine(settings.database_url)
+        if create_tables:
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+        app.state.settings = settings
+        app.state.sessionmaker = create_sessionmaker(engine)
         rooms = RoomManager()
         app.state.rooms = rooms
         tick_task = asyncio.create_task(rooms.run_tick_loop(1 / TICK_RATE_HZ))
         yield
         tick_task.cancel()
+        await engine.dispose()
 
     app = FastAPI(title="dg-village server", lifespan=lifespan)
+    app.include_router(api.router)
 
     @app.get("/health")
     async def health() -> dict[str, str]:
@@ -56,7 +71,20 @@ def create_app() -> FastAPI:
             await _reject(ws, "first message must be 'join'")
             return
 
-        room, me = await rooms.join(first.room, first.name, first.character_id, ws)
+        try:
+            user_id = read_access_token(first.token, settings)
+        except AuthError as e:
+            await _reject(ws, str(e))
+            return
+        async with ws.app.state.sessionmaker() as session:
+            user = await session.get(User, user_id)
+        if user is None:
+            await _reject(ws, "unknown user")
+            return
+
+        room, me = await rooms.join(
+            first.room, user.id.hex, user.display_name, user.character_id, ws
+        )
         last_chat_at = -math.inf
         try:
             await ws.send_text(WelcomeMessage(id=me.id, players=room.snapshot()).to_json())
@@ -80,7 +108,7 @@ def create_app() -> FastAPI:
         except WebSocketDisconnect:
             pass
         finally:
-            await rooms.leave(room, me.id)
+            await rooms.leave(room, me.id, ws)
 
     return app
 

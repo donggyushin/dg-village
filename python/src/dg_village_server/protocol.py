@@ -11,6 +11,17 @@ from pydantic.alias_generators import to_camel
 Facing = Literal["down", "up", "left", "right"]
 
 CHAT_MAX_LENGTH = 200
+DISPLAY_NAME_MAX_LENGTH = 16
+
+
+def normalize_display_name(value: str) -> str:
+    """Collapse whitespace; 1-16 characters after that."""
+    value = " ".join(value.split())
+    if not value:
+        raise ValueError("empty name")
+    if len(value) > DISPLAY_NAME_MAX_LENGTH:
+        raise ValueError(f"name longer than {DISPLAY_NAME_MAX_LENGTH} characters")
+    return value
 
 
 class CamelModel(BaseModel):
@@ -24,10 +35,12 @@ class CamelModel(BaseModel):
 
 
 class JoinMessage(CamelModel):
+    """Name and character come from the account (PATCH /me), not from this message."""
+
     type: Literal["join"]
     room: str = Field(min_length=1, max_length=32)
-    name: str = Field(min_length=1, max_length=16)
-    character_id: str = Field(min_length=1, max_length=32)
+    # Access token from POST /auth/login or /auth/anonymous.
+    token: str = Field(min_length=1, max_length=2048)
 
 
 class MoveMessage(CamelModel):
