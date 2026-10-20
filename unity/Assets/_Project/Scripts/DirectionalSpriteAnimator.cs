@@ -4,9 +4,9 @@ using UnityEngine;
 namespace DgVillage
 {
     /// <summary>
-    /// PlayerMovement 의 Facing · IsMoving 을 읽어 방향별 서기/걷기 스프라이트를 재생한다.
+    /// ICharacterMotion(PlayerMovement 또는 RemotePlayer)의 Facing · IsMoving 을 읽어 방향별 서기/걷기 스프라이트를 재생한다.
     /// Left 는 Right 를 좌우 반전해서 쓴다 (스프라이트 1방향 절약).
-    /// Visual(SpriteRenderer) 오브젝트에 붙이고, PlayerMovement 는 부모에서 찾는다.
+    /// Visual(SpriteRenderer) 오브젝트에 붙이고, ICharacterMotion 은 부모에서 찾는다.
     /// </summary>
     [RequireComponent(typeof(SpriteRenderer))]
     public class DirectionalSpriteAnimator : MonoBehaviour
@@ -25,25 +25,25 @@ namespace DgVillage
         [SerializeField] private float _framesPerSecond = 10f;
 
         private SpriteRenderer _renderer;
-        private PlayerMovement _movement;
+        private ICharacterMotion _motion;
         private float _frameTimer;
         private int _frameIndex;
 
         private void Awake()
         {
             _renderer = GetComponent<SpriteRenderer>();
-            _movement = GetComponentInParent<PlayerMovement>();
+            _motion = GetComponentInParent<ICharacterMotion>();
 
-            if (_movement == null)
+            if (_motion == null)
             {
-                Debug.LogError("DirectionalSpriteAnimator: 부모에 PlayerMovement 가 없다.", this);
+                Debug.LogError("DirectionalSpriteAnimator: 부모에 PlayerMovement 나 RemotePlayer 가 없다.", this);
                 enabled = false;
             }
         }
 
         private void Update()
         {
-            Facing facing = _movement.Facing;
+            Facing facing = _motion.Facing;
             DirectionSprites set = facing switch
             {
                 Facing.Up => _up,
@@ -52,7 +52,7 @@ namespace DgVillage
             };
             _renderer.flipX = facing == Facing.Left;
 
-            if (!_movement.IsMoving || set.Walk == null || set.Walk.Length == 0)
+            if (!_motion.IsMoving || set.Walk == null || set.Walk.Length == 0)
             {
                 _frameTimer = 0f;
                 _frameIndex = 0;

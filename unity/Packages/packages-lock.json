@@ -1,5 +1,12 @@
 {
   "dependencies": {
+    "com.endel.nativewebsocket": {
+      "version": "https://github.com/endel/NativeWebSocket.git#c612a4fef60f2ae57614b73202d2d261ba56aa3e",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "c612a4fef60f2ae57614b73202d2d261ba56aa3e"
+    },
     "com.unity.burst": {
       "version": "2.0.0",
       "depth": 2,

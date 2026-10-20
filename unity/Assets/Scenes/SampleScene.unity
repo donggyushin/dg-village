@@ -119,6 +119,71 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &165079885
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 165079886}
+  - component: {fileID: 165079888}
+  - component: {fileID: 165079887}
+  m_Layer: 0
+  m_Name: Network
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &165079886
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 165079885}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &165079887
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 165079885}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b417ee1ad26a94fbcb4c84a33ffaed9e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DgVillage.RemotePlayerSpawner
+  _client: {fileID: 165079888}
+  _remotePlayerPrefab: {fileID: 5352026829569415875, guid: 129adc9f8328c47668eda0f575eb8d39, type: 3}
+--- !u!114 &165079888
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 165079885}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 13bf95d1712844fe991197f8b61dace4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DgVillage.NetworkClient
+  _serverUrl: ws://localhost:8000/ws
+  _room: lobby
+  _playerName: 
+  _characterId: girl01
+  _localPlayer: {fileID: 399283812}
+  _sendRate: 10
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -749,3 +814,4 @@ SceneRoots:
   - {fileID: 832575519}
   - {fileID: 700876289}
   - {fileID: 399283811}
+  - {fileID: 165079886}

@@ -22,7 +22,7 @@ Single git repo at the root, one `.gitignore` covering both.
 
 | Area | Decision |
 |---|---|
-| Client | Unity `6000.6.6f1` (Apple Silicon), URP 17, new Input System |
+| Client | Unity `6000.6.6f1` (Apple Silicon), URP 17, new Input System, NativeWebSocket 2.0.7 (`upm-2` branch pinned by commit hash in `manifest.json`) |
 | Server | Python — `asyncio` + `websockets` or FastAPI WebSocket. Hand-rolled; **no** Netcode for GameObjects / Mirror |
 | Protocol | JSON over WebSocket (rooms, position broadcast ~10Hz, chat) |
 | Graphics | 2.5D: 3D map + 2D pixel sprite characters, **fixed camera** |
@@ -59,7 +59,10 @@ Main Camera   Orthographic, Size 5, pos (0, 8, -11.5), rot X 35  + CameraFollow(
 Ground        Plane, scale (2,1,2) → 20x20 units. No bounds/collision yet (player can walk off)
 Player        empty root, movement only               + PlayerMovement
 └── Visual    SpriteRenderer, rot X 35 (faces camera) + DirectionalSpriteAnimator(girl01)
+Network       empty at origin                         + NetworkClient(localPlayer = Player) + RemotePlayerSpawner(prefab = RemotePlayer)
 ```
+
+Prefab `Assets/_Project/Prefabs/RemotePlayer.prefab`: copy of Player with `RemotePlayer` instead of `PlayerMovement`. Spawned remote players are parented under `Network`.
 
 Scripts (`Assets/_Project/Scripts/`, namespace `DgVillage`):
 
@@ -67,7 +70,12 @@ Scripts (`Assets/_Project/Scripts/`, namespace `DgVillage`):
 |---|---|
 | `PlayerMovement` | XZ movement from Input System `Player/Move` (project-wide actions). Exposes `Facing` (Down/Up/Left/Right) and `IsMoving` |
 | `CameraFollow` | Keeps the scene-authored offset to target, SmoothDamp in LateUpdate |
-| `DirectionalSpriteAnimator` | Picks idle/walk sprites from `Facing`/`IsMoving`. Left = Right with `flipX` |
+| `ICharacterMotion` | `Facing` + `IsMoving`. Implemented by `PlayerMovement` (local input) and `RemotePlayer` (server data) |
+| `DirectionalSpriteAnimator` | Picks idle/walk sprites from parent `ICharacterMotion`. Left = Right with `flipX` |
+| `Network/NetworkMessages` | JsonUtility DTOs mirroring `protocol.py` (camelCase public fields, exception to naming rule) + `FacingWire` |
+| `Network/NetworkClient` | NativeWebSocket connect → `join` → sends `move` at 10Hz only when changed; raises C# events per server message. Sets `runInBackground` |
+| `Network/RemotePlayerSpawner` | Subscribes to `NetworkClient` events; Instantiate/ApplyState/Destroy `RemotePlayer`s, skips own id |
+| `Network/RemotePlayer` | Exponential lerp toward server position, snaps if > 5 units |
 | `Editor/PixelSpriteImporter` | Auto pixel import settings for `Sprites/` (Point, no compression, 32 PPU). `Sprites/Characters/` gets foot pivot (0.5, 10/64). **Only applies on first import** (`importSettingsMissing`) |
 | `Editor/DirectionalSpriteAnimatorFiller` | Component ⋮ menu "Fill From Character Folder" — fills sprites by filename convention |
 
@@ -99,6 +107,9 @@ Reference character: `Sprites/Characters/girl01/` (pink-haired chibi girl). Futu
 - Background/decision history lives in the owner's wiki: `~/Documents/llm_wiki/wiki/sources/social-pixel-game-feasibility-2026-10-20.md` and `.../sources/dg-village-day1-2026-10-20.md`.
 
 ## Gotchas
+
+- Unity editor log is `unity/Logs/Editor.log` (not `~/Library/Logs/Unity`). Grep `error CS` there to check compile results.
+- Editing `Packages/manifest.json` while the editor is open is **not** picked up automatically — install via Package Manager "Add package from git URL" (or restart the editor).
 
 - **Import race**: when a new/changed `AssetPostprocessor` and new assets land in the same refresh, assets may import before the script recompiles. Commit the importer first or fix `.meta` (`alignment: 9`, `spritePivot`) afterwards — reimport alone won't re-apply because of the first-import-only guard.
 - Mesh Collider warning on Ground ("missing pre-baked triangle collision") is harmless for now.

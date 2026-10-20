@@ -15,7 +15,7 @@ namespace DgVillage
     /// 키보드(WASD · 방향키) / 게임패드 입력으로 바닥(XZ 평면) 위를 이동한다.
     /// 이동 방향으로 4방향 Facing 을 계산해 둔다 — 나중에 방향별 걷기 스프라이트가 이 값을 쓴다.
     /// </summary>
-    public class PlayerMovement : MonoBehaviour
+    public class PlayerMovement : MonoBehaviour, ICharacterMotion
     {
         [SerializeField] private float _moveSpeed = 4f;
 
