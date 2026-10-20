@@ -14,3 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DgVillage.CharacterRegistry
   _characters:
   - {fileID: 11400000, guid: 2087ef93c1dc84eeda7e2856fa491e4c, type: 2}
+  - {fileID: 11400000, guid: 0b5bf24fd92024e28ac1adee5442ad6c, type: 2}

@@ -44,7 +44,7 @@ Single git repo at the root, one `.gitignore` covering both.
 1. ~~Make a reference character → get it moving in Unity.~~ **Done 2026-10-20** (girl01, 3-direction walk).
 2. ~~Server + multiple clients seeing each other move in one room.~~ **Done 2026-10-20** (verified with macOS build + editor).
 3. ~~Name tags → text chat + speech bubbles.~~ **Done 2026-10-20** (Korean via Galmuri fallback font).
-4. ~~Player character selection.~~ **Done 2026-10-20** (CharacterSelect scene + `characterId` sync). Second character `boy01` (black hoodie + laptop) in progress.
+4. ~~Player character selection.~~ **Done 2026-10-20** (CharacterSelect scene + `characterId` sync). Characters: `girl01` (default), `boy01` (black hoodie, green cargo pants, laptop).
 5. **Next**: Accounts + DB (see below).
 6. Create/join channels.
 7. Deploy (Seoul VPS) for external testing.
@@ -127,7 +127,7 @@ Reference character: `Sprites/Characters/girl01/` (pink-haired chibi girl). Futu
 
 - PixelLab → Characters → Create from Text: Humanoid, **v3**, **Low Top-Down**, **48×48**, Detail "Highly detailed". Prompt style: "cute chibi, 2.5 heads tall, classic Korean MMORPG style like Ragnarok Online, bright saturated colors, clean dark outline, soft cel shading".
 - Walk: Add Animation → Template motion **Skeleton v3 → Walking → Walk** (6 frames). Template motion keeps outfit/colors identical per frame. Generate South, East, North only (West = flipped East).
-- Export → **ZIP (all frames)**. Idle rotations are 48×48, animation frames are **64×64** (centered padding). Pad idle to 64×64 centered (`sips -p 64 64`) so feet line up — both end up with 10px empty below the feet.
+- Export → **ZIP (all frames)**. Idle rotations are 48×48; animation frames are a larger centered canvas — **64×64 for girl01, 80×80 for boy01** (varies, check). Target is always 64×64 with ~10px empty below the feet (importer pivot = 10/64). For 64 frames: pad idle centered (`sips -p 64 64`). For 80 frames: paste idle at (16,16) on 80×80, then crop everything to box (8, 10, 72, 74) (Pillow via `uv run --no-project --with pillow`). In the ZIP each direction is a separate `Idle/animations/Walk*/{dir}/frame_00N.png` folder.
 - File naming: `{name}_idle_{south|north|east}.png`, `{name}_walk_{south|north|east}_{0..5}.png` → put in `Sprites/Characters/{name}/` → right-click the folder → **DgVillage → Create Character Definition** (auto-registers; shows up in the select screen).
 - Free plan: 1 concurrent job ("Too many animations generating" otherwise), ~8–10 min per walk direction. Character = 2 generations, each walk direction = 3 ("Generate in Background"). Check credits/pricing on the site.
 - Browser flow: Characters → type prompt in top bar → Create (opens form with prompt) → defaults already match (v3, Low Top-Down, 48px, Highly detailed). Animation: Add Animation → pick Direction radio on the left → Template motion Skeleton v3 → Walking (expand) → **Walk** → Generate.
