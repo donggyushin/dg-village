@@ -58,6 +58,12 @@ namespace DgVillage
                 _playerName = $"guest{UnityEngine.Random.Range(1000, 10000)}";
             }
 
+            var localNameTag = _localPlayer.GetComponentInChildren<NameTag>();
+            if (localNameTag != null)
+            {
+                localNameTag.SetName(_playerName);
+            }
+
             // NativeWebSocket 은 생성한 스레드(메인)로 이벤트를 넘겨주므로 핸들러에서 Unity API 를 써도 된다
             _socket = new WebSocket(_serverUrl);
             _socket.OnOpen += OnOpen;

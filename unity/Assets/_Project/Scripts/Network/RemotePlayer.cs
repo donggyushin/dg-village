@@ -19,11 +19,21 @@ namespace DgVillage
         public bool IsMoving { get; private set; }
 
         private Vector3 _targetPosition;
+        private NameTag _nameTag;
+
+        private void Awake()
+        {
+            _nameTag = GetComponentInChildren<NameTag>();
+        }
 
         public void Init(PlayerState state)
         {
             PlayerId = state.id;
             gameObject.name = $"Remote {state.name}";
+            if (_nameTag != null)
+            {
+                _nameTag.SetName(state.name);
+            }
             ApplyState(state);
             transform.position = _targetPosition;
         }
