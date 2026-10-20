@@ -23,7 +23,7 @@ Single git repo at the root, one `.gitignore` covering both.
 | Area | Decision |
 |---|---|
 | Client | Unity `6000.6.6f1` (Apple Silicon), URP 17, new Input System, NativeWebSocket 2.0.7 (`upm-2` branch pinned by commit hash in `manifest.json`) |
-| Server | Python — `asyncio` + `websockets` or FastAPI WebSocket. Hand-rolled; **no** Netcode for GameObjects / Mirror |
+| Server | Python 3.13 — FastAPI WebSocket + uvicorn, pydantic schemas, managed with `uv`. Hand-rolled; **no** Netcode for GameObjects / Mirror |
 | Protocol | JSON over WebSocket (rooms, position broadcast ~10Hz, chat) |
 | Graphics | 2.5D: 3D map + 2D pixel sprite characters, **fixed camera** |
 | Platforms | Desktop first (Mac + Windows). WebGL later |
@@ -85,16 +85,16 @@ Scripts (`Assets/_Project/Scripts/`, namespace `DgVillage`):
 
 | File | Role |
 |---|---|
-| `PlayerMovement` | XZ movement from Input System `Player/Move` (project-wide actions). Exposes `Facing` (Down/Up/Left/Right) and `IsMoving` |
+| `PlayerMovement` | XZ movement from Input System `Player/Move` (project-wide actions). Exposes `Facing` (Down/Up/Left/Right), `IsMoving`, and `InputBlocked` (set by chat) |
 | `CameraFollow` | Keeps the scene-authored offset to target, SmoothDamp in LateUpdate |
 | `ICharacterMotion` | `Facing` + `IsMoving`. Implemented by `PlayerMovement` (local input) and `RemotePlayer` (server data) |
 | `DirectionalSpriteAnimator` | Picks idle/walk sprites from parent `ICharacterMotion`. Left = Right with `flipX` |
 | `Network/NetworkMessages` | JsonUtility DTOs mirroring `protocol.py` (camelCase public fields, exception to naming rule) + `FacingWire` |
-| `Network/NetworkClient` | NativeWebSocket connect → `join` → sends `move` at 10Hz only when changed; raises C# events per server message. Sets `runInBackground` |
+| `Network/NetworkClient` | NativeWebSocket connect → `join` → sends `move` at 10Hz only when changed; `SendChat`; raises C# events per server message. Sets `runInBackground` and the local player's name tag (random `guestNNNN` if name empty) |
 | `Network/RemotePlayerSpawner` | Subscribes to `NetworkClient` events; Instantiate/ApplyState/Destroy `RemotePlayer`s, skips own id |
 | `Network/RemotePlayer` | Exponential lerp toward server position, snaps if > 5 units |
 | `NameTag` | World-space TMP under `Visual` (inherits camera tilt). `Reset()` sets default look; rich text off |
-| `Chat/ChatInput` | Enter opens/sends, Esc cancels; sets `PlayerMovement.InputBlocked` while focused |
+| `Chat/ChatInput` | Enter opens/sends, Esc cancels; visible only while typing (CanvasGroup alpha, not SetActive — Update must keep running); sets `PlayerMovement.InputBlocked` while focused |
 | `Chat/ChatBubble` | Screen-space bubble sized via `GetPreferredValues`, follows anchor (name tag) each LateUpdate, self-destroys after 3–8s |
 | `Chat/ChatBubbleSpawner` | `NetworkClient.ChatReceived` → bubble over speaker (own bubble comes from the server echo) |
 | `Editor/ChatUIBuilder` | Menu **DgVillage → Create Chat UI**: builds/wires canvas, input, EventSystem, ChatBubble prefab |
@@ -106,8 +106,9 @@ Scripts (`Assets/_Project/Scripts/`, namespace `DgVillage`):
 - `uv sync` → `uv run uvicorn dg_village_server.main:app --reload` (port 8000, WS at `/ws`, `GET /health`). Tests: `uv run pytest`, lint: `uv run ruff check .`
 - `protocol.py` (pydantic message schemas, camelCase on the wire), `room.py` (in-memory `RoomManager`/`Room`, 10Hz tick broadcasts `state` only for rooms that changed), `main.py` (app factory + `/ws` handler)
 - Protocol: client sends `join {room, name, characterId}` first, then `move {x, z, facing, moving}` (`facing` = `down|up|left|right`) and `chat {text}` (whitespace collapsed, ≤200 chars, 0.5s rate limit). Server sends `welcome {id, players}`, `player_joined`, `player_left`, `state {players}`, `chat {id, name, text}` (to whole room incl. sender), `error`.
-- No DB yet — all state in memory. Postgres arrives with channels (roadmap 4), as a separate container in the same docker compose.
+- No DB yet — all state in memory. Postgres arrives with accounts (roadmap 5), as a separate container in the same docker compose.
 - Deploy plan: single VPS in **Seoul region** (Lightsail/Vultr, ~2GB RAM) + Caddy (TLS, `wss://` needed for WebGL). Buy only when external testing starts.
+- Local multiplayer test: server running + macOS build (Build And Run into `unity/Builds/`, gitignored, windowed mode) + editor Play.
 - Test gotcha: Starlette `TestClient` cancels the server task when a `websocket_connect` block exits; call `ws.close()` inside the block to test disconnect handling.
 
 ## Character art pipeline (PixelLab)
@@ -122,7 +123,7 @@ Reference character: `Sprites/Characters/girl01/` (pink-haired chibi girl). Futu
 
 ## Working with the owner
 
-- Owner does editor clicks (placing objects, attaching components) — give step-by-step instructions. Claude writes C#, editor tooling, and batch/repetitive work.
+- Owner does editor clicks for one-off setups that teach a Unity concept (placing objects, attaching components, prefabs) — give step-by-step instructions. Claude writes C#, editor tooling, and batch/repetitive work; setups with many fiddly settings get an editor menu script instead (e.g. **DgVillage → Create Chat UI**). Claude also checks compiles (`unity/Logs/Editor.log`) and runs the server.
 - Owner often forgets Play mode is on — remind that changes made in Play mode are lost.
 - Before committing, verify via the saved scene YAML (grep script GUIDs) that components are actually wired, rather than trusting screenshots.
 - Browser automation: start with `claude --chrome` (requires claude.ai login, not API key/token). Ask before downloading files; owner handles signup/payment.
@@ -131,11 +132,9 @@ Reference character: `Sprites/Characters/girl01/` (pink-haired chibi girl). Futu
 ## Gotchas
 
 - Fonts: TMP default (LiberationSans) has no Hangul. `Fonts/Galmuri11 SDF` (Dynamic, multi-atlas, OFL — keep `Galmuri-OFL.txt`) is registered in **TMP Settings → Fallback Font Assets**, so Korean works everywhere without per-component changes. Latin still renders in LiberationSans.
-- `ProjectSettings.asset` `preloadedAssets` (Input System actions) flips on/off around builds — noise, commit whichever state.
-
+- `ProjectSettings.asset` `preloadedAssets` (Input System actions) flips on/off around builds — noise, commit whichever state. The file itself must stay tracked.
 - Unity editor log is `unity/Logs/Editor.log` (not `~/Library/Logs/Unity`). Grep `error CS` there to check compile results.
 - Editing `Packages/manifest.json` while the editor is open is **not** picked up automatically — install via Package Manager "Add package from git URL" (or restart the editor).
-
 - **Import race**: when a new/changed `AssetPostprocessor` and new assets land in the same refresh, assets may import before the script recompiles. Commit the importer first or fix `.meta` (`alignment: 9`, `spritePivot`) afterwards — reimport alone won't re-apply because of the first-import-only guard.
 - Mesh Collider warning on Ground ("missing pre-baked triangle collision") is harmless for now.
 

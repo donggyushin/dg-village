@@ -9,13 +9,13 @@
 ```
 dg-village/
 ├── unity/    # 게임 클라이언트 (Unity 6 · URP)
-└── python/   # WebSocket 서버 (준비 중)
+└── python/   # WebSocket 게임 서버 (FastAPI)
 ```
 
 | 영역 | 기술 |
 |---|---|
 | 클라이언트 | Unity `6000.6.6f1` · Universal Render Pipeline · Input System |
-| 서버 | Python WebSocket (`asyncio` + `websockets` 또는 FastAPI) |
+| 서버 | Python 3.13 · FastAPI WebSocket · uv |
 | 통신 | WebSocket 위 JSON 메시지 |
 | 그래픽 | 3D 맵 위에 2D 도트 캐릭터, 고정 카메라 |
 | 플랫폼 | Mac · Windows 데스크톱 우선, 웹(WebGL)은 나중에 |
@@ -31,13 +31,32 @@ dg-village/
 처음 열 때 `Library/` 를 새로 만드느라 몇 분 걸린다.
 
 ### 서버
-아직 없음.
+1. [uv](https://docs.astral.sh/uv/) 설치 (`brew install uv`)
+2. 실행
+   ```bash
+   cd python
+   uv sync
+   uv run uvicorn dg_village_server.main:app --reload   # ws://localhost:8000/ws
+   ```
+3. 테스트: `uv run pytest`
+
+### 여럿이 접속해 보기 (로컬)
+1. 서버 실행
+2. Unity → File → Build Profiles → macOS → Build And Run (저장 위치 `unity/Builds/`)
+3. 에디터에서도 ▶ Play → 창 두 개에서 서로의 캐릭터가 보이고, Enter 로 채팅할 수 있다
 
 ## 로드맵
 
 - [x] 기준 캐릭터 만들기 → Unity에서 캐릭터 이동 (2026-10-20, girl01 3방향 걷기)
-- [ ] 서버 연결 — 한 방에서 여러 명이 서로 움직이는 게 보이기
-- [ ] 텍스트 채팅 + 말풍선
+- [x] 서버 연결 — 한 방에서 여러 명이 서로 움직이는 게 보이기 (2026-10-20)
+- [x] 이름표 + 텍스트 채팅 + 말풍선, 한글 지원 (2026-10-20)
+- [ ] 캐릭터 선택
+- [ ] 계정 (익명 계정 → 소셜 로그인) + DB
 - [ ] 채널 만들기 / 입장
-- [ ] 아트 입히기
+- [ ] 서버 배포 (서울 리전) → 친구들과 테스트
+- [ ] 아트 입히기 (맵 · 건물)
 - [ ] 음성 채팅
+
+## 크레딧
+
+- 한글 폰트: [Galmuri](https://github.com/quiple/galmuri) by Lee Minseo — SIL Open Font License 1.1 (`unity/Assets/_Project/Fonts/Galmuri-OFL.txt`)
