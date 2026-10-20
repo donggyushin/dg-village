@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: ServerSettings
   m_EditorClassIdentifier: Assembly-CSharp::DgVillage.ServerSettings
   _localUrl: http://localhost:8000
-  _productionUrl: 
+  _productionUrl: https://13-54-176-157.sslip.io
   _editorUsesProduction: 0
   _buildsUseProduction: 1
