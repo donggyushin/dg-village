@@ -1,0 +1,65 @@
+# ===== Unity (unity/) =====
+# Unity가 자동 생성하는 폴더 — 커밋 금지 (수 GB, 에디터가 재생성)
+/unity/[Ll]ibrary/
+/unity/[Tt]emp/
+/unity/[Oo]bj/
+/unity/[Bb]uild/
+/unity/[Bb]uilds/
+/unity/[Ll]ogs/
+/unity/[Uu]ser[Ss]ettings/
+/unity/[Mm]emoryCaptures/
+/unity/[Rr]ecordings/
+
+# Asset Store 도구
+/unity/[Aa]ssets/AssetStoreTools*
+
+# IDE 생성 파일 (VS Code / Rider / Visual Studio)
+/unity/.vs/
+/unity/.idea/
+/unity/.vscode/
+*.csproj
+*.unityproj
+*.sln
+*.slnx
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# 디버그 심볼 · 크래시 리포트
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+sysinfo.txt
+crashlytics-build.properties
+
+# 빌드 산출물
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# Burst / 기타 자동 생성
+/unity/[Aa]ssets/[Ss]treamingAssets/aa.meta
+/unity/[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# ===== Python (python/) =====
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ===== OS / 공통 =====
+.DS_Store
+Thumbs.db
