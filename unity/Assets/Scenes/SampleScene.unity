@@ -341,8 +341,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DgVillage.NetworkClient
   _serverUrl: ws://localhost:8000/ws
   _room: lobby
-  _playerName: 
   _localPlayer: {fileID: 399283812}
+  _characters: {fileID: 11400000, guid: 7d3c7cc30e4604412872401125027ab1, type: 2}
   _sendRate: 10
 --- !u!1 &274801603
 GameObject:

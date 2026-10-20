@@ -14,11 +14,11 @@ namespace DgVillage
         [SerializeField] private string _serverUrl = "ws://localhost:8000/ws";
         [SerializeField] private string _room = "lobby";
 
-        [Tooltip("비워두면 guest1234 같은 임시 이름을 쓴다")]
-        [SerializeField] private string _playerName = "";
-
         [Tooltip("위치를 보낼 내 캐릭터 (씬의 Player)")]
         [SerializeField] private PlayerMovement _localPlayer;
+
+        [Tooltip("PlayerSession 의 characterId 로 내 캐릭터를 찾을 목록")]
+        [SerializeField] private CharacterRegistry _characters;
 
         [Tooltip("초당 위치 전송 횟수. 서버 tick(10Hz)과 맞춘다")]
         [SerializeField] private float _sendRate = 10f;
@@ -33,11 +33,15 @@ namespace DgVillage
         /// <summary>서버 CHAT_MAX_LENGTH 와 같게 유지</summary>
         public const int ChatMaxLength = 200;
 
+        /// <summary>서버 JoinMessage.name max_length 와 같게 유지</summary>
+        public const int NameMaxLength = 16;
+
         /// <summary>서버가 정해준 내 id. 방에 들어가기 전이나 연결이 끊기면 null.</summary>
         public string LocalPlayerId { get; private set; }
 
         private WebSocket _socket;
         private DirectionalSpriteAnimator _localAnimator;
+        private string _playerName;
         private float _sendTimer;
         private MoveMessage _lastSent;
 
@@ -49,31 +53,39 @@ namespace DgVillage
 
         private void Start()
         {
-            if (_localPlayer == null)
+            if (_localPlayer == null || _characters == null)
             {
-                Debug.LogError("NetworkClient: Local Player 가 비어 있다. Inspector 에서 Player 를 연결할 것.", this);
+                Debug.LogError("NetworkClient: Local Player 또는 Characters 가 비어 있다. Inspector 에서 연결할 것.", this);
                 enabled = false;
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(_playerName))
+            _localAnimator = _localPlayer.GetComponentInChildren<DirectionalSpriteAnimator>();
+            if (_localAnimator == null)
             {
-                _playerName = $"guest{UnityEngine.Random.Range(1000, 10000)}";
+                Debug.LogError("NetworkClient: Player 아래에 DirectionalSpriteAnimator 가 없다.", this);
+                enabled = false;
+                return;
             }
 
+            // 캐릭터 선택 씬에서 고른 값. 이 씬을 바로 Play 하면 마지막 저장값 · 기본 캐릭터
+            CharacterDefinition character = _characters.Find(PlayerSession.CharacterId);
+            if (character != null)
+            {
+                _localAnimator.SetCharacter(character);
+            }
+            if (_localAnimator.Character == null)
+            {
+                Debug.LogError("NetworkClient: 쓸 캐릭터가 없다. CharacterRegistry 가 비어 있는지 확인할 것.", this);
+                enabled = false;
+                return;
+            }
+
+            _playerName = SanitizeName(PlayerSession.PlayerName);
             var localNameTag = _localPlayer.GetComponentInChildren<NameTag>();
             if (localNameTag != null)
             {
                 localNameTag.SetName(_playerName);
-            }
-
-            // 내 캐릭터 id 는 Player 의 animator 가 들고 있는 CharacterDefinition 이 기준
-            _localAnimator = _localPlayer.GetComponentInChildren<DirectionalSpriteAnimator>();
-            if (_localAnimator == null || _localAnimator.Character == null)
-            {
-                Debug.LogError("NetworkClient: Player/Visual 의 DirectionalSpriteAnimator 에 Character 가 비어 있다.", this);
-                enabled = false;
-                return;
             }
 
             // NativeWebSocket 은 생성한 스레드(메인)로 이벤트를 넘겨주므로 핸들러에서 Unity API 를 써도 된다
@@ -83,6 +95,17 @@ namespace DgVillage
             _socket.OnError += error => Debug.LogWarning($"NetworkClient: {error}", this);
             _socket.OnClose += OnClose;
             Connect();
+        }
+
+        /// <summary>앞뒤 공백 제거 · 길이 제한. 비어 있으면 guest1234 같은 임시 이름.</summary>
+        private static string SanitizeName(string playerName)
+        {
+            playerName = playerName?.Trim();
+            if (string.IsNullOrEmpty(playerName))
+            {
+                return $"guest{UnityEngine.Random.Range(1000, 10000)}";
+            }
+            return playerName.Length > NameMaxLength ? playerName.Substring(0, NameMaxLength) : playerName;
         }
 
         // Connect() 는 연결이 끊길 때까지 끝나지 않는 Task 라서 기다리지 않고 흘려보낸다.
