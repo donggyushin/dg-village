@@ -12,6 +12,10 @@ namespace DgVillage.Editor
         private const string SpriteFolder = "Assets/_Project/Sprites/";
         private const float PixelsPerUnit = 32f;
 
+        // PixelLab 캐릭터 프레임은 64x64 캔버스에 발밑 아래 10px 여백이 있다 → pivot 을 발 위치로
+        private const string CharacterFolder = "Assets/_Project/Sprites/Characters/";
+        private static readonly Vector2 CharacterFootPivot = new Vector2(0.5f, 10f / 64f);
+
         private void OnPreprocessTexture()
         {
             if (!assetPath.StartsWith(SpriteFolder))
@@ -37,7 +41,15 @@ namespace DgVillage.Editor
 
             var settings = new TextureImporterSettings();
             importer.ReadTextureSettings(settings);
-            settings.spriteAlignment = (int)SpriteAlignment.BottomCenter;
+            if (assetPath.StartsWith(CharacterFolder))
+            {
+                settings.spriteAlignment = (int)SpriteAlignment.Custom;
+                settings.spritePivot = CharacterFootPivot;
+            }
+            else
+            {
+                settings.spriteAlignment = (int)SpriteAlignment.BottomCenter;
+            }
             settings.spriteMeshType = SpriteMeshType.FullRect;
             importer.SetTextureSettings(settings);
         }

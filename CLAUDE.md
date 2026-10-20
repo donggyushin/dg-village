@@ -41,12 +41,56 @@ Single git repo at the root, one `.gitignore` covering both.
 
 ## Roadmap
 
-1. **Current**: make a reference character → get it moving in Unity.
-2. Server + multiple clients seeing each other move in one room.
+1. ~~Make a reference character → get it moving in Unity.~~ **Done 2026-10-20** (girl01, 3-direction walk).
+2. **Next**: Server + multiple clients seeing each other move in one room.
 3. Text chat + speech bubbles.
 4. Create/join channels.
-5. Art pass.
+5. Art pass (map tiles, buildings — the floor currently looks flat/2D because it's a plain ortho plane).
 6. Voice.
+
+## Current state (as of 2026-10-20)
+
+Scene `Assets/Scenes/SampleScene.unity`:
+
+```
+Main Camera   Orthographic, Size 5, pos (0, 8, -11.5), rot X 35  + CameraFollow(target = Player)
+Ground        Plane, scale (2,1,2) → 20x20 units. No bounds/collision yet (player can walk off)
+Player        empty root, movement only               + PlayerMovement
+└── Visual    SpriteRenderer, rot X 35 (faces camera) + DirectionalSpriteAnimator(girl01)
+```
+
+Scripts (`Assets/_Project/Scripts/`, namespace `DgVillage`):
+
+| File | Role |
+|---|---|
+| `PlayerMovement` | XZ movement from Input System `Player/Move` (project-wide actions). Exposes `Facing` (Down/Up/Left/Right) and `IsMoving` |
+| `CameraFollow` | Keeps the scene-authored offset to target, SmoothDamp in LateUpdate |
+| `DirectionalSpriteAnimator` | Picks idle/walk sprites from `Facing`/`IsMoving`. Left = Right with `flipX` |
+| `Editor/PixelSpriteImporter` | Auto pixel import settings for `Sprites/` (Point, no compression, 32 PPU). `Sprites/Characters/` gets foot pivot (0.5, 10/64). **Only applies on first import** (`importSettingsMissing`) |
+| `Editor/DirectionalSpriteAnimatorFiller` | Component ⋮ menu "Fill From Character Folder" — fills sprites by filename convention |
+
+## Character art pipeline (PixelLab)
+
+Reference character: `Sprites/Characters/girl01/` (pink-haired chibi girl). Future characters must match this style and size.
+
+- PixelLab → Characters → Create from Text: Humanoid, **v3**, **Low Top-Down**, **48×48**, Detail "Highly detailed". Prompt style: "cute chibi, 2.5 heads tall, classic Korean MMORPG style like Ragnarok Online, bright saturated colors, clean dark outline, soft cel shading".
+- Walk: Add Animation → Template motion **Skeleton v3 → Walking → Walk** (6 frames). Template motion keeps outfit/colors identical per frame. Generate South, East, North only (West = flipped East).
+- Export → **ZIP (all frames)**. Idle rotations are 48×48, animation frames are **64×64** (centered padding). Pad idle to 64×64 centered (`sips -p 64 64`) so feet line up — both end up with 10px empty below the feet.
+- File naming: `{name}_idle_{south|north|east}.png`, `{name}_walk_{south|north|east}_{0..5}.png` → put in `Sprites/Characters/{name}/` → Visual's animator ⋮ → Fill From Character Folder.
+- Free plan: 1 concurrent job, ~8–10 min per walk direction. Check credits/pricing on the site.
+
+## Working with the owner
+
+- Owner does editor clicks (placing objects, attaching components) — give step-by-step instructions. Claude writes C#, editor tooling, and batch/repetitive work.
+- Owner often forgets Play mode is on — remind that changes made in Play mode are lost.
+- Before committing, verify via the saved scene YAML (grep script GUIDs) that components are actually wired, rather than trusting screenshots.
+- Browser automation: start with `claude --chrome` (requires claude.ai login, not API key/token). Ask before downloading files; owner handles signup/payment.
+- Background/decision history lives in the owner's wiki: `~/Documents/llm_wiki/wiki/sources/social-pixel-game-feasibility-2026-10-20.md` and `.../sources/dg-village-day1-2026-10-20.md`.
+
+## Gotchas
+
+- **Import race**: when a new/changed `AssetPostprocessor` and new assets land in the same refresh, assets may import before the script recompiles. Commit the importer first or fix `.meta` (`alignment: 9`, `spritePivot`) afterwards — reimport alone won't re-apply because of the first-import-only guard.
+- Mesh Collider warning on Ground ("missing pre-baked triangle collision") is harmless for now.
 
 ## Unity conventions
 
