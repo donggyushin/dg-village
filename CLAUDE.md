@@ -42,11 +42,22 @@ Single git repo at the root, one `.gitignore` covering both.
 ## Roadmap
 
 1. ~~Make a reference character → get it moving in Unity.~~ **Done 2026-10-20** (girl01, 3-direction walk).
-2. **Next**: Server + multiple clients seeing each other move in one room.
-3. Text chat + speech bubbles.
-4. Create/join channels.
-5. Art pass (map tiles, buildings — the floor currently looks flat/2D because it's a plain ortho plane).
-6. Voice.
+2. ~~Server + multiple clients seeing each other move in one room.~~ **Done 2026-10-20** (verified with macOS build + editor).
+3. **Next**: Name tags → text chat + speech bubbles.
+4. Player character selection (see below).
+5. Accounts + DB (see below).
+6. Create/join channels.
+7. Deploy (Seoul VPS) for external testing.
+8. Social login (Google/Discord OAuth).
+9. Art pass (map tiles, buildings — the floor currently looks flat/2D because it's a plain ortho plane).
+10. Voice.
+
+Accounts plan (owner request, 2026-10-20: "eventually log in, create an account, then enter channels"):
+- Start right before channels — channels need an owner (account id), and Postgres + Alembic arrive at the same time (`users` + `channels` designed together). Must exist before public deploy. Stay guest-only until then; login would just slow down testing.
+- Phase 1 = **anonymous accounts**: on first launch the server issues an account + token; client stores the token locally and reuses it, so nickname/character choice persist without a signup screen.
+- Phase 2 = link **social login** (Google/Discord OAuth) to the anonymous account. Desktop Unity OAuth needs a browser round-trip, so it comes last. No email/password (hashing, resets, email sending not worth it).
+- Auth provider (self-issued tokens vs Supabase Auth etc.) decided then; the game server only verifies a token either way.
+- Keep now: `name` is display-only (not unique, never an identity) — identify by server-issued `id`. Entry stays a single `join` message; accounts will just add a `token` field to it.
 
 Planned feature (owner request, 2026-10-20): **player chooses their character.** Plan: move sprite sets out of `DirectionalSpriteAnimator`'s inline fields into a `CharacterDefinition` ScriptableObject (id + per-direction idle/walk sprites), one asset per character, collected in a registry. The animator reads the currently selected definition at runtime. In multiplayer, the server only syncs `characterId`; each client resolves it locally. The editor-only "Fill From Character Folder" menu should then fill a `CharacterDefinition` asset instead of the component. Do this before adding a second character.
 
