@@ -106,33 +106,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fdb9ec703e27484789e0da1f51496d7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DgVillage.DirectionalSpriteAnimator
-  _down:
-    Idle: {fileID: 21300000, guid: f22669b15305e49538e0f06bc5849e3a, type: 3}
-    Walk:
-    - {fileID: 21300000, guid: 99b6f55fab922427ea043c2bdc97d12a, type: 3}
-    - {fileID: 21300000, guid: ba6d7f70ceba64847a9a63a509a50fa2, type: 3}
-    - {fileID: 21300000, guid: 8781c92b023da4e98b8b02bda6f208ae, type: 3}
-    - {fileID: 21300000, guid: dc9f94bb910aa41a49f708e0dc533fcd, type: 3}
-    - {fileID: 21300000, guid: f07911f1cd2c74c3a87d9113117b5167, type: 3}
-    - {fileID: 21300000, guid: ac677825db0184ee1840835f2ea62f36, type: 3}
-  _up:
-    Idle: {fileID: 21300000, guid: 88119cf24e7e94f61a590de8a084854c, type: 3}
-    Walk:
-    - {fileID: 21300000, guid: fc2ad2db6ea8d4f7eab122660773f90f, type: 3}
-    - {fileID: 21300000, guid: 7ce90d46c6cb743e1977faf3ce03aa0e, type: 3}
-    - {fileID: 21300000, guid: 1588fa832872c40e786eb14541c1935c, type: 3}
-    - {fileID: 21300000, guid: 07ee8bb4b458148fb82348f7f8ce017c, type: 3}
-    - {fileID: 21300000, guid: 1cf104d7624734651896ba50aee10671, type: 3}
-    - {fileID: 21300000, guid: cbb0097b73ce9410abadf7cb868d3041, type: 3}
-  _right:
-    Idle: {fileID: 21300000, guid: 0a9eec19faf404555821bfe192f80fa2, type: 3}
-    Walk:
-    - {fileID: 21300000, guid: 41a57bec1cee84978a4a28c1c2e0a959, type: 3}
-    - {fileID: 21300000, guid: b249dfaad15dd4150b7fa754359e10b8, type: 3}
-    - {fileID: 21300000, guid: 6072b1bb431c841e0b885c6e5954a4d3, type: 3}
-    - {fileID: 21300000, guid: c8d15fdd691df49ffb85e208b54c3465, type: 3}
-    - {fileID: 21300000, guid: 2481b62b3227f404da326b2ce6a33c82, type: 3}
-    - {fileID: 21300000, guid: 06c6adc9771f94369aa4ec00f307935e, type: 3}
+  _character: {fileID: 11400000, guid: 2087ef93c1dc84eeda7e2856fa491e4c, type: 2}
   _framesPerSecond: 10
 --- !u!1 &6958338005515461435
 GameObject:
