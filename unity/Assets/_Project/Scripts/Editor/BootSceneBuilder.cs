@@ -59,7 +59,28 @@ namespace DgVillage.Editor
             }
 
             CreateCameraAndEventSystem();
-            GameObject canvasGo = CreateCanvas("LoadingCanvas");
+            GameObject canvasGo = CreateLoadingCanvas("LoadingCanvas", illustration, out TMP_Text status);
+
+            var loading = canvasGo.AddComponent<LoadingScreen>();
+            var so = new SerializedObject(loading);
+            so.FindProperty("_statusText").objectReferenceValue = status;
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            EditorSceneManager.SaveScene(scene, ScenePath);
+            AddToSceneListFirst();
+            Selection.activeGameObject = canvasGo;
+            Debug.Log($"{ScenePath} 생성 완료 · Scene List 0번으로 등록.", canvasGo);
+        }
+
+        internal static Sprite LoadIllustration() => AssetDatabase.LoadAssetAtPath<Sprite>(IllustrationPath);
+
+        /// <summary>
+        /// 열린 씬에 로딩 화면 캔버스(일러스트 + 아래 그늘 + 상태 문구)를 만든다. 동작 컴포넌트는 부르는 쪽이 붙인다.
+        /// Boot 씬과 마을 씬(VillageLoadingScreen)이 같이 쓴다.
+        /// </summary>
+        internal static GameObject CreateLoadingCanvas(string name, Sprite illustration, out TMP_Text status)
+        {
+            GameObject canvasGo = CreateCanvas(name);
             canvasGo.GetComponent<Canvas>().sortingOrder = 100;
             canvasGo.AddComponent<CanvasGroup>();
             var root = (RectTransform)canvasGo.transform;
@@ -86,18 +107,9 @@ namespace DgVillage.Editor
             shade.color = new Color(0f, 0f, 0f, 0.55f);
             shade.raycastTarget = false;
 
-            TMP_Text status = CreateText(root, "StatusText", "", 22f, new Vector2(0f, -305f), new Vector2(900f, 70f));
+            status = CreateText(root, "StatusText", "", 22f, new Vector2(0f, -305f), new Vector2(900f, 70f));
             status.color = new Color(1f, 0.92f, 0.75f);
-
-            var loading = canvasGo.AddComponent<LoadingScreen>();
-            var so = new SerializedObject(loading);
-            so.FindProperty("_statusText").objectReferenceValue = status;
-            so.ApplyModifiedPropertiesWithoutUndo();
-
-            EditorSceneManager.SaveScene(scene, ScenePath);
-            AddToSceneListFirst();
-            Selection.activeGameObject = canvasGo;
-            Debug.Log($"{ScenePath} 생성 완료 · Scene List 0번으로 등록.", canvasGo);
+            return canvasGo;
         }
 
         // Scene List 맨 앞에 Boot 를 둔다 (이미 있으면 자리만 옮긴다). Save Project 전엔 메모리에만 있으므로 바로 저장한다

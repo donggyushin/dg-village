@@ -13,6 +13,7 @@ namespace DgVillage.Editor
     ///     지우는 것: 옛 평지 Ground, 이전에 깐 Map (그리고 그 전 방식의 Floor · Props · Seats · Portals)
     ///   - Network 에 MapLoader (맵 깔기) · SeatInteraction (앉기) · PortalTraveler (맵 이동),
     ///     ChatCanvas 에 안내 문구 SeatHint 를 (없으면) 붙이고 연결한다.
+    ///   - 들어올 때의 로딩 화면 VillageLoadingCanvas (Boot 와 같은 일러스트 + VillageLoadingScreen) 를 새로 만든다.
     /// 소품 그림을 추가했거나 이 씬의 미리보기를 새로 보고 싶을 때 다시 실행한다. 맵 배치만 바꿨으면 서버 배포로 충분.
     /// </summary>
     public static class VillageMapBuilder
@@ -20,7 +21,11 @@ namespace DgVillage.Editor
         private const string ScenePath = "Assets/Scenes/SampleScene.unity";
         private const string PreviewMapId = "office";
         private const string Title = "Set Up Village Scene";
-        private static readonly string[] OldRoots = { "Ground", MapBuilder.RootName, "Floor", "Props", "Seats", "Portals" };
+        private const string LoadingCanvasName = "VillageLoadingCanvas";
+        private static readonly string[] OldRoots =
+        {
+            "Ground", MapBuilder.RootName, "Floor", "Props", "Seats", "Portals", LoadingCanvasName,
+        };
 
         [MenuItem("DgVillage/Set Up Village Scene")]
         private static void Apply()
@@ -157,6 +162,14 @@ namespace DgVillage.Editor
             loaderSo.FindProperty("_camera").objectReferenceValue = Object.FindAnyObjectByType<CameraFollow>();
             loaderSo.FindProperty("_room").objectReferenceValue = room;
             loaderSo.ApplyModifiedPropertiesWithoutUndo();
+
+            GameObject loadingCanvas = BootSceneBuilder.CreateLoadingCanvas(
+                LoadingCanvasName, BootSceneBuilder.LoadIllustration(), out TMP_Text status);
+            var loadingScreen = loadingCanvas.AddComponent<VillageLoadingScreen>();
+            var loadingSo = new SerializedObject(loadingScreen);
+            loadingSo.FindProperty("_client").objectReferenceValue = client;
+            loadingSo.FindProperty("_statusText").objectReferenceValue = status;
+            loadingSo.ApplyModifiedPropertiesWithoutUndo();
             return null;
         }
     }
