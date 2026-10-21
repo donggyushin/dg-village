@@ -56,7 +56,7 @@ deploy/deploy.sh   # git pull → docker compose up -d --build --wait → 옛 �
 | 무엇 | 언제 | 막아주는 것 |
 |---|---|---|
 | `deploy/backup.sh` (pg_dump → `~/backups/`, 14일 보관) | 매일 03:00 KST (cron) | 실수로 지운 데이터, DB 깨짐 |
-| Lightsail 자동 스냅샷 (인스턴스 디스크 전체) | 매일 (콘솔에서 켬) | 인스턴스 자체를 잃음 |
+| Lightsail 자동 스냅샷 (인스턴스 디스크 전체, 최근 7개) | 매일 21:00 KST (콘솔 Snapshots 탭) | 인스턴스 자체를 잃음 |
 
 cron 등록 (서버에서 한 번):
 
