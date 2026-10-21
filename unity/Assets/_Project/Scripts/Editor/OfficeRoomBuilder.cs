@@ -10,6 +10,7 @@ namespace DgVillage.Editor
     /// MapTestSceneBuilder(오프라인 테스트 씬)와 VillageMapBuilder(온라인 마을 씬)가 같이 쓴다:
     ///   Floor   FloorMesh (재질별 타일 바닥 + 가장자리 벽) + Floor_Office · Wall_Office 머티리얼 (URP Unlit)
     ///   Props   가구 (35° 세운 스프라이트 + 바닥에 눕힌 그림자 + Obstacle = 못 지나감)
+    ///   Seats   앉을 자리 (Seat — id 가 서버와 같다)
     /// 방을 고칠 땐 JSON 을 고치고 메뉴를 다시 실행한다 (씬의 Layout 을 직접 고치면 서버의 채팅 구역과 어긋난다).
     /// </summary>
     internal static class OfficeRoomBuilder
@@ -25,6 +26,7 @@ namespace DgVillage.Editor
 
         internal const string FloorName = "Floor";
         internal const string PropsName = "Props";
+        internal const string SeatsName = "Seats";
         internal static readonly Color BackgroundColor = new(0.106f, 0.129f, 0.118f);
 
         // 캐릭터 Visual 과 같은 기울기: 카메라(X 35°)를 정면으로 본다
@@ -99,6 +101,18 @@ namespace DgVillage.Editor
                 {
                     CreateShadow(root, prop.shadow, spriteMaterial);
                 }
+            }
+
+            var seats = new GameObject(SeatsName).transform;
+            foreach (GameMapData.Seat seat in map.seats)
+            {
+                var go = new GameObject(seat.id, typeof(Seat));
+                go.transform.SetParent(seats, false);
+                go.transform.position = new Vector3(seat.x, 0f, seat.z);
+                var seatSo = new SerializedObject(go.GetComponent<Seat>());
+                seatSo.FindProperty("_id").stringValue = seat.id;
+                seatSo.FindProperty("_kind").stringValue = seat.kind;
+                seatSo.ApplyModifiedPropertiesWithoutUndo();
             }
             return floor;
         }

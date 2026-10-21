@@ -26,6 +26,8 @@ from .protocol import (
     ErrorMessage,
     JoinMessage,
     MoveMessage,
+    SitMessage,
+    StandMessage,
     WelcomeMessage,
     client_message_adapter,
 )
@@ -122,6 +124,12 @@ def create_app(settings: Settings | None = None, *, create_tables: bool = False)
                         continue
                     last_chat_at = now
                     await room.chat(me.id, msg.text)
+                elif isinstance(msg, SitMessage):
+                    error = room.sit(me.id, msg.seat)
+                    if error:
+                        await _send_error(ws, error)
+                elif isinstance(msg, StandMessage):
+                    room.stand(me.id)
                 else:
                     await _send_error(ws, "already joined")
         except WebSocketDisconnect:

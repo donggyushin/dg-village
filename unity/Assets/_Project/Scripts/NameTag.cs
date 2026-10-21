@@ -24,7 +24,26 @@ namespace DgVillage
             _text.outlineColor = Color.black;
         }
 
-        public void SetName(string playerName) => _text.text = playerName;
+        private string _name = "";
+        private bool _focused;
+
+        public void SetName(string playerName)
+        {
+            _name = playerName;
+            Refresh();
+        }
+
+        /// <summary>책상에 앉아 집중 모드면 이름 옆에 표시 (그 사람에게 말 걸어도 안 들린다는 신호)</summary>
+        public void SetFocused(bool focused)
+        {
+            if (_focused != focused)
+            {
+                _focused = focused;
+                Refresh();
+            }
+        }
+
+        private void Refresh() => _text.text = _focused ? $"{_name} · 집중" : _name;
 
         // 에디터에서 컴포넌트를 처음 붙일 때 한 번 호출된다. 이후 Inspector 에서 자유롭게 바꿔도 된다
         private void Reset()

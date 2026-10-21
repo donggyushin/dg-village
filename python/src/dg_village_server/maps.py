@@ -11,7 +11,8 @@ Zones decide chat delivery:
 - lounge = a connected carpet area; everyone inside the same lounge hears each other
 - hallway = everywhere else; only players within `hearingRadius` hear each other
 - a lounge and the hallway don't hear each other, even when standing close
-(Desks / focus mode come with sitting.)
+- a player sitting at a `desk` seat is in focus mode: hears nobody and nobody hears them
+  (handled in room.py, since it depends on player state, not on the position)
 """
 
 import json
@@ -36,7 +37,9 @@ class GameMap:
         self.id: str = data["id"]
         self.hearing_radius: float = float(data["hearingRadius"])
         self.layout: list[str] = data["layout"]
-        self.seats = [Seat(s["id"], s["kind"], s["x"], s["z"]) for s in data.get("seats", [])]
+        self.seats = {
+            s["id"]: Seat(s["id"], s["kind"], s["x"], s["z"]) for s in data.get("seats", [])
+        }
         width = max(len(row) for row in self.layout)
         self._left = -width / 2
         self._top = len(self.layout) / 2

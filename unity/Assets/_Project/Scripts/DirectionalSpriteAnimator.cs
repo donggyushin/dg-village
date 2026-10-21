@@ -14,6 +14,11 @@ namespace DgVillage
         [SerializeField] private CharacterDefinition _character;
         [SerializeField] private float _framesPerSecond = 10f;
 
+        [Tooltip("앉아 있을 때 그림을 위로 올리는 높이 (unit). 책상 · 소파 뒤에서 상반신이 보이도록 (32 PPU 기준 정수 픽셀)")]
+        [SerializeField] private float _seatedLift = 12f / 32f;
+
+        private Vector3 _baseLocalPosition;
+
         private SpriteRenderer _renderer;
         private ICharacterMotion _motion;
         private float _frameTimer;
@@ -25,6 +30,7 @@ namespace DgVillage
         {
             _renderer = GetComponent<SpriteRenderer>();
             _motion = GetComponentInParent<ICharacterMotion>();
+            _baseLocalPosition = transform.localPosition;
 
             if (_motion == null)
             {
@@ -47,6 +53,11 @@ namespace DgVillage
             {
                 return;
             }
+
+            // 스프라이트 면을 따라 위로 (Visual 이 35° 기울어 있어서 로컬 up 방향)
+            transform.localPosition = _motion.IsSeated
+                ? _baseLocalPosition + transform.localRotation * Vector3.up * _seatedLift
+                : _baseLocalPosition;
 
             Facing facing = _motion.Facing;
             CharacterDefinition.DirectionSprites set = _character.Get(facing);

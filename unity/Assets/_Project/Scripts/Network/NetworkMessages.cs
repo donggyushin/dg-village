@@ -39,6 +39,20 @@ namespace DgVillage
         public string text;
     }
 
+    /// <summary>좌석(맵 JSON 의 seats, 씬의 Seat)에 앉겠다는 요청. 서버가 거리 · 빈자리를 확인하고 state 로 답한다.</summary>
+    [Serializable]
+    public class SitMessage
+    {
+        public string type = "sit";
+        public string seat;
+    }
+
+    [Serializable]
+    public class StandMessage
+    {
+        public string type = "stand";
+    }
+
     // ----- server -> client -----
 
     /// <summary>방 안 누군가(나 포함)의 채팅 한 줄. 서버가 공백 정리 · 길이 검사를 마친 텍스트.</summary>
@@ -60,6 +74,12 @@ namespace DgVillage
         public float z;
         public string facing;
         public bool moving;
+        /// <summary>앉아 있는 좌석 id. 서 있으면 null 또는 "" (JsonUtility)</summary>
+        public string seat;
+        /// <summary>책상에 앉아 집중 모드: 채팅을 듣지도 보내지도 못한다</summary>
+        public bool focused;
+
+        public bool IsSeated => !string.IsNullOrEmpty(seat);
     }
 
     [Serializable]

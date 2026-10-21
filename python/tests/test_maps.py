@@ -3,7 +3,7 @@ import asyncio
 import pytest
 
 from dg_village_server.maps import HALLWAY, GameMap, load_map
-from dg_village_server.protocol import PlayerState
+from dg_village_server.protocol import MoveMessage, PlayerState
 from dg_village_server.room import Player, Room
 
 # 6 × 4 tiles → x from -3 to 3, z from 2 (north) to -2. Two separate carpet areas.
@@ -54,7 +54,7 @@ def test_office_map_loads() -> None:
     assert office.id == "office"
     assert office.zone_at(5.5, 3.0) == "lounge:0"  # the carpet lounge
     assert office.zone_at(-0.5, 0.0) == HALLWAY
-    assert {s.kind for s in office.seats} == {"desk", "lounge"}
+    assert {s.kind for s in office.seats.values()} == {"desk", "lounge"}
 
 
 class FakeConnection:
@@ -96,3 +96,64 @@ def test_room_without_map_broadcasts_to_everyone() -> None:
     room, connections = make_room(None, {"a": (0.0, 0.0), "b": (100.0, 100.0)})
     asyncio.run(room.chat("a", "hi"))
     assert received_chat(connections) == {"a", "b"}
+
+
+OFFICE = load_map("office")
+DESK = OFFICE.seats["desk-1"]
+SOFA = OFFICE.seats["sofa"]
+
+
+def test_sit_snaps_onto_the_seat_and_desks_focus() -> None:
+    room, _ = make_room(OFFICE, {"a": (DESK.x + 1.0, DESK.z - 0.5), "b": (SOFA.x, SOFA.z - 1.0)})
+    assert room.sit("a", "desk-1") is None
+    a = room.players["a"].state
+    assert (a.x, a.z, a.facing, a.seat, a.focused) == (DESK.x, DESK.z, "down", "desk-1", True)
+    assert room.sit("b", "sofa") is None
+    assert room.players["b"].state.focused is False  # lounge seat: just sitting
+
+
+@pytest.mark.parametrize(
+    ("seat", "position", "error"),
+    [
+        ("nope", (DESK.x, DESK.z), "unknown seat"),
+        ("desk-1", (DESK.x + 3.0, DESK.z), "too far from the seat"),
+    ],
+)
+def test_sit_is_rejected(seat, position, error) -> None:
+    room, _ = make_room(OFFICE, {"a": position})
+    assert room.sit("a", seat) == error
+    assert room.players["a"].state.seat is None
+
+
+def test_a_seat_holds_one_player() -> None:
+    room, _ = make_room(OFFICE, {"a": (DESK.x, DESK.z), "b": (DESK.x, DESK.z - 1.0)})
+    assert room.sit("a", "desk-1") is None
+    assert room.sit("b", "desk-1") == "seat taken"
+    room.stand("a")
+    assert room.sit("b", "desk-1") is None
+
+
+def move(x: float, z: float) -> MoveMessage:
+    return MoveMessage(type="move", x=x, z=z, facing="left", moving=True)
+
+
+def test_moving_away_stands_up_but_resending_the_seat_position_doesnt() -> None:
+    room, _ = make_room(OFFICE, {"a": (DESK.x, DESK.z)})
+    room.sit("a", "desk-1")
+    room.apply_move("a", move(DESK.x, DESK.z))
+    assert room.players["a"].state.seat == "desk-1"
+    room.apply_move("a", move(DESK.x, DESK.z - 0.3))
+    a = room.players["a"].state
+    assert (a.seat, a.focused, a.z) == (None, False, DESK.z - 0.3)
+
+
+def test_focused_player_neither_hears_nor_is_heard() -> None:
+    near = (DESK.x + 1.0, DESK.z - 1.0)  # hallway-rules area, well within the radius
+    room, connections = make_room(OFFICE, {"desk": (DESK.x, DESK.z), "near": near})
+    room.sit("desk", "desk-1")
+    asyncio.run(room.chat("near", "hi"))
+    asyncio.run(room.chat("desk", "hello?"))
+    assert [m for m in connections["desk"].sent if '"chat"' in m] == [
+        m for m in connections["desk"].sent if "hello?" in m
+    ]  # only its own echo
+    assert all("hello?" not in m for m in connections["near"].sent)

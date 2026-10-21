@@ -33,6 +33,29 @@ namespace DgVillage
         /// <summary>true 면 이동 입력을 무시한다 (채팅 입력 중 WASD 가 캐릭터를 움직이지 않게)</summary>
         public bool InputBlocked { get; set; }
 
+        /// <summary>앉아 있는 동안 true. 움직이지 않고, 이동 키는 WantsToStand 로만 알린다 (SeatInteraction 이 서버에 일어나기 요청)</summary>
+        public bool Seated { get; private set; }
+
+        bool ICharacterMotion.IsSeated => Seated;
+
+        /// <summary>앉아 있는데 이동 키를 누르고 있다</summary>
+        public bool WantsToStand { get; private set; }
+
+        /// <summary>좌석 위치로 옮겨 앉힌다 (서버가 앉기를 허락했을 때). 정면(카메라)을 본다</summary>
+        public void SitAt(Vector3 position)
+        {
+            transform.position = position;
+            Facing = Facing.Down;
+            IsMoving = false;
+            Seated = true;
+        }
+
+        public void StandUp()
+        {
+            Seated = false;
+            WantsToStand = false;
+        }
+
         private void Awake()
         {
             _moveAction = _moveActionReference != null
@@ -58,6 +81,12 @@ namespace DgVillage
             }
 
             Vector2 input = Vector2.ClampMagnitude(_moveAction.ReadValue<Vector2>(), 1f);
+            if (Seated)
+            {
+                IsMoving = false;
+                WantsToStand = input.sqrMagnitude > 0.01f;
+                return;
+            }
             IsMoving = input.sqrMagnitude > 0.01f;
 
             if (!IsMoving)

@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import math
 from dataclasses import dataclass, field
 from typing import Protocol
 
@@ -17,6 +18,11 @@ from .protocol import (
 )
 
 logger = logging.getLogger(__name__)
+
+# How close (units) a player must stand to a seat to sit on it.
+SIT_RANGE = 1.5
+# A move this far from the seat while sitting means the player got up.
+STAND_DISTANCE = 0.05
 
 
 class Connection(Protocol):
@@ -56,9 +62,34 @@ class Room:
 
     def apply_move(self, player_id: str, move: MoveMessage) -> None:
         state = self.players[player_id].state
+        if state.seat is not None:
+            if math.dist((state.x, state.z), (move.x, move.z)) <= STAND_DISTANCE:
+                return  # still sitting; the seat decides position and facing
+            self.stand(player_id)
         state.x, state.z = move.x, move.z
         state.facing, state.moving = move.facing, move.moving
         self.dirty = True
+
+    def sit(self, player_id: str, seat_id: str) -> str | None:
+        """Seat the player (snapped onto the seat, facing the camera). Returns why not, or None."""
+        seat = self.game_map.seats.get(seat_id) if self.game_map else None
+        if seat is None:
+            return "unknown seat"
+        state = self.players[player_id].state
+        if any(p.state.seat == seat_id for pid, p in self.players.items() if pid != player_id):
+            return "seat taken"
+        if math.dist((state.x, state.z), (seat.x, seat.z)) > SIT_RANGE:
+            return "too far from the seat"
+        state.seat, state.focused = seat.id, seat.kind == "desk"
+        state.x, state.z, state.facing, state.moving = seat.x, seat.z, "down", False
+        self.dirty = True
+        return None
+
+    def stand(self, player_id: str) -> None:
+        state = self.players[player_id].state
+        if state.seat is not None:
+            state.seat, state.focused = None, False
+            self.dirty = True
 
     async def chat(self, player_id: str, text: str) -> None:
         speaker = self.players[player_id].state
@@ -70,11 +101,17 @@ class Room:
         if self.game_map is None:
             return list(self.players.values())
         speaker = self.players[player_id].state
+        game_map = self.game_map
         return [
             p
             for pid, p in self.players.items()
             if pid == player_id
-            or self.game_map.can_hear((speaker.x, speaker.z), (p.state.x, p.state.z))
+            or (
+                # focus mode (sitting at a desk): neither side hears the other
+                not speaker.focused
+                and not p.state.focused
+                and game_map.can_hear((speaker.x, speaker.z), (p.state.x, p.state.z))
+            )
         ]
 
     def snapshot(self) -> list[PlayerState]:

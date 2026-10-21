@@ -27,12 +27,21 @@ namespace DgVillage
         public event Action<StateMessage> StateReceived;
         public event Action<ChatBroadcastMessage> ChatReceived;
         public event Action Disconnected;
+        /// <summary>서버가 본 내 좌석 · 집중 모드가 바뀌었다 (앉기 성공, 일어남). 위치는 서버가 좌석으로 옮겨 둔 값</summary>
+        public event Action<PlayerState> LocalSeatChanged;
+        /// <summary>연결은 유지되는 서버 에러 (예: "seat taken")</summary>
+        public event Action<string> ServerError;
 
         /// <summary>서버 CHAT_MAX_LENGTH 와 같게 유지</summary>
         public const int ChatMaxLength = 200;
 
         /// <summary>서버가 정해준 내 id (= 계정 id). 방에 들어가기 전이나 연결이 끊기면 null.</summary>
         public string LocalPlayerId { get; private set; }
+
+        /// <summary>책상에 앉아 집중 모드인가 (서버 기준). 채팅 입력을 막는 데 쓴다</summary>
+        public bool LocalFocused { get; private set; }
+
+        private string _localSeat = "";
 
         private WebSocket _socket;
         private float _sendTimer;
@@ -118,6 +127,12 @@ namespace DgVillage
             Debug.Log($"NetworkClient: 연결 종료 ({code})", this);
             LocalPlayerId = null;
             _lastSent = null;
+            if (_localSeat != "" || LocalFocused)
+            {
+                _localSeat = "";
+                LocalFocused = false;
+                LocalSeatChanged?.Invoke(new PlayerState());
+            }
             Disconnected?.Invoke();
         }
 
@@ -166,6 +181,7 @@ namespace DgVillage
                     var welcome = JsonUtility.FromJson<WelcomeMessage>(json);
                     LocalPlayerId = welcome.id;
                     Welcomed?.Invoke(welcome);
+                    UpdateLocalSeat(welcome.players);
                     break;
                 case "player_joined":
                     PlayerJoined?.Invoke(JsonUtility.FromJson<PlayerJoinedMessage>(json).player);
@@ -174,19 +190,47 @@ namespace DgVillage
                     PlayerLeft?.Invoke(JsonUtility.FromJson<PlayerLeftMessage>(json).id);
                     break;
                 case "state":
-                    StateReceived?.Invoke(JsonUtility.FromJson<StateMessage>(json));
+                    var state = JsonUtility.FromJson<StateMessage>(json);
+                    StateReceived?.Invoke(state);
+                    UpdateLocalSeat(state.players);
                     break;
                 case "chat":
                     ChatReceived?.Invoke(JsonUtility.FromJson<ChatBroadcastMessage>(json));
                     break;
                 case "error":
-                    Debug.LogWarning($"NetworkClient: 서버 에러 - {JsonUtility.FromJson<ErrorMessage>(json).message}", this);
+                    string message = JsonUtility.FromJson<ErrorMessage>(json).message;
+                    Debug.LogWarning($"NetworkClient: 서버 에러 - {message}", this);
+                    ServerError?.Invoke(message);
                     break;
                 default:
                     Debug.LogWarning($"NetworkClient: 모르는 메시지 - {json}", this);
                     break;
             }
         }
+
+        // 내 위치는 내가 정하지만 좌석은 서버가 정한다: 스냅샷에서 내 좌석이 바뀌었으면 알린다
+        private void UpdateLocalSeat(PlayerState[] players)
+        {
+            foreach (PlayerState player in players)
+            {
+                if (player.id != LocalPlayerId)
+                {
+                    continue;
+                }
+                string seat = player.seat ?? "";
+                if (seat != _localSeat || player.focused != LocalFocused)
+                {
+                    _localSeat = seat;
+                    LocalFocused = player.focused;
+                    LocalSeatChanged?.Invoke(player);
+                }
+                return;
+            }
+        }
+
+        public void SendSit(string seatId) => Send(new SitMessage { seat = seatId });
+
+        public void SendStand() => Send(new StandMessage());
 
         /// <summary>
         /// 채팅을 보낸다. 말풍선은 서버가 되돌려준 chat 메시지를 받았을 때 띄운다 (내 것도 마찬가지).

@@ -75,7 +75,23 @@ class ChatMessage(CamelModel):
         return value
 
 
-ClientMessage = Annotated[JoinMessage | MoveMessage | ChatMessage, Field(discriminator="type")]
+class SitMessage(CamelModel):
+    """Sit on a seat of the map (maps/<id>.json). Must be near it and it must be free."""
+
+    type: Literal["sit"]
+    seat: str = Field(min_length=1, max_length=32)
+
+
+class StandMessage(CamelModel):
+    """Get up. Moving away from the seat also stands up."""
+
+    type: Literal["stand"]
+
+
+ClientMessage = Annotated[
+    JoinMessage | MoveMessage | ChatMessage | SitMessage | StandMessage,
+    Field(discriminator="type"),
+]
 client_message_adapter: TypeAdapter[ClientMessage] = TypeAdapter(ClientMessage)
 
 
@@ -90,6 +106,10 @@ class PlayerState(CamelModel):
     z: float = 0.0
     facing: Facing = "down"
     moving: bool = False
+    # Seat id while sitting, else None.
+    seat: str | None = None
+    # Sitting at a desk: hears no chat and isn't heard (focus mode).
+    focused: bool = False
 
 
 class WelcomeMessage(CamelModel):

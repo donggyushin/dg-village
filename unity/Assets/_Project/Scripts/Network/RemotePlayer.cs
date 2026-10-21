@@ -17,6 +17,7 @@ namespace DgVillage
         public string PlayerId { get; private set; }
         public Facing Facing { get; private set; } = Facing.Down;
         public bool IsMoving { get; private set; }
+        public bool IsSeated { get; private set; }
 
         private Vector3 _targetPosition;
         private NameTag _nameTag;
@@ -49,6 +50,11 @@ namespace DgVillage
             _targetPosition = new Vector3(state.x, transform.position.y, state.z);
             Facing = FacingWire.Parse(state.facing);
             IsMoving = state.moving;
+            IsSeated = state.IsSeated;
+            if (_nameTag != null)
+            {
+                _nameTag.SetFocused(state.focused);
+            }
 
             if ((transform.position - _targetPosition).sqrMagnitude > _snapDistance * _snapDistance)
             {
