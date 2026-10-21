@@ -6,23 +6,31 @@ using UnityEngine;
 namespace DgVillage.Editor
 {
     /// <summary>
-    /// 메뉴 "DgVillage → Apply Office Map To Village".
-    /// 온라인 마을 씬(SampleScene)의 바닥을 서버의 maps/office.json 사무실 방으로 바꾼다.
-    /// 지우는 것: 옛 평지 Ground, 이전에 깐 Floor · Props · Seats. 그대로 두는 것: Player · Network · ChatCanvas 등 나머지 전부.
-    /// 앉기용으로 Network 에 SeatInteraction 을, ChatCanvas 에 안내 문구 SeatHint 를 (없으면) 붙인다.
+    /// 메뉴 "DgVillage → Apply Maps To Village Scenes".
+    /// 맵 하나 = 씬 하나 (MapClient.SceneOf). 서버의 maps/{id}.json 으로 마을 씬들의 바닥을 깐다:
+    ///   office  → SampleScene (Player · Network · ChatCanvas 등 손으로 만든 씬)
+    ///   outdoor → Outdoor     (SampleScene 을 통째로 복사한 뒤 바닥만 바꾼다 — 매번 새로 복사하니 Outdoor 를 손으로 고치지 말 것)
+    /// 지우는 것: 옛 평지 Ground, 이전에 깐 Floor · Props · Seats · Portals. 그대로 두는 것: 나머지 전부.
+    /// Network 에 SeatInteraction (앉기) · PortalTraveler (맵 이동) 를, ChatCanvas 에 안내 문구 SeatHint 를 (없으면) 붙이고,
+    /// NetworkClient 의 Map Id 를 그 씬의 맵으로 채운다.
     /// 맵 JSON 을 고친 뒤 다시 실행하면 방만 새로 깐다 (서버도 같은 JSON 으로 채팅 구역을 정한다).
+    /// Outdoor 를 처음 만든 뒤엔 Build Profiles 의 Scene List 에 넣어야 LoadScene 으로 열린다.
     /// </summary>
     public static class VillageMapBuilder
     {
-        private const string ScenePath = "Assets/Scenes/SampleScene.unity";
-        private const string MapId = "office";
-        private const string Title = "Apply Office Map To Village";
+        private const string SceneFolder = "Assets/Scenes/";
+        private const string Title = "Apply Maps To Village Scenes";
+        // 첫 번째 = 손으로 만든 원본 씬, 나머지는 그 복사본
+        private static readonly string[] MapIds = { MapClient.DefaultMapId, "outdoor" };
         private static readonly string[] OldRoots =
         {
             "Ground", OfficeRoomBuilder.FloorName, OfficeRoomBuilder.PropsName, OfficeRoomBuilder.SeatsName,
+            OfficeRoomBuilder.PortalsName,
         };
 
-        [MenuItem("DgVillage/Apply Office Map To Village")]
+        private static string ScenePath(string mapId) => $"{SceneFolder}{MapClient.SceneOf(mapId)}.unity";
+
+        [MenuItem("DgVillage/Apply Maps To Village Scenes")]
         private static void Apply()
         {
             if (EditorApplication.isPlaying)
@@ -52,12 +60,36 @@ namespace DgVillage.Editor
         /// </summary>
         public static string ApplyToVillage()
         {
-            GameMapData map = OfficeRoomBuilder.LoadMap(MapId);
+            for (int i = 0; i < MapIds.Length; i++)
+            {
+                if (i > 0)
+                {
+                    string copy = ScenePath(MapIds[i]);
+                    AssetDatabase.DeleteAsset(copy);
+                    if (!AssetDatabase.CopyAsset(ScenePath(MapIds[0]), copy))
+                    {
+                        return $"{copy} 로 복사 실패.";
+                    }
+                }
+                string error = ApplyMap(MapIds[i]);
+                if (error != null)
+                {
+                    return error;
+                }
+            }
+            EditorSceneManager.OpenScene(ScenePath(MapIds[0]), OpenSceneMode.Single);
+            return null;
+        }
+
+        private static string ApplyMap(string mapId)
+        {
+            GameMapData map = OfficeRoomBuilder.LoadMap(mapId);
             if (map == null)
             {
-                return $"{OfficeRoomBuilder.MapPath(MapId)} 가 없다.";
+                return $"{OfficeRoomBuilder.MapPath(mapId)} 가 없다.";
             }
-            var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            string scenePath = ScenePath(mapId);
+            var scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
             foreach (GameObject root in scene.GetRootGameObjects())
             {
                 if (System.Array.IndexOf(OldRoots, root.name) >= 0)
@@ -67,7 +99,7 @@ namespace DgVillage.Editor
             }
             GameObject floor = OfficeRoomBuilder.CreateRoom(map);
 
-            string seatError = SetUpSeating();
+            string seatError = SetUpSeating(mapId);
             if (seatError != null)
             {
                 return seatError;
@@ -83,13 +115,12 @@ namespace DgVillage.Editor
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
-            Selection.activeGameObject = floor;
-            Debug.Log($"{ScenePath} 에 사무실 방을 깔았다 ({map.id}).", floor);
+            Debug.Log($"{scenePath} 에 맵을 깔았다 ({map.id}).", floor);
             return null;
         }
 
-        // Network 오브젝트에 SeatInteraction, ChatCanvas 에 화면 아래 안내 문구 (입력창 바로 위)
-        private static string SetUpSeating()
+        // Network 오브젝트에 SeatInteraction · PortalTraveler + 맵 id, ChatCanvas 에 화면 아래 안내 문구 (입력창 바로 위)
+        private static string SetUpSeating(string mapId)
         {
             var client = Object.FindAnyObjectByType<NetworkClient>();
             var player = Object.FindAnyObjectByType<PlayerMovement>();
@@ -132,6 +163,19 @@ namespace DgVillage.Editor
             so.FindProperty("_localPlayer").objectReferenceValue = player;
             so.FindProperty("_hint").objectReferenceValue = hint;
             so.ApplyModifiedPropertiesWithoutUndo();
+
+            var traveler = client.GetComponent<PortalTraveler>();
+            if (traveler == null)
+            {
+                traveler = client.gameObject.AddComponent<PortalTraveler>();
+            }
+            var travelerSo = new SerializedObject(traveler);
+            travelerSo.FindProperty("_localPlayer").objectReferenceValue = player;
+            travelerSo.ApplyModifiedPropertiesWithoutUndo();
+
+            var clientSo = new SerializedObject(client);
+            clientSo.FindProperty("_mapId").stringValue = mapId;
+            clientSo.ApplyModifiedPropertiesWithoutUndo();
             return null;
         }
     }

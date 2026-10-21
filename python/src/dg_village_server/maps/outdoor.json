@@ -1,0 +1,48 @@
+{
+  "id": "outdoor",
+  "hearingRadius": 4.0,
+  "layout": [
+    "gggggggggggppggggggggggg",
+    "gggggggggggppggggggggggg",
+    "gggggggggggppggggggggggg",
+    "gggggggggggppggggggggggg",
+    "gggggggggggppggggggggggg",
+    "ggggggggppppppppgggggggg",
+    "ggggggggppppppppgggggggg",
+    "ggppppppppppppppppppppgg",
+    "ggppppppppppppppppppppgg",
+    "ggggggggppppppppgggggggg",
+    "ggggggggppppppppgggggggg",
+    "gggggggggggppggggggggggg",
+    "gggggggggggppggggggggggg",
+    "gggggggggggppggggggggggg",
+    "gggggggggggppggggggggggg",
+    "gggggggggggppggggggggggg"
+  ],
+  "seats": [],
+  "portals": [
+    {"x": 0.0, "z": 7.5, "w": 2.0, "d": 1.0, "to": "office", "spawnX": -1.0, "spawnZ": -4.0}
+  ],
+  "props": [
+    {"sprite": "plant_pot", "x": -1.7, "z": 7.3, "shadow": 1},
+    {"sprite": "plant_pot", "x": 1.7, "z": 7.3, "shadow": 1},
+    {"sprite": "tree_round", "x": -9.5, "z": 6.0, "shadow": 2},
+    {"sprite": "tree_blossom", "x": -6.0, "z": 6.5, "shadow": 2},
+    {"sprite": "tree_twin", "x": -6.6, "z": 3.8, "shadow": 2},
+    {"sprite": "tree_blossom", "x": 6.0, "z": 6.5, "shadow": 2},
+    {"sprite": "tree_round_b", "x": 9.5, "z": 6.0, "shadow": 2},
+    {"sprite": "tree_round", "x": 6.6, "z": 3.8, "shadow": 2},
+    {"sprite": "tree_round_b", "x": -9.0, "z": -3.0, "shadow": 2},
+    {"sprite": "tree_blossom", "x": -5.5, "z": -5.5, "shadow": 2},
+    {"sprite": "tree_round", "x": -6.8, "z": -3.4, "shadow": 2},
+    {"sprite": "tree_twin", "x": 9.0, "z": -3.0, "shadow": 2},
+    {"sprite": "tree_blossom", "x": 5.5, "z": -5.5, "shadow": 2},
+    {"sprite": "tree_round_b", "x": 6.8, "z": -3.4, "shadow": 2},
+    {"sprite": "tree_round", "x": -10.5, "z": -6.8, "shadow": 2},
+    {"sprite": "tree_round", "x": 10.5, "z": -6.8, "shadow": 2},
+    {"sprite": "plant_pot", "x": -3.6, "z": 2.6, "shadow": 1},
+    {"sprite": "plant_pot", "x": -3.6, "z": -2.4, "shadow": 1},
+    {"sprite": "plant_pot", "x": 3.6, "z": 2.6, "shadow": 1},
+    {"sprite": "plant_pot", "x": 3.6, "z": -2.4, "shadow": 1}
+  ]
+}

@@ -1,4 +1,4 @@
-"""Indoor floor atlas (stone / wood / carpet) for Unity's FloorMesh.
+"""Floor atlas (indoor stone / wood / carpet + outdoor grass / path) for Unity's FloorMesh.
 
 Run from the repo root:
     uv run --no-project --with pillow python art/tilesets/make_floor_atlas.py
@@ -10,6 +10,9 @@ to the map palette by brightness, and the edges are drawn here:
 - atlas row = material (MATERIALS order), column = edge mask
   N·1 + E·2 + S·4 + W·8 (bit set = the neighbor on that side is another material or empty);
 - each set side gets a 2px trim from the material's own dark steps (carpet also a light stripe).
+Outdoor rows (grass, garden path) reuse the full tiles of the already recolored plaza ground
+atlas (make_ground_atlas.py → plaza_ground.png): grass has no trim (lawn just meets the path),
+the path gets the stone trim.
 Also writes the wall atlas office_wall.png (see make_walls) and floor-preview.png next to this
 script (sample room ×3 + grayscale with girl01/boy01).
 """
@@ -38,8 +41,14 @@ MATERIALS = {
     "wood": ("office/pixellab-stone-wood-v1.png", FULL_UPPER, 4, [2, 3, 4, 5], [0.2, 0.55, 0.92]),
     "carpet": ("office/pixellab-wood-carpet.png", FULL_UPPER, 6, [1, 2, 3, 4], [0.15, 0.55, 0.9]),
 }
-# FloorMesh layout characters, same order as MATERIALS
-CHARS = "swc"
+# outdoor: name: (Wang index in plaza_ground.png — 0 = all grass, 15 = all stone, trim ramp row or None)
+GROUND_ATLAS = ROOT / "unity/Assets/_Project/Sprites/Environment/Ground/plaza_ground.png"
+OUTDOOR = {
+    "grass": (0, None),
+    "path": (15, 2),
+}
+# FloorMesh layout characters: MATERIALS then OUTDOOR order
+CHARS = "swcgp"
 
 Rgb = tuple[int, int, int]
 
@@ -131,13 +140,20 @@ def make_walls(rows: list[list[Rgb]]) -> Image.Image:
 def main() -> None:
     rows = palette_rows()
     make_walls(rows).save(WALL_OUT)
-    atlas = Image.new("RGBA", (TILE * 16, TILE * len(MATERIALS)))
+    atlas = Image.new("RGBA", (TILE * 16, TILE * (len(MATERIALS) + len(OUTDOOR))))
     for m, (name, (sheet, (col, row), ramp_row, steps, cuts)) in enumerate(MATERIALS.items()):
         src = Image.open(HERE / sheet).convert("RGBA")
         full = src.crop((col * TILE, row * TILE, (col + 1) * TILE, (row + 1) * TILE))
         base = recolor(full, rows[ramp_row], steps, cuts)
         for mask in range(16):
             atlas.paste(with_trim(base, mask, rows[ramp_row], name == "carpet"), (mask * TILE, m * TILE))
+    ground = Image.open(GROUND_ATLAS).convert("RGBA")
+    for m, (index, trim_row) in enumerate(OUTDOOR.values(), start=len(MATERIALS)):
+        col, row = index % 4, index // 4
+        base = ground.crop((col * TILE, row * TILE, (col + 1) * TILE, (row + 1) * TILE))
+        for mask in range(16):
+            tile = base if trim_row is None else with_trim(base, mask, rows[trim_row], False)
+            atlas.paste(tile, (mask * TILE, m * TILE))
     OUT.parent.mkdir(parents=True, exist_ok=True)
     atlas.save(OUT)
 

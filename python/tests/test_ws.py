@@ -9,8 +9,8 @@ from conftest import create_channel, signup
 PLAZA = DEFAULT_CHANNEL_ID.hex
 
 
-def join(ws, token: str, room: str = PLAZA) -> dict:
-    ws.send_json({"type": "join", "room": room, "token": token})
+def join(ws, token: str, room: str = PLAZA, **extra) -> dict:
+    ws.send_json({"type": "join", "room": room, "token": token, **extra})
     welcome = ws.receive_json()
     assert welcome["type"] == "welcome", welcome
     return welcome
@@ -158,5 +158,44 @@ def test_join_unknown_channel_is_rejected(client: TestClient, room: str) -> None
     with client.websocket_connect("/ws") as ws:
         ws.send_json({"type": "join", "room": room, "token": signup(client, "alice")})
         assert ws.receive_json() == {"type": "error", "message": "unknown channel"}
+        with pytest.raises(WebSocketDisconnect):
+            ws.receive_json()
+
+
+def test_maps_of_a_channel_are_separate_rooms(client: TestClient) -> None:
+    alice, bob = signup(client, "alice"), signup(client, "bob")
+    with client.websocket_connect("/ws") as a, client.websocket_connect("/ws") as b:
+        join(a, alice)  # no map = the office
+        welcome_b = join(b, bob, map="outdoor", x=0.0, z=6.0)
+        assert [p["name"] for p in welcome_b["players"]] == ["bob"]
+        assert (welcome_b["players"][0]["x"], welcome_b["players"][0]["z"]) == (0.0, 6.0)
+        # both count for the channel
+        channels = client.get("/channels", headers={"Authorization": f"Bearer {alice}"}).json()
+        assert channels["channels"][0]["playerCount"] == 2
+        a.send_json({"type": "chat", "text": "anyone outside?"})
+        assert receive_until(a, "chat")["text"] == "anyone outside?"
+        b.send_json({"type": "chat", "text": "only me"})
+        assert receive_until(b, "chat")["text"] == "only me"  # alice's line never came
+
+
+def test_walking_through_a_portal_moves_the_player_to_the_other_room(client: TestClient) -> None:
+    alice, bob = signup(client, "alice"), signup(client, "bob")
+    with client.websocket_connect("/ws") as other:
+        join(other, bob, map="outdoor")
+        with client.websocket_connect("/ws") as office:
+            welcome = join(office, alice)
+            # the client opens a new session on the target map; the office one gets replaced
+            with client.websocket_connect("/ws") as outdoor:
+                welcome_out = join(outdoor, alice, map="outdoor", x=0.0, z=6.0)
+                assert sorted(p["name"] for p in welcome_out["players"]) == ["alice", "bob"]
+                assert receive_until(other, "player_joined")["player"]["id"] == welcome["id"]
+
+
+def test_join_unknown_map_is_rejected(client: TestClient) -> None:
+    with client.websocket_connect("/ws") as ws:
+        ws.send_json(
+            {"type": "join", "room": PLAZA, "token": signup(client, "alice"), "map": "moon"}
+        )
+        assert ws.receive_json() == {"type": "error", "message": "unknown map"}
         with pytest.raises(WebSocketDisconnect):
             ws.receive_json()

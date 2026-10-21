@@ -20,6 +20,9 @@ namespace DgVillage
         public string type = "join";
         public string room;
         public string token;
+        public string map;
+        public float x;
+        public float z;
     }
 
     [Serializable]

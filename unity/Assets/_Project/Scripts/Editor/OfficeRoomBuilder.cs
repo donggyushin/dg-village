@@ -11,6 +11,7 @@ namespace DgVillage.Editor
     ///   Floor   FloorMesh (재질별 타일 바닥 + 가장자리 벽) + Floor_Office · Wall_Office 머티리얼 (URP Unlit)
     ///   Props   가구 (35° 세운 스프라이트 + 바닥에 눕힌 그림자 + Obstacle = 못 지나감)
     ///   Seats   앉을 자리 (Seat — id 가 서버와 같다)
+    ///   Portals 다른 맵으로 가는 영역 (Portal)
     /// 방을 고칠 땐 JSON 을 고치고 메뉴를 다시 실행한다 (씬의 Layout 을 직접 고치면 서버의 채팅 구역과 어긋난다).
     /// </summary>
     internal static class OfficeRoomBuilder
@@ -27,6 +28,7 @@ namespace DgVillage.Editor
         internal const string FloorName = "Floor";
         internal const string PropsName = "Props";
         internal const string SeatsName = "Seats";
+        internal const string PortalsName = "Portals";
         internal static readonly Color BackgroundColor = new(0.106f, 0.129f, 0.118f);
 
         // 캐릭터 Visual 과 같은 기울기: 카메라(X 35°)를 정면으로 본다
@@ -35,12 +37,15 @@ namespace DgVillage.Editor
         // 가구가 바닥에서 차지하는 크기 (가로, 깊이) unit → Obstacle. 가로 ≈ 스프라이트에 그려진 폭, 깊이는 눈대중
         private static readonly Dictionary<string, Vector2> Footprints = new()
         {
-            ["desk_quill"] = new(1.4f, 0.6f), ["desk_spellbook"] = new(1.4f, 0.6f), ["desk_crystal"] = new(1.4f, 0.6f),
-            ["chair_cushion"] = new(0.7f, 0.4f), ["chair_high"] = new(0.8f, 0.4f),
+            ["desk_quill"] = new(1.3f, 0.6f), ["desk_spellbook"] = new(1.5f, 0.6f), ["desk_crystal"] = new(1.5f, 0.6f),
+            ["chair_cushion"] = new(0.7f, 0.4f), ["chair_high"] = new(1.0f, 0.4f),
             ["bookshelf"] = new(1.1f, 0.4f), ["bookshelf_potion"] = new(1.1f, 0.4f), ["fireplace"] = new(1.4f, 0.4f),
             ["notice_board"] = new(1.1f, 0.3f), ["globe"] = new(0.8f, 0.5f),
-            ["sofa"] = new(1.5f, 0.6f), ["armchair"] = new(1.1f, 0.6f), ["tea_table"] = new(0.9f, 0.6f),
+            ["sofa"] = new(1.7f, 0.6f), ["armchair"] = new(1.2f, 0.6f), ["tea_table"] = new(1.0f, 0.6f),
             ["plant_pot"] = new(0.7f, 0.4f), ["candelabra"] = new(0.4f, 0.3f), ["owl_perch"] = new(0.4f, 0.3f),
+            // 나무는 줄기만 막는다 (잎 아래로는 지나가도 자연스럽다)
+            ["tree_round"] = new(0.6f, 0.3f), ["tree_blossom"] = new(0.5f, 0.3f), ["tree_round_b"] = new(0.6f, 0.3f),
+            ["tree_twin"] = new(1.0f, 0.3f),
         };
 
         internal static string MapPath(string mapId) =>
@@ -113,6 +118,19 @@ namespace DgVillage.Editor
                 seatSo.FindProperty("_id").stringValue = seat.id;
                 seatSo.FindProperty("_kind").stringValue = seat.kind;
                 seatSo.ApplyModifiedPropertiesWithoutUndo();
+            }
+
+            var portals = new GameObject(PortalsName).transform;
+            foreach (GameMapData.Portal portal in map.portals ?? new GameMapData.Portal[0])
+            {
+                var go = new GameObject($"to {portal.to}", typeof(Portal));
+                go.transform.SetParent(portals, false);
+                go.transform.position = new Vector3(portal.x, 0f, portal.z);
+                var portalSo = new SerializedObject(go.GetComponent<Portal>());
+                portalSo.FindProperty("_to").stringValue = portal.to;
+                portalSo.FindProperty("_size").vector2Value = new Vector2(portal.w, portal.d);
+                portalSo.FindProperty("_spawn").vector2Value = new Vector2(portal.spawnX, portal.spawnZ);
+                portalSo.ApplyModifiedPropertiesWithoutUndo();
             }
             return floor;
         }

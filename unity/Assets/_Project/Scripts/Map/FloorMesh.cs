@@ -5,8 +5,8 @@ using UnityEngine;
 namespace DgVillage
 {
     /// <summary>
-    /// 실내 바닥 + 벽 메시. 1 타일 = 1 unit = 32 texel. GroundMesh(야외, 꼭짓점 Wang)와 달리 타일 하나가 재질 하나다.
-    /// Layout 한 글자 = 타일 하나: 's' 돌(복도) · 'w' 나무(자리) · 'c' 카펫(휴게실), 그 외 = 바닥 없음.
+    /// 바닥 + 벽 메시. 1 타일 = 1 unit = 32 texel. GroundMesh(꼭짓점 Wang)와 달리 타일 하나가 재질 하나다.
+    /// Layout 한 글자 = 타일 하나: 's' 돌(복도) · 'w' 나무(자리) · 'c' 카펫(휴게실) · 'g' 잔디 · 'p' 정원 길, 그 외 = 바닥 없음.
     /// 바닥 아틀라스(art/tilesets/make_floor_atlas.py): 행 = 재질(Materials 순서), 열 = 테두리 마스크
     /// N·1 + E·2 + S·4 + W·8 (그 방향 이웃이 다른 재질이거나 비어 있으면 그쪽에 몰딩을 그린 타일).
     /// 벽은 바닥 끝(이웃이 비어 있는 변)에 자동으로 생긴다 — submesh 1, 두 번째 머티리얼(벽 아틀라스):
@@ -20,7 +20,7 @@ namespace DgVillage
     [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
     public class FloorMesh : MonoBehaviour
     {
-        private const string Materials = "swc";
+        private const string Materials = "swcgp";
         private const int AtlasColumns = 16;
         // 칸 경계에서 이웃 칸 픽셀을 집어오지 않도록 UV 를 아주 조금 안쪽으로
         private const float UvInset = 0.0002f;
@@ -31,7 +31,7 @@ namespace DgVillage
         private const float CapV = 1f - 16f / 96f;
         private static readonly Vector3 WallUp = Quaternion.Euler(35f, 0f, 0f) * Vector3.up;
 
-        [Tooltip("타일 격자. 첫 줄이 북쪽(화면 위). s = 돌, w = 나무, c = 카펫, 그 외 = 바닥 없음")]
+        [Tooltip("타일 격자. 첫 줄이 북쪽(화면 위). s = 돌, w = 나무, c = 카펫, g = 잔디, p = 길, 그 외 = 바닥 없음")]
         [SerializeField, TextArea(5, 30)] private string _layout = "ss\nss";
 
         /// <summary>씬에 켜져 있는 바닥 (없으면 null = 어디든 걸을 수 있음)</summary>

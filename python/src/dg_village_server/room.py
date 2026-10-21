@@ -42,6 +42,8 @@ class Player:
 @dataclass
 class Room:
     name: str
+    # Channel id (hex) the room belongs to; a channel has one room per map.
+    channel: str = ""
     # None = everyone in the room hears every chat message (no zones).
     game_map: GameMap | None = None
     players: dict[str, Player] = field(default_factory=dict)
@@ -119,35 +121,43 @@ class Room:
 
 
 class RoomManager:
-    def __init__(self, game_map: GameMap | None = None) -> None:
-        # Map used by every room (chat zones). None until the client's village is the office.
-        self.game_map = game_map
+    def __init__(self, maps: dict[str, GameMap] | None = None) -> None:
+        # Map id -> map (chat zones, seats). A map id not in here = whole room hears everything.
+        self.maps = maps or {}
+        # "<channel>/<map>" -> room
         self.rooms: dict[str, Room] = {}
         # Player id (= account id) -> the room they are in. One session per account.
         self._player_rooms: dict[str, Room] = {}
 
     async def join(
         self,
-        room_name: str,
+        channel: str,
+        map_id: str,
         player_id: str,
         name: str,
         character_id: str,
         connection: Connection,
+        position: tuple[float, float] = (0.0, 0.0),
     ) -> tuple[Room, PlayerState]:
         # Same account logging in again (another window/device): the newer session wins.
+        # Walking through a portal is also a new session (on the other map's room).
         await self.kick(player_id, "logged in from another session")
 
-        room = self.rooms.setdefault(room_name, Room(room_name, self.game_map))
-        state = PlayerState(id=player_id, name=name, character_id=character_id)
+        room_name = f"{channel}/{map_id}"
+        room = self.rooms.get(room_name)
+        if room is None:
+            room = self.rooms[room_name] = Room(room_name, channel, self.maps.get(map_id))
+        x, z = position
+        state = PlayerState(id=player_id, name=name, character_id=character_id, x=x, z=z)
         room.players[player_id] = Player(state, connection)
         self._player_rooms[player_id] = room
         await room.broadcast(PlayerJoinedMessage(player=state).to_json(), exclude=player_id)
         logger.info("%s (%s) joined room %r", name, player_id, room_name)
         return room, state
 
-    def player_count(self, room_name: str) -> int:
-        room = self.rooms.get(room_name)
-        return len(room.players) if room else 0
+    def player_count(self, channel: str) -> int:
+        """Players in the channel, all maps together."""
+        return sum(len(room.players) for room in self.rooms.values() if room.channel == channel)
 
     async def leave(self, room: Room, player_id: str, connection: Connection) -> None:
         player = room.players.get(player_id)

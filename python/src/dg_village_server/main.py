@@ -20,7 +20,7 @@ from .db import (
     create_sessionmaker,
     ensure_default_channel,
 )
-from .maps import load_map
+from .maps import load_maps
 from .protocol import (
     ChatMessage,
     ErrorMessage,
@@ -52,8 +52,8 @@ def create_app(settings: Settings | None = None, *, create_tables: bool = False)
         app.state.settings = settings
         app.state.sessionmaker = create_sessionmaker(engine)
         await ensure_default_channel(app.state.sessionmaker)
-        # Every channel is the office room: chat reaches only players in the same zone
-        rooms = RoomManager(load_map("office"))
+        # Every channel has the same maps (office + outdoor); chat follows each map's zones
+        rooms = RoomManager(load_maps())
         app.state.rooms = rooms
         tick_task = asyncio.create_task(rooms.run_tick_loop(1 / TICK_RATE_HZ))
         yield
@@ -102,9 +102,18 @@ def create_app(settings: Settings | None = None, *, create_tables: bool = False)
         if channel is None:
             await _reject(ws, "unknown channel")
             return
+        if first.map not in rooms.maps:
+            await _reject(ws, "unknown map")
+            return
 
         room, me = await rooms.join(
-            channel.id.hex, user.id.hex, user.display_name, user.character_id, ws
+            channel.id.hex,
+            first.map,
+            user.id.hex,
+            user.display_name,
+            user.character_id,
+            ws,
+            (first.x, first.z),
         )
         last_chat_at = -math.inf
         try:

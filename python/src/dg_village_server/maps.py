@@ -5,7 +5,11 @@
 
 Coordinates match Unity's FloorMesh: 1 tile = 1 unit, the layout is centered on the origin,
 the first row is north (+z). Layout characters: `s` stone (hallway), `w` wood (desk area),
-`c` carpet (lounge), anything else = no floor.
+`c` carpet (lounge), `g` grass and `p` path (outdoor, hallway rules), anything else = no floor.
+
+Each map is its own room per channel (room.py): players only see and hear players on the same map.
+`portals` are floor rectangles that send the player to another map (`to`) at (`spawnX`, `spawnZ`);
+the client does the travel (leave + join the other map), the server only lists them.
 
 Zones decide chat delivery:
 - lounge = a connected carpet area; everyone inside the same lounge hears each other
@@ -22,6 +26,10 @@ from importlib import resources
 
 HALLWAY = "hallway"
 LOUNGE_TILE = "c"
+# Every map a client may join. The first one is where a channel starts
+# (also for old clients that send no map).
+MAP_IDS = ("office", "outdoor")
+DEFAULT_MAP_ID = MAP_IDS[0]
 
 
 @dataclass(frozen=True)
@@ -32,6 +40,17 @@ class Seat:
     z: float
 
 
+@dataclass(frozen=True)
+class Portal:
+    x: float  # center
+    z: float
+    w: float  # size along x
+    d: float  # size along z
+    to: str  # target map id
+    spawn_x: float  # where the player appears on the target map
+    spawn_z: float
+
+
 class GameMap:
     def __init__(self, data: dict) -> None:
         self.id: str = data["id"]
@@ -40,6 +59,10 @@ class GameMap:
         self.seats = {
             s["id"]: Seat(s["id"], s["kind"], s["x"], s["z"]) for s in data.get("seats", [])
         }
+        self.portals = [
+            Portal(p["x"], p["z"], p["w"], p["d"], p["to"], p["spawnX"], p["spawnZ"])
+            for p in data.get("portals", [])
+        ]
         width = max(len(row) for row in self.layout)
         self._left = -width / 2
         self._top = len(self.layout) / 2
@@ -87,3 +110,7 @@ class GameMap:
 def load_map(map_id: str) -> GameMap:
     text = resources.files(__package__).joinpath("maps", f"{map_id}.json").read_text("utf-8")
     return GameMap(json.loads(text))
+
+
+def load_maps() -> dict[str, GameMap]:
+    return {map_id: load_map(map_id) for map_id in MAP_IDS}

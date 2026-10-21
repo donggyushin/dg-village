@@ -24,6 +24,9 @@
     {"id": "armchair-1", "kind": "lounge", "x": 7.8, "z": 1.95},
     {"id": "armchair-2", "kind": "lounge", "x": 3.4, "z": 1.15}
   ],
+  "portals": [
+    {"x": -1.0, "z": -5.5, "w": 5.0, "d": 1.0, "to": "outdoor", "spawnX": 0.0, "spawnZ": 6.0}
+  ],
   "props": [
     {"sprite": "chair_cushion", "x": -7.5, "z": 3.9, "shadow": 1},
     {"sprite": "desk_quill", "x": -7.5, "z": 3.0, "shadow": 2},

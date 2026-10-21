@@ -6,7 +6,7 @@ using UnityEngine;
 namespace DgVillage
 {
     /// <summary>
-    /// 서버와 WebSocket 으로 연결해 채널 방(ChannelClient.Current, 안 골랐으면 광장)에 들어가고,
+    /// 서버와 WebSocket 으로 연결해 채널(ChannelClient.Current, 안 골랐으면 광장)의 이 씬 맵(MapId) 방에 들어가고,
     /// 내 위치를 보내고, 받은 메시지를 이벤트로 알린다.
     /// 다른 플레이어를 화면에 그리는 일은 RemotePlayerSpawner 가 이 이벤트를 구독해서 한다.
     /// </summary>
@@ -17,6 +17,9 @@ namespace DgVillage
 
         [Tooltip("계정 프로필의 characterId 로 내 캐릭터를 찾을 목록")]
         [SerializeField] private CharacterRegistry _characters;
+
+        [Tooltip("이 씬의 맵 id (서버 maps/<id>.json). 마을 맵 메뉴가 채운다")]
+        [SerializeField] private string _mapId = MapClient.DefaultMapId;
 
         [Tooltip("초당 위치 전송 횟수. 서버 tick(10Hz)과 맞춘다")]
         [SerializeField] private float _sendRate = 10f;
@@ -60,6 +63,12 @@ namespace DgVillage
                 Debug.LogError("NetworkClient: Local Player 또는 Characters 가 비어 있다. Inspector 에서 연결할 것.", this);
                 enabled = false;
                 return;
+            }
+
+            // 포탈로 왔으면 그 도착 위치에서 시작 (CameraFollow 는 첫 프레임에 바로 따라붙는다)
+            if (MapClient.TryTakeSpawn(out Vector3 spawn))
+            {
+                _localPlayer.transform.position = spawn;
             }
 
             var localAnimator = _localPlayer.GetComponentInChildren<DirectionalSpriteAnimator>();
@@ -117,9 +126,13 @@ namespace DgVillage
         {
             Profile profile = AccountClient.Profile;
             string room = ChannelClient.CurrentId;
-            Debug.Log($"NetworkClient: 연결됨. 채널 {room} 에 {profile.displayName}({profile.characterId}) 로 입장", this);
-            // 이름 · 캐릭터는 서버가 계정에서 읽는다. 여기서는 채널과 토큰만 보낸다
-            Send(new JoinMessage { room = room, token = AccountClient.AccessToken });
+            Debug.Log($"NetworkClient: 연결됨. 채널 {room} 맵 {_mapId} 에 {profile.displayName}({profile.characterId}) 로 입장", this);
+            // 이름 · 캐릭터는 서버가 계정에서 읽는다. 여기서는 채널 · 맵 · 토큰과 시작 위치만 보낸다
+            Vector3 position = _localPlayer.transform.position;
+            Send(new JoinMessage
+            {
+                room = room, token = AccountClient.AccessToken, map = _mapId, x = position.x, z = position.z,
+            });
         }
 
         private void OnClose(WebSocketCloseCode code)

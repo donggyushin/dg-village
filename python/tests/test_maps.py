@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 
-from dg_village_server.maps import HALLWAY, GameMap, load_map
+from dg_village_server.maps import HALLWAY, MAP_IDS, GameMap, load_map, load_maps
 from dg_village_server.protocol import MoveMessage, PlayerState
 from dg_village_server.room import Player, Room
 
@@ -49,6 +49,23 @@ def test_zones_dont_hear_each_other(speaker, listener) -> None:
     assert not SMALL.can_hear(listener, speaker)
 
 
+def test_portals_lead_to_walkable_spots_on_existing_maps() -> None:
+    maps = load_maps()
+    assert set(maps) == set(MAP_IDS)
+    for game_map in maps.values():
+        assert game_map.portals, f"{game_map.id} has no way out"
+        for portal in game_map.portals:
+            target = maps[portal.to]
+            tx, ty = target.tile_at(portal.spawn_x, portal.spawn_z)
+            where = f"{game_map.id} → {portal.to}"
+            assert target.layout[ty][tx] in "swcgp", f"{where} spawns off the floor"
+            # spawning inside the target's own portal would bounce the player straight back
+            for back in target.portals:
+                inside_x = abs(portal.spawn_x - back.x) < back.w / 2
+                inside_z = abs(portal.spawn_z - back.z) < back.d / 2
+                assert not (inside_x and inside_z), f"{where} spawns inside a portal"
+
+
 def test_office_map_loads() -> None:
     office = load_map("office")
     assert office.id == "office"
@@ -71,7 +88,7 @@ class FakeConnection:
 def make_room(
     game_map: GameMap | None, positions: dict[str, tuple[float, float]]
 ) -> tuple[Room, dict[str, FakeConnection]]:
-    room = Room("test", game_map)
+    room = Room("test", game_map=game_map)
     connections = {pid: FakeConnection() for pid in positions}
     for pid, (x, z) in positions.items():
         state = PlayerState(id=pid, name=pid, character_id="girl01", x=x, z=z)

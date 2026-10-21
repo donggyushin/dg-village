@@ -14,6 +14,7 @@ namespace DgVillage
         public float hearingRadius;
         public string[] layout;
         public Seat[] seats;
+        public Portal[] portals;
         public Prop[] props;
 
         [Serializable]
@@ -23,6 +24,18 @@ namespace DgVillage
             public string kind; // "desk" | "lounge"
             public float x;
             public float z;
+        }
+
+        [Serializable]
+        public class Portal
+        {
+            public float x; // 영역 가운데
+            public float z;
+            public float w; // 가로
+            public float d; // 깊이
+            public string to; // 갈 맵 id
+            public float spawnX; // 도착 맵에서 시작할 발 위치
+            public float spawnZ;
         }
 
         [Serializable]
