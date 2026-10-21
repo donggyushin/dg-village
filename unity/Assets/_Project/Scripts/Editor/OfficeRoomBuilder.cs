@@ -20,7 +20,8 @@ namespace DgVillage.Editor
         private const string WallMaterialPath = "Assets/_Project/Materials/Wall_Office.mat";
         private const string PropFolder = "Assets/_Project/Sprites/Environment/Props";
         private const string ShadowPath = PropFolder + "/blob_shadow.png";
-        private const string SpriteMaterialPath = "Packages/com.unity.render-pipelines.universal/Runtime/Materials/Sprite-Unlit-Default.mat";
+        // 소품 · 캐릭터 공용 (DgVillage/Sprite = URP Sprite-Unlit-Default + 맵 조명)
+        private const string SpriteMaterialPath = "Assets/_Project/Materials/Sprite_Lit.mat";
         internal const string CatalogPath = "Assets/_Project/Maps/PropCatalog.asset";
         // Application.dataPath(= unity/Assets) 기준
         private const string MapFolder = "../../python/src/dg_village_server/maps/";
@@ -60,7 +61,7 @@ namespace DgVillage.Editor
             return missing == null;
         }
 
-        internal static Material SpriteMaterial => AssetDatabase.LoadAssetAtPath<Material>(SpriteMaterialPath);
+        internal static Material SpriteMaterial => LoadOrCreateMaterial(SpriteMaterialPath, null, "DgVillage/Sprite");
 
         /// <summary>
         /// 열린 씬에 방(루트 "Map")을 만든다. (NewScene 다음에 불러야 한다 — 에셋을 여기서 불러오므로)
@@ -107,8 +108,8 @@ namespace DgVillage.Editor
                 AssetDatabase.CreateAsset(catalog, CatalogPath);
             }
             catalog.Set(
-                LoadOrCreateUnlitMaterial(FloorMaterialPath, FloorTexturePath),
-                LoadOrCreateUnlitMaterial(WallMaterialPath, WallTexturePath),
+                LoadOrCreateMaterial(FloorMaterialPath, FloorTexturePath, "DgVillage/Ground"),
+                WallMaterial(),
                 SpriteMaterial,
                 AssetDatabase.LoadAssetAtPath<Sprite>(ShadowPath),
                 entries);
@@ -117,18 +118,38 @@ namespace DgVillage.Editor
             return catalog;
         }
 
-        private static Material LoadOrCreateUnlitMaterial(string materialPath, string texturePath)
+        // 벽도 맵 조명을 받는다 (촛불 옆 벽이 밝게). 세운 벽면에 바닥 구름은 줄무늬가 되므로 끈다
+        private static Material WallMaterial()
+        {
+            Material material = LoadOrCreateMaterial(WallMaterialPath, WallTexturePath, "DgVillage/Ground");
+            if (material.GetFloat("_Clouds") != 0f)
+            {
+                material.SetFloat("_Clouds", 0f);
+                EditorUtility.SetDirty(material);
+            }
+            return material;
+        }
+
+        private static Material LoadOrCreateMaterial(string materialPath, string texturePath, string shaderName)
         {
             var material = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
+            Shader shader = Shader.Find(shaderName);
             if (material != null)
             {
+                // 예전에 URP Unlit 으로 만든 바닥 · 벽도 Ground 로 바꾼다 (_BaseMap 이름이 같아 텍스처는 그대로)
+                if (material.shader != shader)
+                {
+                    material.shader = shader;
+                    EditorUtility.SetDirty(material);
+                }
                 return material;
             }
-            // 캐릭터 스프라이트도 Unlit 이라 바닥도 Unlit: 조명 없이 텍스처 색 그대로
-            material = new Material(Shader.Find("Universal Render Pipeline/Unlit"))
+            // 전부 Unlit 계열: URP 조명 없이 텍스처 색 그대로 × 맵 조명(MapLighting). 스프라이트는 텍스처를 SpriteRenderer 가 준다
+            material = new Material(shader);
+            if (texturePath != null)
             {
-                mainTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(texturePath),
-            };
+                material.mainTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(texturePath);
+            }
             AssetDatabase.CreateAsset(material, materialPath);
             return material;
         }

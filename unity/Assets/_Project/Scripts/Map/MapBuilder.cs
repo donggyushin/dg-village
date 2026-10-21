@@ -9,6 +9,7 @@ namespace DgVillage
     ///   Props   가구 (35° 세운 스프라이트 + 바닥에 눕힌 그림자 + Obstacle = 못 지나감)
     ///   Seats   앉을 자리 (Seat — id 가 서버와 같다)
     ///   Portals 다른 맵으로 가는 영역 (Portal)
+    ///   Lighting 해 · 구름 그림자와 색감 (MapLighting)
     /// </summary>
     public static class MapBuilder
     {
@@ -40,7 +41,7 @@ namespace DgVillage
                 var item = new GameObject(prop.sprite).transform;
                 item.SetParent(props, false);
                 item.position = new Vector3(prop.x, 0f, prop.z);
-                CreateSprite("Sprite", item, entry.Sprite, catalog.SpriteMaterial);
+                CreateSprite("Sprite", item, entry.Sprite, catalog.SpriteMaterial).AddComponent<SunShadow>();
                 if (entry.Footprint != Vector2.zero)
                 {
                     item.gameObject.AddComponent<Obstacle>().Init(entry.Footprint);
@@ -68,6 +69,8 @@ namespace DgVillage
                 go.transform.position = new Vector3(portal.x, 0f, portal.z);
                 go.AddComponent<Portal>().Init(portal.to, new Vector2(portal.w, portal.d), new Vector2(portal.spawnX, portal.spawnZ));
             }
+
+            Child(root, "Lighting").gameObject.AddComponent<MapLighting>().Init(map.lighting, map.lights);
             return root.gameObject;
         }
 

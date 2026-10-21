@@ -60,7 +60,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
+  - {fileID: 2100000, guid: 74286f43626ae47cfaadb303d5c581f0, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -108,6 +108,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DgVillage.DirectionalSpriteAnimator
   _character: {fileID: 11400000, guid: 2087ef93c1dc84eeda7e2856fa491e4c, type: 2}
   _framesPerSecond: 10
+  _seatedLift: 0.375
+  _sitSpriteLift: 0
 --- !u!1 &6958338005515461435
 GameObject:
   m_ObjectHideFlags: 0

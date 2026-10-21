@@ -1,6 +1,20 @@
 {
   "id": "office",
   "hearingRadius": 4.0,
+  "lighting": {
+    "exposure": 0.0, "contrast": 8, "saturation": 6, "temperature": 14, "colorFilter": "#fff4e2",
+    "vignette": 0.3, "ambient": "#3c3654"
+  },
+  "lights": [
+    {"x": -2.6, "z": -3.6, "radius": 4.0, "intensity": 1.5, "color": "#ffb35c", "flicker": 0.25, "glow": 2.5, "glowY": 1.6},
+    {"x": 1.6, "z": -3.6, "radius": 4.0, "intensity": 1.5, "color": "#ffb35c", "flicker": 0.25, "glow": 2.5, "glowY": 1.6},
+    {"x": 6.0, "z": 5.2, "radius": 5.0, "intensity": 1.7, "color": "#ff8a3d", "flicker": 0.35, "glow": 3.0, "glowY": 0.6},
+    {"x": -7.5, "z": -0.5, "radius": 2.6, "intensity": 1.1, "color": "#8fd0ff", "flicker": 0.08, "glow": 1.6, "glowY": 1.1},
+    {"x": -7.5, "z": 3.0, "radius": 2.4, "intensity": 0.8, "color": "#ffc878"},
+    {"x": -4.5, "z": 3.0, "radius": 2.4, "intensity": 0.8, "color": "#ffc878"},
+    {"x": -4.5, "z": -0.5, "radius": 2.4, "intensity": 0.8, "color": "#ffc878"},
+    {"x": -1.0, "z": 1.5, "radius": 4.5, "intensity": 0.4, "color": "#ffe2b0", "flicker": 0.05}
+  ],
   "layout": [
     "wwwwwwssssscccccccc",
     "wwwwwwssssscccccccc",

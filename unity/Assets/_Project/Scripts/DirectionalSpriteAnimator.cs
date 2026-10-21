@@ -35,6 +35,11 @@ namespace DgVillage
             _renderer = GetComponent<SpriteRenderer>();
             _motion = GetComponentInParent<ICharacterMotion>();
             _baseLocalPosition = transform.localPosition;
+            // 해가 있는 맵(MapLighting)에선 캐릭터도 바닥에 그림자를 드리운다
+            if (GetComponent<SunShadow>() == null)
+            {
+                gameObject.AddComponent<SunShadow>();
+            }
 
             if (_motion == null)
             {

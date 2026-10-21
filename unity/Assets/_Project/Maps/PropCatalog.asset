@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DgVillage.PropCatalog
   _floorMaterial: {fileID: 2100000, guid: ac36d452f85274e87b3ce34a7d62e11f, type: 2}
   _wallMaterial: {fileID: 2100000, guid: 07219ef9ffbca4808bbc09b13568ec4b, type: 2}
-  _spriteMaterial: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
+  _spriteMaterial: {fileID: 2100000, guid: 74286f43626ae47cfaadb303d5c581f0, type: 2}
   _shadow: {fileID: 21300000, guid: 08f55c411b12644fb964f3eeabc7740b, type: 3}
   _entries:
   - Id: armchair
