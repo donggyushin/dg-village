@@ -19,6 +19,9 @@ namespace DgVillage
     {
         [SerializeField] private float _moveSpeed = 4f;
 
+        [Tooltip("벽과 이만큼(unit) 떨어져서 멈춘다 (발 둘레 반지름)")]
+        [SerializeField] private float _bodyRadius = 0.25f;
+
         [Tooltip("비워두면 Project-wide Input Actions 의 Player/Move 를 사용")]
         [SerializeField] private InputActionReference _moveActionReference;
 
@@ -64,11 +67,32 @@ namespace DgVillage
 
             // 화면 위쪽(입력 y+) = 월드 +Z (카메라가 -Z 쪽에서 +Z 를 바라보므로)
             var delta = new Vector3(input.x, 0f, input.y) * (_moveSpeed * Time.deltaTime);
-            transform.position += delta;
+            transform.position = Constrain(transform.position, delta);
 
             Facing = Mathf.Abs(input.x) > Mathf.Abs(input.y)
                 ? (input.x > 0f ? Facing.Right : Facing.Left)
                 : (input.y > 0f ? Facing.Up : Facing.Down);
+        }
+
+        // 바닥(FloorMesh)이 있으면 바닥 밖으로 못 나간다. 축마다 따로 막아서 벽에 비스듬히 부딪히면 벽을 따라 미끄러진다
+        private Vector3 Constrain(Vector3 position, Vector3 delta)
+        {
+            FloorMesh floor = FloorMesh.Current;
+            if (floor == null)
+            {
+                return position + delta;
+            }
+            var alongX = new Vector3(position.x + delta.x, position.y, position.z);
+            if (floor.IsWalkable(alongX, _bodyRadius))
+            {
+                position = alongX;
+            }
+            var alongZ = new Vector3(position.x, position.y, position.z + delta.z);
+            if (floor.IsWalkable(alongZ, _bodyRadius))
+            {
+                position = alongZ;
+            }
+            return position;
         }
     }
 }

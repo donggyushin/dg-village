@@ -9,7 +9,7 @@ namespace DgVillage.Editor
     /// 맵 아트 실험용 씬 Assets/Scenes/MapTest.unity 를 만든다 (네트워크 없음, 걸어다니며 보기만).
     /// 첫 맵 = 마법사 길드 사무소 한 칸: 왼쪽 자리(나무 바닥 · 책상 4개) | 가운데 복도(돌) | 오른쪽 휴게실(카펫 · 벽난로):
     ///   Main Camera   마을과 같은 각도 · Size 5.625 + CameraFollow
-    ///   Floor         FloorMesh (재질별 타일 바닥) + Floor_Office 머티리얼 (URP Unlit)
+    ///   Floor         FloorMesh (재질별 타일 바닥 + 가장자리 벽) + Floor_Office · Wall_Office 머티리얼 (URP Unlit)
     ///   Player        PlayerMovement + Visual (girl01)
     ///   Boy01         서 있는 비교용 캐릭터 (책상 뒤)
     ///   Props         가구 (35° 세운 스프라이트 + 바닥에 눕힌 그림자)
@@ -20,6 +20,8 @@ namespace DgVillage.Editor
         private const string ScenePath = "Assets/Scenes/MapTest.unity";
         private const string FloorTexturePath = "Assets/_Project/Sprites/Environment/Ground/office_floor.png";
         private const string FloorMaterialPath = "Assets/_Project/Materials/Floor_Office.mat";
+        private const string WallTexturePath = "Assets/_Project/Sprites/Environment/Ground/office_wall.png";
+        private const string WallMaterialPath = "Assets/_Project/Materials/Wall_Office.mat";
         private const string PropFolder = "Assets/_Project/Sprites/Environment/Props/";
         private const string SpriteMaterialPath = "Packages/com.unity.render-pipelines.universal/Runtime/Materials/Sprite-Unlit-Default.mat";
         private const string Title = "Create Map Test Scene";
@@ -87,12 +89,14 @@ namespace DgVillage.Editor
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             // 에셋은 NewScene 다음에 불러온다 (그 전에 불러오면 "가짜 null" 이 된다)
             Material floorMaterial = LoadOrCreateUnlitMaterial(FloorMaterialPath, FloorTexturePath);
+            Material wallMaterial = LoadOrCreateUnlitMaterial(WallMaterialPath, WallTexturePath);
             var spriteMaterial = AssetDatabase.LoadAssetAtPath<Material>(SpriteMaterialPath);
             var girl = AssetDatabase.LoadAssetAtPath<CharacterDefinition>("Assets/_Project/Characters/girl01.asset");
             var boy = AssetDatabase.LoadAssetAtPath<CharacterDefinition>("Assets/_Project/Characters/boy01.asset");
 
             var floor = new GameObject("Floor", typeof(MeshFilter), typeof(MeshRenderer), typeof(FloorMesh));
-            floor.GetComponent<MeshRenderer>().sharedMaterial = floorMaterial;
+            // submesh 0 = 바닥, 1 = 벽 (FloorMesh 가 바닥 끝에 자동으로 만든다)
+            floor.GetComponent<MeshRenderer>().sharedMaterials = new[] { floorMaterial, wallMaterial };
             var floorSo = new SerializedObject(floor.GetComponent<FloorMesh>());
             floorSo.FindProperty("_layout").stringValue = Layout;
             floorSo.ApplyModifiedPropertiesWithoutUndo();

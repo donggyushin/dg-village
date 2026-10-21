@@ -10,9 +10,11 @@ to the map palette by brightness, and the edges are drawn here:
 - atlas row = material (MATERIALS order), column = edge mask
   N·1 + E·2 + S·4 + W·8 (bit set = the neighbor on that side is another material or empty);
 - each set side gets a 2px trim from the material's own dark steps (carpet also a light stripe).
-Also writes floor-preview.png next to this script (sample room ×3 + grayscale with girl01/boy01).
+Also writes the wall atlas office_wall.png (see make_walls) and floor-preview.png next to this
+script (sample room ×3 + grayscale with girl01/boy01).
 """
 
+import random
 from pathlib import Path
 
 from PIL import Image
@@ -20,6 +22,9 @@ from PIL import Image
 HERE = Path(__file__).parent
 ROOT = HERE.parents[1]
 OUT = ROOT / "unity/Assets/_Project/Sprites/Environment/Ground/office_floor.png"
+WALL_OUT = ROOT / "unity/Assets/_Project/Sprites/Environment/Ground/office_wall.png"
+WALL_HEIGHT = 96  # px = 3 units, FloorMesh's wall height
+CAP_HEIGHT = 16  # px = 0.5 units
 PALETTE = ROOT / "art/palettes/dg-village-map.hex"
 CHARACTERS = ROOT / "unity/Assets/_Project/Sprites/Characters"
 
@@ -77,8 +82,55 @@ def with_trim(base: Image.Image, mask: int, ramp: list[Rgb], carpet: bool) -> Im
     return tile
 
 
+def make_walls(rows: list[list[Rgb]]) -> Image.Image:
+    """64×96 wall atlas: x 0–31 = wall face (repeats every 32px sideways), x 32–63 top 16 rows = wall cap.
+
+    Drawn instead of generated: a block pattern has to repeat seamlessly, which is trivial in code.
+    Face, bottom→top: 8px wooden baseboard, stone blocks (16×12, every other row offset by 8), 4px top ledge.
+    """
+    stone, wood = rows[2], rows[4]
+    rng = random.Random(7)
+    im = Image.new("RGBA", (TILE * 2, WALL_HEIGHT))
+
+    def put(x: int, y: int, c: Rgb) -> None:
+        im.putpixel((x, y), (*c, 255))
+
+    block_w, block_h, top_ledge, baseboard = 16, 12, 4, 8
+    for row, y0 in enumerate(range(top_ledge, WALL_HEIGHT - baseboard, block_h)):
+        offset = (row % 2) * (block_w // 2)
+        for b in range(TILE // block_w):
+            x0 = b * block_w + offset
+            fill = stone[rng.choice([1, 2, 2, 3])]
+            for y in range(y0, min(y0 + block_h, WALL_HEIGHT - baseboard)):
+                for x in range(x0, x0 + block_w):
+                    if y == y0 or x == x0:
+                        c = stone[0]  # mortar
+                    elif y == y0 + 1 or x == x0 + 1:
+                        c = stone[min(5, stone.index(fill) + 1)]  # lit top/left edge
+                    elif y == y0 + block_h - 1:
+                        c = stone[max(0, stone.index(fill) - 1)]  # shaded bottom
+                    elif rng.random() < 0.06:
+                        c = stone[max(0, stone.index(fill) - 1)]  # speckles
+                    else:
+                        c = fill
+                    put(x % TILE, y, c)  # offset rows wrap around → seamless sideways
+    for x in range(TILE):
+        for y in range(top_ledge):
+            put(x, y, stone[[4, 3, 3, 1][y]])
+        for i, y in enumerate(range(WALL_HEIGHT - baseboard, WALL_HEIGHT)):
+            put(x, y, wood[[4, 3, 2, 2, 2, 2, 1, 0][i]])
+    # cap: wall top seen from above, 1px dark border so every tile reads as one capstone
+    for x in range(TILE):
+        for y in range(CAP_HEIGHT):
+            edge = x in (0, TILE - 1) or y in (0, CAP_HEIGHT - 1)
+            c = stone[0] if edge else stone[3] if y == 1 else stone[2]
+            put(TILE + x, y, c)
+    return im
+
+
 def main() -> None:
     rows = palette_rows()
+    make_walls(rows).save(WALL_OUT)
     atlas = Image.new("RGBA", (TILE * 16, TILE * len(MATERIALS)))
     for m, (name, (sheet, (col, row), ramp_row, steps, cuts)) in enumerate(MATERIALS.items()):
         src = Image.open(HERE / sheet).convert("RGBA")
