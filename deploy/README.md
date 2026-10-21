@@ -34,10 +34,20 @@ curl https://<DG_DOMAIN>/health
 
 ## 업데이트
 
+`python/` · `deploy/` 를 바꾼 커밋이 main 에 push 되면 자동 배포된다 (아래). 손으로 할 때는:
+
 ```bash
-git pull
-cd deploy && docker compose up -d --build   # 바뀐 서버 이미지만 다시 만들고 교체
+deploy/deploy.sh   # git pull → docker compose up -d --build --wait → 옛 이미지 정리
 ```
+
+## 자동 배포 (GitHub Actions)
+
+`.github/workflows/deploy.yml`: main push (`python/**`, `deploy/**`, 워크플로우 파일 변경 시) → `test` (ruff + pytest) → `deploy` (SSH 로 `deploy/deploy.sh` 실행). Actions 탭의 **Run workflow** 로 수동 실행도 된다.
+
+- 배포 전용 키 `~/.ssh/dg-village-deploy` (관리자 맥). 서버 `~/.ssh/authorized_keys` 에 `restrict,command="/home/ubuntu/dg-village/deploy/deploy.sh"` 로 등록 → 이 키로는 배포 스크립트만 돌고 셸 · 포트 포워딩은 안 된다.
+- GitHub Secrets: `DEPLOY_SSH_KEY` (private key), `DEPLOY_HOST` (`13.54.176.157`), `DEPLOY_KNOWN_HOSTS` (서버 host key 한 줄, 접속 대상 검증용).
+- 키 교체: 새 키 생성 → `authorized_keys` 의 그 줄 교체 → `gh secret set DEPLOY_SSH_KEY < 새키`.
+- 서버 작업 트리를 손으로 고치면 `git pull --ff-only` 가 실패해 배포가 멈춘다. 서버에서는 `deploy/.env` 외에는 고치지 말 것.
 
 ## 자주 쓰는 명령
 
