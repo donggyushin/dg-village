@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -12,7 +13,7 @@ namespace DgVillage.Editor
     ///   Floor         FloorMesh (재질별 타일 바닥 + 가장자리 벽) + Floor_Office · Wall_Office 머티리얼 (URP Unlit)
     ///   Player        PlayerMovement + Visual (girl01)
     ///   Boy01         서 있는 비교용 캐릭터 (책상 뒤)
-    ///   Props         가구 (35° 세운 스프라이트 + 바닥에 눕힌 그림자)
+    ///   Props         가구 (35° 세운 스프라이트 + 바닥에 눕힌 그림자 + Obstacle = 못 지나감)
     /// 바닥 모양은 Floor 의 Layout 글자를 고치면 바로 바뀐다.
     /// </summary>
     public static class MapTestSceneBuilder
@@ -61,6 +62,17 @@ namespace DgVillage.Editor
             // 휴게실
             ("sofa", 5.5f, 3.4f, 2), ("tea_table", 5.5f, 2f, 1), ("armchair", 7.8f, 2f, 1),
             ("armchair", 3.4f, 1.2f, 1), ("plant_pot", 8.8f, -2f, 1), ("plant_pot", -8.6f, -3.6f, 1),
+        };
+
+        // 가구가 바닥에서 차지하는 크기 (가로, 깊이) unit → Obstacle. 가로 ≈ 스프라이트에 그려진 폭, 깊이는 눈대중
+        private static readonly Dictionary<string, Vector2> Footprints = new()
+        {
+            ["desk_quill"] = new(1.4f, 0.6f), ["desk_spellbook"] = new(1.4f, 0.6f), ["desk_crystal"] = new(1.4f, 0.6f),
+            ["chair_cushion"] = new(0.7f, 0.4f), ["chair_high"] = new(0.8f, 0.4f),
+            ["bookshelf"] = new(1.1f, 0.4f), ["bookshelf_potion"] = new(1.1f, 0.4f), ["fireplace"] = new(1.4f, 0.4f),
+            ["notice_board"] = new(1.1f, 0.3f), ["globe"] = new(0.8f, 0.5f),
+            ["sofa"] = new(1.5f, 0.6f), ["armchair"] = new(1.1f, 0.6f), ["tea_table"] = new(0.9f, 0.6f),
+            ["plant_pot"] = new(0.7f, 0.4f), ["candelabra"] = new(0.4f, 0.3f), ["owl_perch"] = new(0.4f, 0.3f),
         };
 
         [MenuItem("DgVillage/Create Map Test Scene")]
@@ -121,6 +133,12 @@ namespace DgVillage.Editor
                 root.SetParent(props, false);
                 root.position = new Vector3(x, 0f, z);
                 CreateSprite("Sprite", root, sprite, spriteMaterial);
+                if (Footprints.TryGetValue(spriteName, out Vector2 footprint))
+                {
+                    var obstacleSo = new SerializedObject(root.gameObject.AddComponent<Obstacle>());
+                    obstacleSo.FindProperty("_size").vector2Value = footprint;
+                    obstacleSo.ApplyModifiedPropertiesWithoutUndo();
+                }
                 if (shadowScale > 0)
                 {
                     CreateShadow(root, shadowScale, spriteMaterial);

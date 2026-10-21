@@ -108,7 +108,7 @@ Scripts (`Assets/_Project/Scripts/`, namespace `DgVillage`):
 
 | File | Role |
 |---|---|
-| `PlayerMovement` | XZ movement from Input System `Player/Move` (project-wide actions). Exposes `Facing` (Down/Up/Left/Right), `IsMoving`, and `InputBlocked` (set by chat) |
+| `PlayerMovement` | XZ movement from Input System `Player/Move` (project-wide actions); stays on `FloorMesh` tiles and out of `Obstacle`s per axis (slides along walls; no floor in scene = free). Exposes `Facing` (Down/Up/Left/Right), `IsMoving`, and `InputBlocked` (set by chat) |
 | `CameraFollow` | Keeps the scene-authored offset to target, SmoothDamp in LateUpdate |
 | `ICharacterMotion` | `Facing` + `IsMoving`. Implemented by `PlayerMovement` (local input) and `RemotePlayer` (server data) |
 | `DirectionalSpriteAnimator` | Plays idle/walk sprites of its `CharacterDefinition` from parent `ICharacterMotion`. Left = Right with `flipX`. `SetCharacter()` swaps at runtime |
@@ -138,8 +138,9 @@ Scripts (`Assets/_Project/Scripts/`, namespace `DgVillage`):
 | `Editor/SceneUIBuilder` | Shared helpers for the scene builders: camera + EventSystem, 1280x720 canvas, default UI sprites, `Place`/`CreateText`/`CreateButton` |
 | `Editor/ServerSettingsMenu` | Menu **DgVillage → Server Settings** (selects/creates the asset). `IPreprocessBuildWithReport`: fails the build if builds use production but `ProductionUrl` is empty — uncheck `BuildsUseProduction` for local-only test builds |
 | `GroundMesh` | Builds the ground mesh from a corner-grid text `Layout` ('#' = stone, else grass) using the 4×4 Wang atlas (index = NE·1+SE·2+SW·4+NW·8); 1 tile = 1 unit. `[ExecuteAlways]`, mesh not saved (rebuilt on enable/edit) |
-| `FloorMesh` | Indoor floor: one char per tile in `Layout` (`s` stone = hallway, `w` wood = desks, `c` carpet = lounge, else no floor); atlas row = material, column = edge mask N·1+E·2+S·4+W·8 (neighbor differs → trim). `[ExecuteAlways]`, mesh not saved |
-| `Editor/MapTestSceneBuilder` | Menu **DgVillage → Create Map Test Scene**: `Assets/Scenes/MapTest.unity` (no network) — wizard-guild office room 19×12 (desks · hallway · lounge), girl01 player, boy01 behind a desk, furniture with blob shadows (`sortingOrder -1`), `Materials/Floor_Office.mat` (URP Unlit, created if missing). The earlier plaza version is in git history (54b3e82) |
+| `FloorMesh` | Indoor floor + walls: one char per tile in `Layout` (`s` stone = hallway, `w` wood = desks, `c` carpet = lounge, else no floor); floor atlas row = material, column = edge mask N·1+E·2+S·4+W·8 (neighbor differs → trim). Open edges get walls (submesh 1, 2nd material): north = 3-unit wall tilted 35° like sprites (upright on screen, 1:1 texels), other sides = 0.5-unit wall-top strip. `FloorMesh.Current.IsWalkable(pos, radius)` = on floor tiles. `[ExecuteAlways]`, mesh not saved |
+| `Obstacle` | Furniture footprint (`_size` = width × depth) from the pivot (front edge) backwards (+Z); static registry, `Obstacle.Blocks(pos, radius)`. Green gizmo when selected |
+| `Editor/MapTestSceneBuilder` | Menu **DgVillage → Create Map Test Scene**: `Assets/Scenes/MapTest.unity` (no network) — wizard-guild office room 19×12 (desks · hallway · lounge), girl01 player, boy01 behind a desk, furniture with blob shadows (`sortingOrder -1`) + `Obstacle` footprints (table in the builder), `Materials/Floor_Office.mat` + `Wall_Office.mat` (URP Unlit, created if missing). The earlier plaza version is in git history (54b3e82) |
 | `Editor/DynamicFontCleaner` | Clears dynamic TMP font atlases in `Fonts/` on returning to Edit mode (also menu **DgVillage → Clear Dynamic Font Data**) |
 
 ## Server (`python/`)
@@ -174,7 +175,7 @@ Full report + raw notes: `docs/research/2026-10-21-map-art/` (`report.md`, `repo
   - Next: trees are too small at 64px (≈ character height) → generate trees at 128px; shadows faint; camera SmoothDamp isn't pixel-snapped.
 - **Office floor (2026-10-21, first indoor map)**: PixelLab Pro tilesets (Pro = palette option, 15 gen; Standard has none) still bleed the two terrains' colors into each other (pink stone, brick-like planks) → don't use their transitions indoors. `art/tilesets/make_floor_atlas.py` takes one full tile per material from `art/tilesets/office/` (Wang sheet cell (1,1) = full lower, (1,3) = full upper), snaps it to a palette ramp by brightness rank, draws edge trims → `Sprites/Environment/Ground/office_floor.png` (16 × 3 tiles) + `art/tilesets/floor-preview.png` (grayscale check). Give PixelLab one-material palettes; mixing ramps in one palette makes it mix the materials.
   - Office props: Object Creator Pro with girl01 style ref + palette, **"Describe each item" = 16 different objects in one 10-gen run** (all came out right). Sources `art/props/pixellab-2026-10-21-office/`, picks/names in `export_props.py`.
-  - Next: walls (north wall standing, low trims elsewhere, also blocks walking off), zone data shared with the server, sitting.
+  - Walls: texture drawn in code (`make_walls` in the same script → `office_wall.png`, seamless). Done 2026-10-21 together with floor bounds + furniture collision. Next: zone data shared with the server, sitting.
 - **Map palette**: `art/palettes/dg-village-map.{gpl,hex}` (48 colors: grass/foliage/stone/dirt/wood/water/brick ramps × 6 + 6 character anchors), regenerate with `uv run --no-project --with pillow python art/palettes/make_map_palette.py` (also writes `preview.png` incl. grayscale check). Large ground areas use ramp steps 4–5 (index 3–4); dark steps only for shadows/edges — boy01's black hoodie vanishes on dark grass in grayscale. Give PixelLab `target_palette` only the ramps a generation needs.
 
 ## Character art pipeline (PixelLab)

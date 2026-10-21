@@ -74,25 +74,30 @@ namespace DgVillage
                 : (input.y > 0f ? Facing.Up : Facing.Down);
         }
 
-        // 바닥(FloorMesh)이 있으면 바닥 밖으로 못 나간다. 축마다 따로 막아서 벽에 비스듬히 부딪히면 벽을 따라 미끄러진다
+        // 바닥(FloorMesh) 밖이나 가구(Obstacle) 안으로는 못 간다.
+        // 축마다 따로 막아서 비스듬히 부딪히면 벽 · 가구를 따라 미끄러진다
         private Vector3 Constrain(Vector3 position, Vector3 delta)
         {
-            FloorMesh floor = FloorMesh.Current;
-            if (floor == null)
-            {
-                return position + delta;
-            }
+            // 이미 가구와 겹친 채 시작했으면(배치 실수 등) 가구는 무시해서 빠져나올 수 있게 한다
+            bool checkObstacles = !Obstacle.Blocks(position, _bodyRadius);
             var alongX = new Vector3(position.x + delta.x, position.y, position.z);
-            if (floor.IsWalkable(alongX, _bodyRadius))
+            if (CanStand(alongX, checkObstacles))
             {
                 position = alongX;
             }
             var alongZ = new Vector3(position.x, position.y, position.z + delta.z);
-            if (floor.IsWalkable(alongZ, _bodyRadius))
+            if (CanStand(alongZ, checkObstacles))
             {
                 position = alongZ;
             }
             return position;
+        }
+
+        private bool CanStand(Vector3 position, bool checkObstacles)
+        {
+            FloorMesh floor = FloorMesh.Current;
+            return (floor == null || floor.IsWalkable(position, _bodyRadius))
+                && !(checkObstacles && Obstacle.Blocks(position, _bodyRadius));
         }
     }
 }
