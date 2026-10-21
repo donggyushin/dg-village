@@ -15,7 +15,7 @@ dg-village/
 ├── unity/    # Game client (Unity 6, URP, Universal 3D template)
 ├── python/   # WebSocket server (FastAPI, uv) + Dockerfile
 ├── deploy/   # Production docker compose (Caddy + server + Postgres), README.md = runbook
-├── art/      # Art sources outside Unity (palettes/: map palette .gpl/.hex + generator)
+├── art/      # Art sources outside Unity (palettes/, tilesets/, props/ + Python generators → Unity)
 └── docs/     # Research reports (docs/research/)
 ```
 
@@ -127,6 +127,8 @@ Scripts (`Assets/_Project/Scripts/`, namespace `DgVillage`):
 | `Editor/ChannelSelectSceneBuilder` | Menu **DgVillage → Create Channel Select Scene**: same for `ChannelSelect.unity` (ScrollView + VerticalLayoutGroup + ContentSizeFitter list) |
 | `Editor/SceneUIBuilder` | Shared helpers for the scene builders: camera + EventSystem, 1280x720 canvas, default UI sprites, `Place`/`CreateText`/`CreateButton` |
 | `Editor/ServerSettingsMenu` | Menu **DgVillage → Server Settings** (selects/creates the asset). `IPreprocessBuildWithReport`: fails the build if builds use production but `ProductionUrl` is empty — uncheck `BuildsUseProduction` for local-only test builds |
+| `GroundMesh` | Builds the ground mesh from a corner-grid text `Layout` ('#' = stone, else grass) using the 4×4 Wang atlas (index = NE·1+SE·2+SW·4+NW·8); 1 tile = 1 unit. `[ExecuteAlways]`, mesh not saved (rebuilt on enable/edit) |
+| `Editor/MapTestSceneBuilder` | Menu **DgVillage → Create Map Test Scene**: `Assets/Scenes/MapTest.unity` (no network) — ground, girl01 player, boy01 standing, benches/trees with blob shadows (`sortingOrder -1`), `Materials/Ground_Plaza.mat` (URP Unlit, created if missing) |
 | `Editor/DynamicFontCleaner` | Clears dynamic TMP font atlases in `Fonts/` on returning to Edit mode (also menu **DgVillage → Clear Dynamic Font Data**) |
 
 ## Server (`python/`)
@@ -145,7 +147,7 @@ Scripts (`Assets/_Project/Scripts/`, namespace `DgVillage`):
 - Tests share helpers via `tests/conftest.py` (`client` fixture, `signup(client, name)` → token); ruff isort knows `conftest` as local.
 - Test gotcha: Starlette `TestClient` cancels the server task when a `websocket_connect` block exits; call `ws.close()` inside the block to test disconnect handling.
 
-## Map art direction (research 2026-10-21, not started)
+## Map art direction (research 2026-10-21, experimenting)
 
 Full report + raw notes: `docs/research/2026-10-21-map-art/` (`report.md`, `report.html`, `notes/`). Decisions to follow:
 
@@ -155,6 +157,10 @@ Full report + raw notes: `docs/research/2026-10-21-map-art/` (`report.md`, `repo
 - **Tools**: PixelLab first (`create-tileset` / `map-objects` support `view = low top-down`, `target_palette`; feed references at native resolution). Perspective-drawn vertical objects must stand upright, never lie on the ground (double perspective). Meshy/Tripo = blockout only (no pixel textures; Meshy free = CC BY 4.0 attribution). **Don't use Mana Seed** (author: incompatible with gen-AI content). LimeZu OK with credit.
 - **Art direction**: readability via value contrast — ground lineless, mid-saturation; strongest colors/outlines reserved for characters; grayscale test. Palette from girl01/boy01 → nearest Lospec palette → desaturated map subset (hue-shift ramps). Plaza ≈ 28×28 units (Gather: 20–40 tiles per concurrent player), central fountain, 3–4 conversation islands, building entrances at edges (future channel portals), edges closed by walls/bushes (also fixes walking off the map).
 - First plaza plan = 10 steps over two weekends (table in the report).
+- **First experiment (2026-10-21, `MapTest.unity`, screenshot `docs/research/2026-10-21-map-art/map-test-01.png`)**: works — Wang seams clean, props match characters, grayscale reads. PixelLab Apprentice ($12/mo, Map Workshop) used.
+  - Ground: PixelLab tileset (Wang, 32px) → `art/tilesets/plaza/pixellab-wang.png` → `uv run --no-project --with pillow python art/tilesets/make_ground_atlas.py` (tileset form has **no palette option** → script snaps grass to palette grass ramp, repacks the 5×4 sheet into the 4×4 Wang-index atlas `Sprites/Environment/Ground/plaza_ground.png`, writes `art/tilesets/preview.png`). Extra full-stone variant tile is skipped for now. 35° tilt squashes tiles vertically (expected).
+  - Props: Object Creator Pro with palette image + girl01 as style reference (locks size to 64px). 32 candidates in `art/props/pixellab-2026-10-21/`; picks + names in `art/props/export_props.py` (trims empty bottom rows so the bottom-center pivot = ground contact, also writes `blob_shadow.png`) → `Sprites/Environment/Props/`.
+  - Next: trees are too small at 64px (≈ character height) → generate trees at 128px; shadows faint; camera SmoothDamp isn't pixel-snapped.
 - **Map palette**: `art/palettes/dg-village-map.{gpl,hex}` (48 colors: grass/foliage/stone/dirt/wood/water/brick ramps × 6 + 6 character anchors), regenerate with `uv run --no-project --with pillow python art/palettes/make_map_palette.py` (also writes `preview.png` incl. grayscale check). Large ground areas use ramp steps 4–5 (index 3–4); dark steps only for shadows/edges — boy01's black hoodie vanishes on dark grass in grayscale. Give PixelLab `target_palette` only the ramps a generation needs.
 
 ## Character art pipeline (PixelLab)
