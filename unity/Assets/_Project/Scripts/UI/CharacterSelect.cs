@@ -62,7 +62,18 @@ namespace DgVillage
             Select(0);
         }
 
-        private void Start() => Login();
+        private void Start()
+        {
+            // 보통은 Boot 씬(로딩 화면)이 이미 로그인해 두었다. 이 씬을 바로 Play 하면 여기서 로그인한다
+            if (AccountClient.IsLoggedIn)
+            {
+                ShowProfile();
+            }
+            else
+            {
+                Login();
+            }
+        }
 
         // 저장된 계정으로 로그인하고 프로필로 화면을 채운다. 실패하면 입장 버튼이 재시도가 된다
         private async void Login()
@@ -77,7 +88,11 @@ namespace DgVillage
                 SetBusy(false, $"{e.Message}\n입장을 누르면 다시 시도해요");
                 return;
             }
+            ShowProfile();
+        }
 
+        private void ShowProfile()
+        {
             Profile profile = AccountClient.Profile;
             _nameField.text = profile.displayName;
             int savedIndex = FindIndex(profile.characterId);

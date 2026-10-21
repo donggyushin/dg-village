@@ -23,9 +23,15 @@ namespace DgVillage
         [SerializeField] private DirectionSprites _up;
         [SerializeField] private DirectionSprites _right;
 
+        [Tooltip("앉은 모습 (정면). 없으면 서기 그림을 올려서 쓴다")]
+        [SerializeField] private Sprite _sitDown;
+
         public string Id => _id;
         public string DisplayName => string.IsNullOrEmpty(_displayName) ? _id : _displayName;
         public Sprite Preview => _down.Idle;
+
+        /// <summary>앉은 모습 (앉으면 항상 정면). 없으면 null</summary>
+        public Sprite SitDown => _sitDown;
 
         /// <summary>Left 는 Right 를 좌우 반전해서 쓰므로 Right 세트를 돌려준다.</summary>
         public DirectionSprites Get(Facing facing) => facing switch

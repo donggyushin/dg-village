@@ -41,3 +41,4 @@ MonoBehaviour:
     - {fileID: 21300000, guid: c8d15fdd691df49ffb85e208b54c3465, type: 3}
     - {fileID: 21300000, guid: 2481b62b3227f404da326b2ce6a33c82, type: 3}
     - {fileID: 21300000, guid: 06c6adc9771f94369aa4ec00f307935e, type: 3}
+  _sitDown: {fileID: 21300000, guid: e23d14a86a50b4582a373411e14a0767, type: 3}

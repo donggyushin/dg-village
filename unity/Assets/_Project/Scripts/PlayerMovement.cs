@@ -33,6 +33,9 @@ namespace DgVillage
         /// <summary>true 면 이동 입력을 무시한다 (채팅 입력 중 WASD 가 캐릭터를 움직이지 않게)</summary>
         public bool InputBlocked { get; set; }
 
+        /// <summary>true 면 움직이지 않는다 (서버 입장 전: 첫 welcome 이 정한 위치로 옮겨지므로 미리 걸어 봐야 소용없다). MapLoader 가 쓴다</summary>
+        public bool WaitingForServer { get; set; }
+
         /// <summary>앉아 있는 동안 true. 움직이지 않고, 이동 키는 WantsToStand 로만 알린다 (SeatInteraction 이 서버에 일어나기 요청)</summary>
         public bool Seated { get; private set; }
 
@@ -74,7 +77,7 @@ namespace DgVillage
 
         private void Update()
         {
-            if (InputBlocked)
+            if (InputBlocked || WaitingForServer)
             {
                 IsMoving = false;
                 return;

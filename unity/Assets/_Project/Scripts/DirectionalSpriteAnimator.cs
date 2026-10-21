@@ -7,6 +7,7 @@ namespace DgVillage
     /// CharacterDefinition 의 방향별 서기/걷기 스프라이트를 재생한다.
     /// Left 는 Right 를 좌우 반전해서 쓴다 (스프라이트 1방향 절약).
     /// Visual(SpriteRenderer) 오브젝트에 붙이고, ICharacterMotion 은 부모에서 찾는다.
+    /// 앉아 있으면 캐릭터의 앉은 그림(SitDown)을, 없으면 서기 그림을 위로 올려 쓴다.
     /// </summary>
     [RequireComponent(typeof(SpriteRenderer))]
     public class DirectionalSpriteAnimator : MonoBehaviour
@@ -14,8 +15,11 @@ namespace DgVillage
         [SerializeField] private CharacterDefinition _character;
         [SerializeField] private float _framesPerSecond = 10f;
 
-        [Tooltip("앉아 있을 때 그림을 위로 올리는 높이 (unit). 책상 · 소파 뒤에서 상반신이 보이도록 (32 PPU 기준 정수 픽셀)")]
+        [Tooltip("앉은 그림이 없는 캐릭터가 앉았을 때 서기 그림을 올리는 높이 (unit). 책상 · 소파 뒤에서 상반신이 보이도록 (32 PPU 기준 정수 픽셀)")]
         [SerializeField] private float _seatedLift = 12f / 32f;
+
+        [Tooltip("앉은 그림을 올리는 높이 (unit). 0 = 발이 의자 앞 바닥에 닿는다 (책상 자리에선 머리만 보인다)")]
+        [SerializeField] private float _sitSpriteLift = 0f;
 
         private Vector3 _baseLocalPosition;
 
@@ -54,10 +58,17 @@ namespace DgVillage
                 return;
             }
 
+            Sprite sitDown = _motion.IsSeated ? _character.SitDown : null;
+            float lift = !_motion.IsSeated ? 0f : sitDown != null ? _sitSpriteLift : _seatedLift;
             // 스프라이트 면을 따라 위로 (Visual 이 35° 기울어 있어서 로컬 up 방향)
-            transform.localPosition = _motion.IsSeated
-                ? _baseLocalPosition + transform.localRotation * Vector3.up * _seatedLift
-                : _baseLocalPosition;
+            transform.localPosition = _baseLocalPosition + transform.localRotation * Vector3.up * lift;
+
+            if (sitDown != null)
+            {
+                _renderer.flipX = false;
+                _renderer.sprite = sitDown;
+                return;
+            }
 
             Facing facing = _motion.Facing;
             CharacterDefinition.DirectionSprites set = _character.Get(facing);

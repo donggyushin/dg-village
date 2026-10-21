@@ -7,6 +7,7 @@ namespace DgVillage
     /// 씬에 미리 깔려 있던 방(에디터 미리보기)이나 이전 맵을 지우고 MapBuilder 로 새로 만든 뒤,
     /// 내 캐릭터를 서버가 정한 위치(포탈이면 도착 지점)로 옮기고 카메라를 바로 붙인다.
     /// 그래서 맵 배치를 바꿀 땐 서버 JSON 만 배포하면 된다 (새 그림은 PropCatalog = 클라이언트 업데이트).
+    /// 첫 welcome 전에는 내 캐릭터를 묶어 둔다: 미리보기 방에서 걸어 다녀도 welcome 이 오면 서버 위치로 순간이동하니까.
     /// </summary>
     public class MapLoader : MonoBehaviour
     {
@@ -27,6 +28,10 @@ namespace DgVillage
             {
                 _client.Welcomed += OnWelcomed;
             }
+            if (_localPlayer != null)
+            {
+                _localPlayer.WaitingForServer = true;
+            }
         }
 
         private void OnDisable()
@@ -39,6 +44,7 @@ namespace DgVillage
 
         private void OnWelcomed(WelcomeMessage welcome)
         {
+            _localPlayer.WaitingForServer = false;
             // 옛 서버는 map 을 안 보낸다 (JsonUtility 는 빈 객체를 만든다) → 씬에 깔린 방을 그대로 쓴다
             if (welcome.map == null || string.IsNullOrEmpty(welcome.map.id) || _catalog == null)
             {

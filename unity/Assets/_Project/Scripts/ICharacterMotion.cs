@@ -8,7 +8,7 @@ namespace DgVillage
     {
         Facing Facing { get; }
         bool IsMoving { get; }
-        /// <summary>의자 · 소파에 앉아 있다 (앉은 그림이 없어서 서기 그림을 살짝 올려 그린다)</summary>
+        /// <summary>의자 · 소파에 앉아 있다 (앉은 그림, 없으면 서기 그림을 살짝 올려 그린다)</summary>
         bool IsSeated { get; }
     }
 }

@@ -10,6 +10,7 @@ namespace DgVillage.Editor
     /// CharacterRegistry 에 등록한다.
     ///   {name}_idle_{south|north|east}.png
     ///   {name}_walk_{south|north|east}_{0..n}.png
+    ///   {name}_sit_south.png   (선택 — 앉은 모습)
     /// </summary>
     public static class CharacterDefinitionBuilder
     {
@@ -46,6 +47,10 @@ namespace DgVillage.Editor
                 FillDirection(so, "_down", folder, "south");
                 FillDirection(so, "_up", folder, "north");
                 FillDirection(so, "_right", folder, "east");
+                so.FindProperty("_sitDown").objectReferenceValue = AssetDatabase.FindAssets("t:Sprite", new[] { folder })
+                    .Select(AssetDatabase.GUIDToAssetPath)
+                    .Select(AssetDatabase.LoadAssetAtPath<Sprite>)
+                    .FirstOrDefault(s => s != null && s.name.EndsWith("_sit_south"));
                 so.ApplyModifiedProperties();
 
                 Register(registry, character);
