@@ -1,0 +1,52 @@
+{
+  "id": "office",
+  "hearingRadius": 4.0,
+  "layout": [
+    "wwwwwwssssscccccccc",
+    "wwwwwwssssscccccccc",
+    "wwwwwwssssscccccccc",
+    "wwwwwwssssscccccccc",
+    "wwwwwwssssscccccccc",
+    "wwwwwwssssscccccccc",
+    "wwwwwwssssscccccccc",
+    "wwwwwwssssscccccccc",
+    "sssssssssssssssssss",
+    "sssssssssssssssssss",
+    "......sssss........",
+    "......sssss........"
+  ],
+  "seats": [
+    {"id": "desk-1", "kind": "desk", "x": -7.5, "z": 3.6},
+    {"id": "desk-2", "kind": "desk", "x": -4.5, "z": 3.6},
+    {"id": "desk-3", "kind": "desk", "x": -7.5, "z": 0.1},
+    {"id": "desk-4", "kind": "desk", "x": -4.5, "z": 0.1},
+    {"id": "sofa", "kind": "lounge", "x": 5.5, "z": 3.4},
+    {"id": "armchair-1", "kind": "lounge", "x": 7.8, "z": 2.0},
+    {"id": "armchair-2", "kind": "lounge", "x": 3.4, "z": 1.2}
+  ],
+  "props": [
+    {"sprite": "chair_cushion", "x": -7.5, "z": 3.6, "shadow": 1},
+    {"sprite": "desk_quill", "x": -7.5, "z": 3.0, "shadow": 2},
+    {"sprite": "chair_high", "x": -4.5, "z": 3.6, "shadow": 1},
+    {"sprite": "desk_spellbook", "x": -4.5, "z": 3.0, "shadow": 2},
+    {"sprite": "chair_cushion", "x": -7.5, "z": 0.1, "shadow": 1},
+    {"sprite": "desk_crystal", "x": -7.5, "z": -0.5, "shadow": 2},
+    {"sprite": "chair_cushion", "x": -4.5, "z": 0.1, "shadow": 1},
+    {"sprite": "desk_quill", "x": -4.5, "z": -0.5, "shadow": 2},
+    {"sprite": "bookshelf", "x": -8.2, "z": 5.6, "shadow": 0},
+    {"sprite": "bookshelf_potion", "x": -6.6, "z": 5.6, "shadow": 0},
+    {"sprite": "notice_board", "x": -1.0, "z": 5.7, "shadow": 0},
+    {"sprite": "globe", "x": 0.8, "z": 5.2, "shadow": 1},
+    {"sprite": "fireplace", "x": 6.0, "z": 5.6, "shadow": 0},
+    {"sprite": "plant_pot", "x": 8.8, "z": 5.4, "shadow": 1},
+    {"sprite": "candelabra", "x": -2.6, "z": -3.6, "shadow": 1},
+    {"sprite": "candelabra", "x": 1.6, "z": -3.6, "shadow": 1},
+    {"sprite": "owl_perch", "x": 0.9, "z": 2.5, "shadow": 1},
+    {"sprite": "sofa", "x": 5.5, "z": 3.4, "shadow": 2},
+    {"sprite": "tea_table", "x": 5.5, "z": 2.0, "shadow": 1},
+    {"sprite": "armchair", "x": 7.8, "z": 2.0, "shadow": 1},
+    {"sprite": "armchair", "x": 3.4, "z": 1.2, "shadow": 1},
+    {"sprite": "plant_pot", "x": 8.8, "z": -2.0, "shadow": 1},
+    {"sprite": "plant_pot", "x": -8.6, "z": -3.6, "shadow": 1}
+  ]
+}

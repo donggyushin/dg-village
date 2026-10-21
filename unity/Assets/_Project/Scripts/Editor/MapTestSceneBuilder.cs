@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -14,7 +15,8 @@ namespace DgVillage.Editor
     ///   Player        PlayerMovement + Visual (girl01)
     ///   Boy01         서 있는 비교용 캐릭터 (책상 뒤)
     ///   Props         가구 (35° 세운 스프라이트 + 바닥에 눕힌 그림자 + Obstacle = 못 지나감)
-    /// 바닥 모양은 Floor 의 Layout 글자를 고치면 바로 바뀐다.
+    /// 바닥 모양 · 가구 위치는 서버와 같이 쓰는 python/src/dg_village_server/maps/office.json 에서 읽는다
+    /// (Floor 의 Layout 을 씬에서 직접 고치면 서버의 채팅 구역과 어긋난다 — JSON 을 고치고 메뉴를 다시 실행).
     /// </summary>
     public static class MapTestSceneBuilder
     {
@@ -30,39 +32,8 @@ namespace DgVillage.Editor
         // 캐릭터 Visual 과 같은 기울기: 카메라(X 35°)를 정면으로 본다
         private static readonly Quaternion StandUp = Quaternion.Euler(35f, 0f, 0f);
 
-        // 타일 19 × 12. w = 자리(나무) · s = 복도(돌) · c = 휴게실(카펫)
-        private const string Layout =
-            "wwwwwwssssscccccccc\n" +
-            "wwwwwwssssscccccccc\n" +
-            "wwwwwwssssscccccccc\n" +
-            "wwwwwwssssscccccccc\n" +
-            "wwwwwwssssscccccccc\n" +
-            "wwwwwwssssscccccccc\n" +
-            "wwwwwwssssscccccccc\n" +
-            "wwwwwwssssscccccccc\n" +
-            "sssssssssssssssssss\n" +
-            "sssssssssssssssssss\n" +
-            "......sssss........\n" +
-            "......sssss........";
-
-        // (스프라이트 이름, 위치 x/z, 그림자 배율 — 0 = 그림자 없음). 원점 = 바닥 가운데
-        private static readonly (string Sprite, float X, float Z, int ShadowScale)[] Props =
-        {
-            // 자리: 책상 뒤 의자 (앉으면 카메라 쪽을 본다)
-            ("chair_cushion", -7.5f, 3.6f, 1), ("desk_quill", -7.5f, 3f, 2),
-            ("chair_high", -4.5f, 3.6f, 1), ("desk_spellbook", -4.5f, 3f, 2),
-            ("chair_cushion", -7.5f, 0.1f, 1), ("desk_crystal", -7.5f, -0.5f, 2),
-            ("chair_cushion", -4.5f, 0.1f, 1), ("desk_quill", -4.5f, -0.5f, 2),
-            // 북쪽 벽을 따라
-            ("bookshelf", -8.2f, 5.6f, 0), ("bookshelf_potion", -6.6f, 5.6f, 0),
-            ("notice_board", -1f, 5.7f, 0), ("globe", 0.8f, 5.2f, 1),
-            ("fireplace", 6f, 5.6f, 0), ("plant_pot", 8.8f, 5.4f, 1),
-            // 복도
-            ("candelabra", -2.6f, -3.6f, 1), ("candelabra", 1.6f, -3.6f, 1), ("owl_perch", 0.9f, 2.5f, 1),
-            // 휴게실
-            ("sofa", 5.5f, 3.4f, 2), ("tea_table", 5.5f, 2f, 1), ("armchair", 7.8f, 2f, 1),
-            ("armchair", 3.4f, 1.2f, 1), ("plant_pot", 8.8f, -2f, 1), ("plant_pot", -8.6f, -3.6f, 1),
-        };
+        // 맵 원본 = 서버와 같이 쓰는 JSON (바닥 Layout · 가구 위치 · 좌석). 고칠 땐 이 파일을 고치고 메뉴를 다시 실행
+        private const string MapJsonPath = "../python/src/dg_village_server/maps/office.json";
 
         // 가구가 바닥에서 차지하는 크기 (가로, 깊이) unit → Obstacle. 가로 ≈ 스프라이트에 그려진 폭, 깊이는 눈대중
         private static readonly Dictionary<string, Vector2> Footprints = new()
@@ -88,6 +59,14 @@ namespace DgVillage.Editor
                 EditorUtility.DisplayDialog(Title, $"{FloorTexturePath} 가 없다. art/tilesets/make_floor_atlas.py 먼저.", "OK");
                 return;
             }
+            // Application.dataPath = unity/Assets → 저장소 루트 기준 경로로
+            string mapPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", MapJsonPath));
+            if (!File.Exists(mapPath))
+            {
+                EditorUtility.DisplayDialog(Title, $"{mapPath} 가 없다.", "OK");
+                return;
+            }
+            var map = JsonUtility.FromJson<GameMapData>(File.ReadAllText(mapPath));
             if (AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath) != null
                 && !EditorUtility.DisplayDialog(Title, $"{ScenePath} 가 이미 있다. 덮어쓸까?", "덮어쓰기", "취소"))
             {
@@ -97,7 +76,21 @@ namespace DgVillage.Editor
             {
                 return;
             }
+            Build(map);
+        }
 
+        /// <summary>
+        /// 확인 창 없이 씬을 만들어 저장한다 (열린 씬의 저장 안 한 변경은 버려진다).
+        /// 메뉴 대신 코드로 다시 만들 때 (Unity MCP 등): DgVillage.Editor.MapTestSceneBuilder.Rebuild()
+        /// </summary>
+        public static void Rebuild()
+        {
+            string mapPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", MapJsonPath));
+            Build(JsonUtility.FromJson<GameMapData>(File.ReadAllText(mapPath)));
+        }
+
+        private static void Build(GameMapData map)
+        {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             // 에셋은 NewScene 다음에 불러온다 (그 전에 불러오면 "가짜 null" 이 된다)
             Material floorMaterial = LoadOrCreateUnlitMaterial(FloorMaterialPath, FloorTexturePath);
@@ -110,7 +103,7 @@ namespace DgVillage.Editor
             // submesh 0 = 바닥, 1 = 벽 (FloorMesh 가 바닥 끝에 자동으로 만든다)
             floor.GetComponent<MeshRenderer>().sharedMaterials = new[] { floorMaterial, wallMaterial };
             var floorSo = new SerializedObject(floor.GetComponent<FloorMesh>());
-            floorSo.FindProperty("_layout").stringValue = Layout;
+            floorSo.FindProperty("_layout").stringValue = string.Join("\n", map.layout);
             floorSo.ApplyModifiedPropertiesWithoutUndo();
 
             var player = new GameObject("Player", typeof(PlayerMovement));
@@ -126,22 +119,26 @@ namespace DgVillage.Editor
             CreateSprite("Visual", boyRoot.transform, boy != null ? boy.Preview : null, spriteMaterial);
 
             var props = new GameObject("Props").transform;
-            foreach ((string spriteName, float x, float z, int shadowScale) in Props)
+            foreach (GameMapData.Prop prop in map.props)
             {
-                var sprite = AssetDatabase.LoadAssetAtPath<Sprite>($"{PropFolder}{spriteName}.png");
-                var root = new GameObject(spriteName).transform;
+                var sprite = AssetDatabase.LoadAssetAtPath<Sprite>($"{PropFolder}{prop.sprite}.png");
+                if (sprite == null)
+                {
+                    Debug.LogWarning($"{PropFolder}{prop.sprite}.png 가 없다 — art/props/export_props.py 확인");
+                }
+                var root = new GameObject(prop.sprite).transform;
                 root.SetParent(props, false);
-                root.position = new Vector3(x, 0f, z);
+                root.position = new Vector3(prop.x, 0f, prop.z);
                 CreateSprite("Sprite", root, sprite, spriteMaterial);
-                if (Footprints.TryGetValue(spriteName, out Vector2 footprint))
+                if (Footprints.TryGetValue(prop.sprite, out Vector2 footprint))
                 {
                     var obstacleSo = new SerializedObject(root.gameObject.AddComponent<Obstacle>());
                     obstacleSo.FindProperty("_size").vector2Value = footprint;
                     obstacleSo.ApplyModifiedPropertiesWithoutUndo();
                 }
-                if (shadowScale > 0)
+                if (prop.shadow > 0)
                 {
-                    CreateShadow(root, shadowScale, spriteMaterial);
+                    CreateShadow(root, prop.shadow, spriteMaterial);
                 }
             }
 
