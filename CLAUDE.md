@@ -75,7 +75,7 @@ Scenes (Build Profiles → Scene List, order matters): `0 Assets/Scenes/Characte
 Scene `Assets/Scenes/SampleScene.unity`:
 
 ```
-Main Camera   Orthographic, Size 5, pos (0, 8, -11.5), rot X 35  + CameraFollow(target = Player)
+Main Camera   Orthographic, Size 5.625, pos (0, 8, -11.5), rot X 35  + CameraFollow(target = Player)
 Ground        Plane, scale (2,1,2) → 20x20 units. No bounds/collision yet (player can walk off)
 Player        empty root, movement only               + PlayerMovement
 └── Visual    SpriteRenderer, rot X 35 (faces camera) + DirectionalSpriteAnimator(character = girl01, replaced at runtime)
@@ -148,7 +148,7 @@ Scripts (`Assets/_Project/Scripts/`, namespace `DgVillage`):
 Full report + raw notes: `docs/research/2026-10-21-map-art/` (`report.md`, `report.html`, `notes/`). Decisions to follow:
 
 - **Approach = "RO hybrid"** (how Ragnarok Online built maps): ground = low-poly 3D mesh with 32px tiling pixel textures (+ vertex-color variation, ProBuilder curbs/steps for height), props (trees, benches, lamps, fountain) = upright pixel sprites exactly like characters (32 PPU, Alpha Clip, X 35° tilt) + blob shadow. Rejected: one big painted 2D background. Later experiment: low-res render-texture pixelation (needs render graph; would resample the 64px characters too).
-- **One pixel density everywhere**: 32 PPU sprites, 1 unit = 32 texels on meshes, integer scales only (mixels = #1 amateur tell). Planned camera fix: Ortho Size 5 → **5.625** (= 640×360 internal → ×2/×3/×4 at 720p/1080p/1440p); unverified.
+- **One pixel density everywhere**: 32 PPU sprites, 1 unit = 32 texels on meshes, integer scales only (mixels = #1 amateur tell). Camera Ortho Size = **5.625** (done 2026-10-21; = 640×360 internal → ×2/×3/×4 at 720p/1080p/1440p; 16:10 Mac screens are not integer).
 - **URP**: stay on Universal (3D) renderer — 2D Lights, "Sort 3D As 2D" and Pixel Perfect Camera are 2D-renderer features. Unity 6.4 removed URP Compatibility Mode → old `cmd.Blit` renderer-feature tutorials don't work; custom passes need `RecordRenderGraph`. WebGL2: no compute → Shuriken not VFX Graph. Sprite top clipping into walls: keep distance with colliders first; proper fix = bgolus vertical-billboard depth trick in hand-written HLSL.
 - **Tools**: PixelLab first (`create-tileset` / `map-objects` support `view = low top-down`, `target_palette`; feed references at native resolution). Perspective-drawn vertical objects must stand upright, never lie on the ground (double perspective). Meshy/Tripo = blockout only (no pixel textures; Meshy free = CC BY 4.0 attribution). **Don't use Mana Seed** (author: incompatible with gen-AI content). LimeZu OK with credit.
 - **Art direction**: readability via value contrast — ground lineless, mid-saturation; strongest colors/outlines reserved for characters; grayscale test. Palette from girl01/boy01 → nearest Lospec palette → desaturated map subset (hue-shift ramps). Plaza ≈ 28×28 units (Gather: 20–40 tiles per concurrent player), central fountain, 3–4 conversation islands, building entrances at edges (future channel portals), edges closed by walls/bushes (also fixes walking off the map).
