@@ -64,7 +64,8 @@ Single git repo at the root, one `.gitignore` covering both.
 6. ~~Create/join channels.~~ **Done 2026-10-20** (ChannelSelect scene, `channels` table, leave button in the village).
 7. **In progress**: Deploy for external testing. Server is **live** at `https://13-54-176-157.sslip.io` (2026-10-21). ServerSettings `ProductionUrl` points there (builds use it, editor stays local). Auto-deploy on push via GitHub Actions **done 2026-10-21**. Remaining: build clients for testers.
 8. Social login (Google/Discord OAuth).
-9. Art pass (map tiles, buildings — the floor currently looks flat/2D because it's a plain ortho plane). Researched 2026-10-21 → see **Map art direction** below.
+9. Art pass + office concept. **In progress**: online village = wizard-guild office room (desks / hallway / lounge), walls, furniture collision, chat zones, sitting + desk focus mode — all live 2026-10-21 (b975e6a). See **Map art direction** and **Maps & chat zones**.
+   Planned (owner agreed 2026-10-21, "later"): (a) runtime maps — server sends the map JSON on join, client lays the room at runtime from a bundled prop catalog (layout edits = server deploy only; new art later via PNG download or Addressables); (b) several maps per channel joined by portal tiles (player state gets a map id, sync/chat per map, one Unity scene rebuilds the room); (c) maybe per-channel/user-made maps (big, owner still deciding). Small TODOs: ship a new Windows build to testers (their build still shows the old plaza), "N people hear you" indicator, wall end thickness / wall decor, trees at 128px for outdoor maps.
 10. Voice.
 
 Accounts (owner request 2026-10-20; "no signup screen like Steam games, but extensible"):
