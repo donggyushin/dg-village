@@ -49,6 +49,34 @@ deploy/deploy.sh   # git pull → docker compose up -d --build --wait → 옛 �
 - 키 교체: 새 키 생성 → `authorized_keys` 의 그 줄 교체 → `gh secret set DEPLOY_SSH_KEY < 새키`.
 - 서버 작업 트리를 손으로 고치면 `git pull --ff-only` 가 실패해 배포가 멈춘다. 서버에서는 `deploy/.env` 외에는 고치지 말 것.
 
+## 백업
+
+두 겹:
+
+| 무엇 | 언제 | 막아주는 것 |
+|---|---|---|
+| `deploy/backup.sh` (pg_dump → `~/backups/`, 14일 보관) | 매일 03:00 KST (cron) | 실수로 지운 데이터, DB 깨짐 |
+| Lightsail 자동 스냅샷 (인스턴스 디스크 전체) | 매일 (콘솔에서 켬) | 인스턴스 자체를 잃음 |
+
+cron 등록 (서버에서 한 번):
+
+```bash
+(crontab -l 2>/dev/null | grep -v deploy/backup.sh; echo '0 18 * * * $HOME/dg-village/deploy/backup.sh >> $HOME/backups/backup.log 2>&1') | crontab -
+```
+
+서버 시계는 UTC (18:00 UTC = 03:00 KST). 확인: `crontab -l`, `tail ~/backups/backup.log`, `ls -lh ~/backups`.
+
+복원 (서버에서, **현재 DB 를 덮어쓴다** — 먼저 `deploy/backup.sh` 로 지금 상태를 떠 둘 것):
+
+```bash
+cd ~/dg-village/deploy
+sudo docker compose stop server caddy
+sudo docker compose exec -T postgres pg_restore -U dg_village -d dg_village --clean --if-exists < ~/backups/dg_village-<시각>.dump
+sudo docker compose up -d --wait
+```
+
+맥으로 가져오기: `scp -i ~/.ssh/dg-village ubuntu@13.54.176.157:backups/<파일> .`
+
 ## 자주 쓰는 명령
 
 ```bash
