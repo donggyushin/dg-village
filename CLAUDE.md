@@ -174,6 +174,8 @@ Reference character: `Sprites/Characters/girl01/` (pink-haired chibi girl). Futu
 - Editing `Packages/manifest.json` while the editor is open is **not** picked up automatically — install via Package Manager "Add package from git URL" (or restart the editor).
 - **Import race**: when a new/changed `AssetPostprocessor` and new assets land in the same refresh, assets may import before the script recompiles. Commit the importer first or fix `.meta` (`alignment: 9`, `spritePivot`) afterwards — reimport alone won't re-apply because of the first-import-only guard.
 - `uvicorn --reload` restarting on a `db.py` change **before** `alembic upgrade head` dies at startup (missing table) and then hangs every request. Run the migration, then touch a server file (or restart) to reload.
+- **Never change Player Settings `Company Name` (`DefaultCompany`) / `Product Name` (`dg-village`)** once testers have builds: PlayerPrefs location is keyed by them, so changing either silently gives every player a new anonymous account.
+- Windows tester build: Build Profiles → `Windows` profile (Mono, Intel 64-bit; IL2CPP can't cross-compile from Mac) → `unity/Builds/Windows/dg-village/`, zip without the `*_BackUpThisFolder_ButDontShipItWithYourGame` folder. Unsigned → SmartScreen "More info → Run anyway".
 - Mesh Collider warning on Ground ("missing pre-baked triangle collision") is harmless for now.
 
 ## Unity conventions
