@@ -23,6 +23,9 @@ logger = logging.getLogger(__name__)
 SIT_RANGE = 1.5
 # A move this far from the seat while sitting means the player got up.
 STAND_DISTANCE = 0.05
+# How far outside a portal (units) a travel request is still accepted: the server's position lags
+# the client's by up to one move interval.
+PORTAL_SLACK = 1.0
 
 
 class Connection(Protocol):
@@ -143,17 +146,39 @@ class RoomManager:
         # Walking through a portal is also a new session (on the other map's room).
         await self.kick(player_id, "logged in from another session")
 
-        room_name = f"{channel}/{map_id}"
-        room = self.rooms.get(room_name)
-        if room is None:
-            room = self.rooms[room_name] = Room(room_name, channel, self.maps.get(map_id))
+        room = self._room(channel, map_id)
         x, z = position
         state = PlayerState(id=player_id, name=name, character_id=character_id, x=x, z=z)
         room.players[player_id] = Player(state, connection)
         self._player_rooms[player_id] = room
         await room.broadcast(PlayerJoinedMessage(player=state).to_json(), exclude=player_id)
-        logger.info("%s (%s) joined room %r", name, player_id, room_name)
+        logger.info("%s (%s) joined room %r", name, player_id, room.name)
         return room, state
+
+    async def travel(self, room: Room, player_id: str, to: str) -> tuple[Room, str | None]:
+        """Move the player through a portal of their map to `to`. Returns (room now in, error)."""
+        player = room.players[player_id]
+        state = player.state
+        game_map = room.game_map
+        portal = game_map.portal_to(to, state.x, state.z, PORTAL_SLACK) if game_map else None
+        if portal is None or to not in self.maps:
+            return room, "not at a portal"
+        await self.leave(room, player_id, player.connection)
+        state.seat, state.focused, state.moving = None, False, False
+        state.x, state.z = portal.spawn_x, portal.spawn_z
+        target = self._room(room.channel, to)
+        target.players[player_id] = player
+        self._player_rooms[player_id] = target
+        await target.broadcast(PlayerJoinedMessage(player=state).to_json(), exclude=player_id)
+        logger.info("%s (%s) travelled to room %r", state.name, player_id, target.name)
+        return target, None
+
+    def _room(self, channel: str, map_id: str) -> Room:
+        name = f"{channel}/{map_id}"
+        room = self.rooms.get(name)
+        if room is None:
+            room = self.rooms[name] = Room(name, channel, self.maps.get(map_id))
+        return room
 
     def player_count(self, channel: str) -> int:
         """Players in the channel, all maps together."""

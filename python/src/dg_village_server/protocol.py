@@ -95,8 +95,15 @@ class StandMessage(CamelModel):
     type: Literal["stand"]
 
 
+class TravelMessage(CamelModel):
+    """Walk through a portal of the current map to the map `to`. Answered by a new `welcome`."""
+
+    type: Literal["travel"]
+    to: str = Field(min_length=1, max_length=32)
+
+
 ClientMessage = Annotated[
-    JoinMessage | MoveMessage | ChatMessage | SitMessage | StandMessage,
+    JoinMessage | MoveMessage | ChatMessage | SitMessage | StandMessage | TravelMessage,
     Field(discriminator="type"),
 ]
 client_message_adapter: TypeAdapter[ClientMessage] = TypeAdapter(ClientMessage)
@@ -120,11 +127,13 @@ class PlayerState(CamelModel):
 
 
 class WelcomeMessage(CamelModel):
-    """Sent once to the joining client: its own id and everyone already in the room."""
+    """Sent on join and after each travel: own id, everyone in the room (incl. self) and the map."""
 
     type: Literal["welcome"] = "welcome"
     id: str
     players: list[PlayerState]
+    # maps/<id>.json as-is; None for a room without a map (tests)
+    map: dict | None = None
 
 
 class PlayerJoinedMessage(CamelModel):

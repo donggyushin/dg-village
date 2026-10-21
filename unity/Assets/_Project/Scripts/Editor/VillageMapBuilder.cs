@@ -6,31 +6,23 @@ using UnityEngine;
 namespace DgVillage.Editor
 {
     /// <summary>
-    /// 메뉴 "DgVillage → Apply Maps To Village Scenes".
-    /// 맵 하나 = 씬 하나 (MapClient.SceneOf). 서버의 maps/{id}.json 으로 마을 씬들의 바닥을 깐다:
-    ///   office  → SampleScene (Player · Network · ChatCanvas 등 손으로 만든 씬)
-    ///   outdoor → Outdoor     (SampleScene 을 통째로 복사한 뒤 바닥만 바꾼다 — 매번 새로 복사하니 Outdoor 를 손으로 고치지 말 것)
-    /// 지우는 것: 옛 평지 Ground, 이전에 깐 Floor · Props · Seats · Portals. 그대로 두는 것: 나머지 전부.
-    /// Network 에 SeatInteraction (앉기) · PortalTraveler (맵 이동) 를, ChatCanvas 에 안내 문구 SeatHint 를 (없으면) 붙이고,
-    /// NetworkClient 의 Map Id 를 그 씬의 맵으로 채운다.
-    /// 맵 JSON 을 고친 뒤 다시 실행하면 방만 새로 깐다 (서버도 같은 JSON 으로 채팅 구역을 정한다).
-    /// Outdoor 를 처음 만든 뒤엔 Build Profiles 의 Scene List 에 넣어야 LoadScene 으로 열린다.
+    /// 메뉴 "DgVillage → Set Up Village Scene".
+    /// 온라인 마을 씬(SampleScene) 하나가 모든 맵을 쓴다: 접속하면 MapLoader 가 서버 welcome 의 맵으로 방을 깔고,
+    /// 포탈을 지나면 같은 씬에서 방만 바꿔 깐다. 이 메뉴는 그 준비를 한다:
+    ///   - PropCatalog 갱신 + 미리보기용으로 maps/office.json 방(루트 "Map")을 깐다 (에디터에서 보이게; 접속하면 바뀐다)
+    ///     지우는 것: 옛 평지 Ground, 이전에 깐 Map (그리고 그 전 방식의 Floor · Props · Seats · Portals)
+    ///   - Network 에 MapLoader (맵 깔기) · SeatInteraction (앉기) · PortalTraveler (맵 이동),
+    ///     ChatCanvas 에 안내 문구 SeatHint 를 (없으면) 붙이고 연결한다.
+    /// 소품 그림을 추가했거나 이 씬의 미리보기를 새로 보고 싶을 때 다시 실행한다. 맵 배치만 바꿨으면 서버 배포로 충분.
     /// </summary>
     public static class VillageMapBuilder
     {
-        private const string SceneFolder = "Assets/Scenes/";
-        private const string Title = "Apply Maps To Village Scenes";
-        // 첫 번째 = 손으로 만든 원본 씬, 나머지는 그 복사본
-        private static readonly string[] MapIds = { MapClient.DefaultMapId, "outdoor" };
-        private static readonly string[] OldRoots =
-        {
-            "Ground", OfficeRoomBuilder.FloorName, OfficeRoomBuilder.PropsName, OfficeRoomBuilder.SeatsName,
-            OfficeRoomBuilder.PortalsName,
-        };
+        private const string ScenePath = "Assets/Scenes/SampleScene.unity";
+        private const string PreviewMapId = "office";
+        private const string Title = "Set Up Village Scene";
+        private static readonly string[] OldRoots = { "Ground", MapBuilder.RootName, "Floor", "Props", "Seats", "Portals" };
 
-        private static string ScenePath(string mapId) => $"{SceneFolder}{MapClient.SceneOf(mapId)}.unity";
-
-        [MenuItem("DgVillage/Apply Maps To Village Scenes")]
+        [MenuItem("DgVillage/Set Up Village Scene")]
         private static void Apply()
         {
             if (EditorApplication.isPlaying)
@@ -60,36 +52,12 @@ namespace DgVillage.Editor
         /// </summary>
         public static string ApplyToVillage()
         {
-            for (int i = 0; i < MapIds.Length; i++)
-            {
-                if (i > 0)
-                {
-                    string copy = ScenePath(MapIds[i]);
-                    AssetDatabase.DeleteAsset(copy);
-                    if (!AssetDatabase.CopyAsset(ScenePath(MapIds[0]), copy))
-                    {
-                        return $"{copy} 로 복사 실패.";
-                    }
-                }
-                string error = ApplyMap(MapIds[i]);
-                if (error != null)
-                {
-                    return error;
-                }
-            }
-            EditorSceneManager.OpenScene(ScenePath(MapIds[0]), OpenSceneMode.Single);
-            return null;
-        }
-
-        private static string ApplyMap(string mapId)
-        {
-            GameMapData map = OfficeRoomBuilder.LoadMap(mapId);
+            GameMapData map = OfficeRoomBuilder.LoadMap(PreviewMapId);
             if (map == null)
             {
-                return $"{OfficeRoomBuilder.MapPath(mapId)} 가 없다.";
+                return $"{OfficeRoomBuilder.MapPath(PreviewMapId)} 가 없다.";
             }
-            string scenePath = ScenePath(mapId);
-            var scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
+            var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
             foreach (GameObject root in scene.GetRootGameObjects())
             {
                 if (System.Array.IndexOf(OldRoots, root.name) >= 0)
@@ -97,12 +65,12 @@ namespace DgVillage.Editor
                     Object.DestroyImmediate(root);
                 }
             }
-            GameObject floor = OfficeRoomBuilder.CreateRoom(map);
+            GameObject room = OfficeRoomBuilder.CreateRoom(map);
 
-            string seatError = SetUpSeating(mapId);
-            if (seatError != null)
+            string error = SetUpComponents(room);
+            if (error != null)
             {
-                return seatError;
+                return error;
             }
 
             // 하늘색 skybox 대신 방 밖은 어두운 단색
@@ -115,12 +83,13 @@ namespace DgVillage.Editor
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
-            Debug.Log($"{scenePath} 에 맵을 깔았다 ({map.id}).", floor);
+            Selection.activeGameObject = room;
+            Debug.Log($"{ScenePath} 준비 완료 (미리보기 = {map.id}).", room);
             return null;
         }
 
-        // Network 오브젝트에 SeatInteraction · PortalTraveler + 맵 id, ChatCanvas 에 화면 아래 안내 문구 (입력창 바로 위)
-        private static string SetUpSeating(string mapId)
+        // Network 오브젝트에 MapLoader · SeatInteraction · PortalTraveler, ChatCanvas 에 화면 아래 안내 문구 (입력창 바로 위)
+        private static string SetUpComponents(GameObject room)
         {
             var client = Object.FindAnyObjectByType<NetworkClient>();
             var player = Object.FindAnyObjectByType<PlayerMovement>();
@@ -169,13 +138,25 @@ namespace DgVillage.Editor
             {
                 traveler = client.gameObject.AddComponent<PortalTraveler>();
             }
+            var loader = client.GetComponent<MapLoader>();
+            if (loader == null)
+            {
+                loader = client.gameObject.AddComponent<MapLoader>();
+            }
             var travelerSo = new SerializedObject(traveler);
+            travelerSo.FindProperty("_client").objectReferenceValue = client;
             travelerSo.FindProperty("_localPlayer").objectReferenceValue = player;
+            travelerSo.FindProperty("_mapLoader").objectReferenceValue = loader;
             travelerSo.ApplyModifiedPropertiesWithoutUndo();
 
-            var clientSo = new SerializedObject(client);
-            clientSo.FindProperty("_mapId").stringValue = mapId;
-            clientSo.ApplyModifiedPropertiesWithoutUndo();
+            var loaderSo = new SerializedObject(loader);
+            loaderSo.FindProperty("_client").objectReferenceValue = client;
+            loaderSo.FindProperty("_catalog").objectReferenceValue =
+                AssetDatabase.LoadAssetAtPath<PropCatalog>(OfficeRoomBuilder.CatalogPath);
+            loaderSo.FindProperty("_localPlayer").objectReferenceValue = player;
+            loaderSo.FindProperty("_camera").objectReferenceValue = Object.FindAnyObjectByType<CameraFollow>();
+            loaderSo.FindProperty("_room").objectReferenceValue = room;
+            loaderSo.ApplyModifiedPropertiesWithoutUndo();
             return null;
         }
     }

@@ -59,6 +59,13 @@ namespace DgVillage
 
         private void OnValidate() => Parse();
 
+        /// <summary>런타임에 만들 때 (MapBuilder). 메시는 다음 Update 에서 다시 만든다</summary>
+        public void SetLayout(string layout)
+        {
+            _layout = layout;
+            Parse();
+        }
+
         // OnValidate 안에서는 MeshFilter 를 바꿀 수 없어서 다음 Update 에서 다시 만든다
         private void Update()
         {

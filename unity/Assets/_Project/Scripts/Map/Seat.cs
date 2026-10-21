@@ -17,6 +17,13 @@ namespace DgVillage
         public string Id => _id;
         public bool IsDesk => _kind == "desk";
 
+        /// <summary>런타임에 만들 때 (MapBuilder)</summary>
+        public void Init(string id, string kind)
+        {
+            _id = id;
+            _kind = kind;
+        }
+
         private void OnEnable() => Active.Add(this);
 
         private void OnDisable() => Active.Remove(this);

@@ -66,7 +66,7 @@ namespace DgVillage.Editor
 
             var player = new GameObject("Player", typeof(PlayerMovement));
             player.transform.position = new Vector3(-0.5f, 0f, 0f);
-            GameObject visual = OfficeRoomBuilder.CreateSprite("Visual", player.transform, girl != null ? girl.Preview : null, spriteMaterial);
+            GameObject visual = MapBuilder.CreateSprite("Visual", player.transform, girl != null ? girl.Preview : null, spriteMaterial);
             var animator = visual.AddComponent<DirectionalSpriteAnimator>();
             var animatorSo = new SerializedObject(animator);
             animatorSo.FindProperty("_character").objectReferenceValue = girl;
@@ -74,7 +74,7 @@ namespace DgVillage.Editor
 
             var boyRoot = new GameObject("Boy01");
             boyRoot.transform.position = new Vector3(-4.5f, 0f, 3.5f);
-            OfficeRoomBuilder.CreateSprite("Visual", boyRoot.transform, boy != null ? boy.Preview : null, spriteMaterial);
+            MapBuilder.CreateSprite("Visual", boyRoot.transform, boy != null ? boy.Preview : null, spriteMaterial);
 
             var cameraGo = new GameObject("Main Camera", typeof(Camera));
             cameraGo.tag = "MainCamera";

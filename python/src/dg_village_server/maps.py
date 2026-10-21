@@ -1,15 +1,16 @@
 """Map data shared with the Unity client, and who can hear whom on a map.
 
-`maps/<id>.json` is the single source of truth: the server reads it here, and Unity's
-**DgVillage → Create Map Test Scene** builds the room (floor, walls, furniture) from the same file.
+`maps/<id>.json` is the single source of truth: the server reads it here and sends it to the
+client in `welcome`; the client lays the room (floor, walls, furniture) from it at runtime.
 
 Coordinates match Unity's FloorMesh: 1 tile = 1 unit, the layout is centered on the origin,
 the first row is north (+z). Layout characters: `s` stone (hallway), `w` wood (desk area),
 `c` carpet (lounge), `g` grass and `p` path (outdoor, hallway rules), anything else = no floor.
 
 Each map is its own room per channel (room.py): players only see and hear players on the same map.
-`portals` are floor rectangles that send the player to another map (`to`) at (`spawnX`, `spawnZ`);
-the client does the travel (leave + join the other map), the server only lists them.
+`portals` are floor rectangles that send the player to another map (`to`) at (`spawnX`, `spawnZ`):
+the client sends `travel` when its player steps in, the server checks the player is there and moves
+them to the other map's room.
 
 Zones decide chat delivery:
 - lounge = a connected carpet area; everyone inside the same lounge hears each other
@@ -53,6 +54,8 @@ class Portal:
 
 class GameMap:
     def __init__(self, data: dict) -> None:
+        # The JSON as loaded, sent to clients as-is (they lay the room from it).
+        self.data = data
         self.id: str = data["id"]
         self.hearing_radius: float = float(data["hearingRadius"])
         self.layout: list[str] = data["layout"]
@@ -75,6 +78,17 @@ class GameMap:
         """`"lounge:<n>"` (n numbers the connected carpet areas) or `"hallway"`."""
         lounge = self._lounges.get(self.tile_at(x, z))
         return HALLWAY if lounge is None else f"lounge:{lounge}"
+
+    def portal_to(self, to: str, x: float, z: float, slack: float) -> Portal | None:
+        """A portal to `to` that (x, z) stands in, the rectangle grown by `slack` on every side."""
+        for portal in self.portals:
+            if (
+                portal.to == to
+                and abs(x - portal.x) <= portal.w / 2 + slack
+                and abs(z - portal.z) <= portal.d / 2 + slack
+            ):
+                return portal
+        return None
 
     def can_hear(self, speaker: tuple[float, float], listener: tuple[float, float]) -> bool:
         zone = self.zone_at(*speaker)

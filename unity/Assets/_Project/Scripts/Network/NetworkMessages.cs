@@ -20,9 +20,6 @@ namespace DgVillage
         public string type = "join";
         public string room;
         public string token;
-        public string map;
-        public float x;
-        public float z;
     }
 
     [Serializable]
@@ -54,6 +51,13 @@ namespace DgVillage
     public class StandMessage
     {
         public string type = "stand";
+    }
+
+    [Serializable]
+    public class TravelMessage
+    {
+        public string type = "travel";
+        public string to;
     }
 
     // ----- server -> client -----
@@ -90,6 +94,8 @@ namespace DgVillage
     {
         public string id;
         public PlayerState[] players;
+        /// <summary>서버의 maps/{id}.json 그대로. 옛 서버는 안 보낸다 (그러면 id 가 빈 객체)</summary>
+        public GameMapData map;
     }
 
     [Serializable]

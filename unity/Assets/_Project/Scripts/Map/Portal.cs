@@ -4,9 +4,9 @@ using UnityEngine;
 namespace DgVillage
 {
     /// <summary>
-    /// 다른 맵으로 가는 바닥 영역. 맵 JSON 의 portals 를 씬 빌더가 깔아 둔다.
-    /// 위치 = 영역 가운데, Size = 가로 × 깊이. 플레이어 발이 이 안에 들어오면 PortalTraveler 가
-    /// To 맵의 씬을 열고 Spawn 에서 시작하게 한다. 선택하면 Scene 뷰에 하늘색 사각형으로 보인다.
+    /// 다른 맵으로 가는 바닥 영역. 맵 JSON 의 portals 를 MapBuilder 가 깔아 둔다.
+    /// 위치 = 영역 가운데, Size = 가로 × 깊이. 플레이어 발이 이 안에 들어오면 PortalTraveler 가 서버에
+    /// travel 을 보낸다 (도착 위치 Spawn 은 서버가 정한다). 선택하면 Scene 뷰에 하늘색 사각형으로 보인다.
     /// </summary>
     public class Portal : MonoBehaviour
     {
@@ -23,6 +23,14 @@ namespace DgVillage
 
         public string To => _to;
         public Vector3 Spawn => new(_spawn.x, 0f, _spawn.y);
+
+        /// <summary>런타임에 만들 때 (MapBuilder)</summary>
+        public void Init(string to, Vector2 size, Vector2 spawn)
+        {
+            _to = to;
+            _size = size;
+            _spawn = spawn;
+        }
 
         private void OnEnable() => Active.Add(this);
 

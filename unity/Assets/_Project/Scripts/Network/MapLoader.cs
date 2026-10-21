@@ -1,0 +1,69 @@
+using UnityEngine;
+
+namespace DgVillage
+{
+    /// <summary>
+    /// 서버 welcome 에 실려 온 맵으로 방을 깐다 (채널 입장 · 포탈 이동 둘 다 welcome 이 온다).
+    /// 씬에 미리 깔려 있던 방(에디터 미리보기)이나 이전 맵을 지우고 MapBuilder 로 새로 만든 뒤,
+    /// 내 캐릭터를 서버가 정한 위치(포탈이면 도착 지점)로 옮기고 카메라를 바로 붙인다.
+    /// 그래서 맵 배치를 바꿀 땐 서버 JSON 만 배포하면 된다 (새 그림은 PropCatalog = 클라이언트 업데이트).
+    /// </summary>
+    public class MapLoader : MonoBehaviour
+    {
+        [SerializeField] private NetworkClient _client;
+        [SerializeField] private PropCatalog _catalog;
+        [SerializeField] private PlayerMovement _localPlayer;
+        [SerializeField] private CameraFollow _camera;
+
+        [Tooltip("씬에 미리 깔린 방 (에디터 미리보기). 첫 welcome 때 서버 맵으로 바뀐다")]
+        [SerializeField] private GameObject _room;
+
+        /// <summary>지금 깔린 맵 id. 아직 서버 맵을 못 받았으면 null</summary>
+        public string CurrentMapId { get; private set; }
+
+        private void OnEnable()
+        {
+            if (_client != null)
+            {
+                _client.Welcomed += OnWelcomed;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (_client != null)
+            {
+                _client.Welcomed -= OnWelcomed;
+            }
+        }
+
+        private void OnWelcomed(WelcomeMessage welcome)
+        {
+            // 옛 서버는 map 을 안 보낸다 (JsonUtility 는 빈 객체를 만든다) → 씬에 깔린 방을 그대로 쓴다
+            if (welcome.map == null || string.IsNullOrEmpty(welcome.map.id) || _catalog == null)
+            {
+                return;
+            }
+            if (_room != null)
+            {
+                // Destroy 는 프레임 끝에 지운다. 그 전에 꺼서 Obstacle · Seat · Portal 목록에서 바로 빠지게
+                _room.SetActive(false);
+                Destroy(_room);
+            }
+            _room = MapBuilder.Build(welcome.map, _catalog);
+            CurrentMapId = welcome.map.id;
+
+            foreach (PlayerState state in welcome.players)
+            {
+                if (state.id == welcome.id)
+                {
+                    _localPlayer.transform.position = new Vector3(state.x, 0f, state.z);
+                }
+            }
+            if (_camera != null)
+            {
+                _camera.Snap();
+            }
+        }
+    }
+}

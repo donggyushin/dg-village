@@ -15,6 +15,9 @@ namespace DgVillage
         [Tooltip("바닥에서 차지하는 크기 (x = 가로, y = 깊이) unit")]
         [SerializeField] private Vector2 _size = new(1f, 0.5f);
 
+        /// <summary>런타임에 만들 때 (MapBuilder)</summary>
+        public void Init(Vector2 size) => _size = size;
+
         private void OnEnable() => Active.Add(this);
 
         private void OnDisable() => Active.Remove(this);

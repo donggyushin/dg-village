@@ -6,13 +6,11 @@ using UnityEngine;
 namespace DgVillage.Editor
 {
     /// <summary>
-    /// 서버와 같이 쓰는 맵 JSON(python/src/dg_village_server/maps/{id}.json)으로 열린 씬에 방을 깐다.
-    /// MapTestSceneBuilder(오프라인 테스트 씬)와 VillageMapBuilder(온라인 마을 씬)가 같이 쓴다:
-    ///   Floor   FloorMesh (재질별 타일 바닥 + 가장자리 벽) + Floor_Office · Wall_Office 머티리얼 (URP Unlit)
-    ///   Props   가구 (35° 세운 스프라이트 + 바닥에 눕힌 그림자 + Obstacle = 못 지나감)
-    ///   Seats   앉을 자리 (Seat — id 가 서버와 같다)
-    ///   Portals 다른 맵으로 가는 영역 (Portal)
-    /// 방을 고칠 땐 JSON 을 고치고 메뉴를 다시 실행한다 (씬의 Layout 을 직접 고치면 서버의 채팅 구역과 어긋난다).
+    /// 에디터에서 맵을 까는 데 필요한 것들:
+    ///   - 서버와 같이 쓰는 맵 JSON(python/src/dg_village_server/maps/{id}.json) 읽기
+    ///   - PropCatalog (런타임에 맵을 깔 재료 목록) 만들기 · 갱신 — 메뉴 "DgVillage → Update Prop Catalog"
+    ///   - 열린 씬에 방 깔기 (= 런타임과 같은 MapBuilder, 미리보기 · MapTest 용)
+    /// 방을 고칠 땐 JSON 을 고친다 (씬에 깔린 방은 미리보기일 뿐, 마을은 접속하면 서버가 보낸 맵으로 다시 깐다).
     /// </summary>
     internal static class OfficeRoomBuilder
     {
@@ -20,21 +18,17 @@ namespace DgVillage.Editor
         private const string FloorMaterialPath = "Assets/_Project/Materials/Floor_Office.mat";
         private const string WallTexturePath = "Assets/_Project/Sprites/Environment/Ground/office_wall.png";
         private const string WallMaterialPath = "Assets/_Project/Materials/Wall_Office.mat";
-        private const string PropFolder = "Assets/_Project/Sprites/Environment/Props/";
+        private const string PropFolder = "Assets/_Project/Sprites/Environment/Props";
+        private const string ShadowPath = PropFolder + "/blob_shadow.png";
         private const string SpriteMaterialPath = "Packages/com.unity.render-pipelines.universal/Runtime/Materials/Sprite-Unlit-Default.mat";
+        internal const string CatalogPath = "Assets/_Project/Maps/PropCatalog.asset";
         // Application.dataPath(= unity/Assets) 기준
         private const string MapFolder = "../../python/src/dg_village_server/maps/";
 
-        internal const string FloorName = "Floor";
-        internal const string PropsName = "Props";
-        internal const string SeatsName = "Seats";
-        internal const string PortalsName = "Portals";
         internal static readonly Color BackgroundColor = new(0.106f, 0.129f, 0.118f);
 
-        // 캐릭터 Visual 과 같은 기울기: 카메라(X 35°)를 정면으로 본다
-        private static readonly Quaternion StandUp = Quaternion.Euler(35f, 0f, 0f);
-
-        // 가구가 바닥에서 차지하는 크기 (가로, 깊이) unit → Obstacle. 가로 ≈ 스프라이트에 그려진 폭, 깊이는 눈대중
+        // 가구가 바닥에서 차지하는 크기 (가로, 깊이) unit → Obstacle. 가로 ≈ 스프라이트에 그려진 폭, 깊이는 눈대중.
+        // 여기 없는 소품은 막지 않는다 (벤치 등 아직 안 정한 것)
         private static readonly Dictionary<string, Vector2> Footprints = new()
         {
             ["desk_quill"] = new(1.3f, 0.6f), ["desk_spellbook"] = new(1.5f, 0.6f), ["desk_crystal"] = new(1.5f, 0.6f),
@@ -69,98 +63,58 @@ namespace DgVillage.Editor
         internal static Material SpriteMaterial => AssetDatabase.LoadAssetAtPath<Material>(SpriteMaterialPath);
 
         /// <summary>
-        /// 열린 씬에 Floor 와 Props 를 만든다. (NewScene 다음에 불러야 한다 — 에셋을 여기서 불러오므로)
+        /// 열린 씬에 방(루트 "Map")을 만든다. (NewScene 다음에 불러야 한다 — 에셋을 여기서 불러오므로)
         /// </summary>
-        internal static GameObject CreateRoom(GameMapData map)
+        internal static GameObject CreateRoom(GameMapData map) => MapBuilder.Build(map, UpdateCatalog());
+
+        [MenuItem("DgVillage/Update Prop Catalog")]
+        private static void UpdateCatalogMenu()
         {
-            Material floorMaterial = LoadOrCreateUnlitMaterial(FloorMaterialPath, FloorTexturePath);
-            Material wallMaterial = LoadOrCreateUnlitMaterial(WallMaterialPath, WallTexturePath);
-            Material spriteMaterial = SpriteMaterial;
-
-            var floor = new GameObject(FloorName, typeof(MeshFilter), typeof(MeshRenderer), typeof(FloorMesh));
-            // submesh 0 = 바닥, 1 = 벽 (FloorMesh 가 바닥 끝에 자동으로 만든다)
-            floor.GetComponent<MeshRenderer>().sharedMaterials = new[] { floorMaterial, wallMaterial };
-            var floorSo = new SerializedObject(floor.GetComponent<FloorMesh>());
-            floorSo.FindProperty("_layout").stringValue = string.Join("\n", map.layout);
-            floorSo.ApplyModifiedPropertiesWithoutUndo();
-
-            var props = new GameObject(PropsName).transform;
-            foreach (GameMapData.Prop prop in map.props)
-            {
-                var sprite = AssetDatabase.LoadAssetAtPath<Sprite>($"{PropFolder}{prop.sprite}.png");
-                if (sprite == null)
-                {
-                    Debug.LogWarning($"{PropFolder}{prop.sprite}.png 가 없다 — art/props/export_props.py 확인");
-                }
-                var root = new GameObject(prop.sprite).transform;
-                root.SetParent(props, false);
-                root.position = new Vector3(prop.x, 0f, prop.z);
-                CreateSprite("Sprite", root, sprite, spriteMaterial);
-                if (Footprints.TryGetValue(prop.sprite, out Vector2 footprint))
-                {
-                    var obstacleSo = new SerializedObject(root.gameObject.AddComponent<Obstacle>());
-                    obstacleSo.FindProperty("_size").vector2Value = footprint;
-                    obstacleSo.ApplyModifiedPropertiesWithoutUndo();
-                }
-                if (prop.shadow > 0)
-                {
-                    CreateShadow(root, prop.shadow, spriteMaterial);
-                }
-            }
-
-            var seats = new GameObject(SeatsName).transform;
-            foreach (GameMapData.Seat seat in map.seats)
-            {
-                var go = new GameObject(seat.id, typeof(Seat));
-                go.transform.SetParent(seats, false);
-                go.transform.position = new Vector3(seat.x, 0f, seat.z);
-                var seatSo = new SerializedObject(go.GetComponent<Seat>());
-                seatSo.FindProperty("_id").stringValue = seat.id;
-                seatSo.FindProperty("_kind").stringValue = seat.kind;
-                seatSo.ApplyModifiedPropertiesWithoutUndo();
-            }
-
-            var portals = new GameObject(PortalsName).transform;
-            foreach (GameMapData.Portal portal in map.portals ?? new GameMapData.Portal[0])
-            {
-                var go = new GameObject($"to {portal.to}", typeof(Portal));
-                go.transform.SetParent(portals, false);
-                go.transform.position = new Vector3(portal.x, 0f, portal.z);
-                var portalSo = new SerializedObject(go.GetComponent<Portal>());
-                portalSo.FindProperty("_to").stringValue = portal.to;
-                portalSo.FindProperty("_size").vector2Value = new Vector2(portal.w, portal.d);
-                portalSo.FindProperty("_spawn").vector2Value = new Vector2(portal.spawnX, portal.spawnZ);
-                portalSo.ApplyModifiedPropertiesWithoutUndo();
-            }
-            return floor;
+            PropCatalog catalog = UpdateCatalog();
+            Selection.activeObject = catalog;
+            Debug.Log($"{CatalogPath} 갱신 완료.", catalog);
         }
 
-        internal static GameObject CreateSprite(string name, Transform parent, Sprite sprite, Material material)
+        /// <summary>
+        /// Props 폴더의 스프라이트 전부(그림자 제외) + 위 Footprints + 바닥 · 벽 · 스프라이트 머티리얼로
+        /// PropCatalog 를 만들거나 갱신해서 돌려준다. 소품을 export_props.py 로 추가했으면 다시 부를 것.
+        /// </summary>
+        internal static PropCatalog UpdateCatalog()
         {
-            var go = new GameObject(name, typeof(SpriteRenderer));
-            go.transform.SetParent(parent, false);
-            go.transform.localRotation = StandUp;
-            var renderer = go.GetComponent<SpriteRenderer>();
-            renderer.sprite = sprite;
-            renderer.sharedMaterial = material;
-            return go;
-        }
+            var entries = new List<PropCatalog.Entry>();
+            foreach (string guid in AssetDatabase.FindAssets("t:Sprite", new[] { PropFolder }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (path == ShadowPath)
+                {
+                    continue;
+                }
+                string id = Path.GetFileNameWithoutExtension(path);
+                entries.Add(new PropCatalog.Entry
+                {
+                    Id = id,
+                    Sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path),
+                    Footprint = Footprints.TryGetValue(id, out Vector2 footprint) ? footprint : Vector2.zero,
+                });
+            }
+            entries.Sort((a, b) => string.CompareOrdinal(a.Id, b.Id));
 
-        // 바닥에 눕힌 타원 그림자. 스프라이트 pivot 이 아래 가운데라 반 높이만큼 당겨 발밑 중앙에 맞춘다
-        private static void CreateShadow(Transform parent, int scale, Material material)
-        {
-            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>($"{PropFolder}blob_shadow.png");
-            var go = new GameObject("Shadow", typeof(SpriteRenderer));
-            go.transform.SetParent(parent, false);
-            go.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-            go.transform.localScale = new Vector3(scale, scale, 1f);
-            float halfDepth = sprite != null ? sprite.bounds.size.y * scale / 2f : 0f;
-            go.transform.localPosition = new Vector3(0f, 0.01f, -halfDepth);
-            var renderer = go.GetComponent<SpriteRenderer>();
-            renderer.sprite = sprite;
-            renderer.sharedMaterial = material;
-            // 투명 스프라이트끼리는 거리순으로 그리는데, 그림자는 항상 먼저 (= 캐릭터 · 소품 아래)
-            renderer.sortingOrder = -1;
+            var catalog = AssetDatabase.LoadAssetAtPath<PropCatalog>(CatalogPath);
+            if (catalog == null)
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(CatalogPath));
+                catalog = ScriptableObject.CreateInstance<PropCatalog>();
+                AssetDatabase.CreateAsset(catalog, CatalogPath);
+            }
+            catalog.Set(
+                LoadOrCreateUnlitMaterial(FloorMaterialPath, FloorTexturePath),
+                LoadOrCreateUnlitMaterial(WallMaterialPath, WallTexturePath),
+                SpriteMaterial,
+                AssetDatabase.LoadAssetAtPath<Sprite>(ShadowPath),
+                entries);
+            EditorUtility.SetDirty(catalog);
+            AssetDatabase.SaveAssetIfDirty(catalog);
+            return catalog;
         }
 
         private static Material LoadOrCreateUnlitMaterial(string materialPath, string texturePath)

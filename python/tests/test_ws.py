@@ -178,17 +178,42 @@ def test_maps_of_a_channel_are_separate_rooms(client: TestClient) -> None:
         assert receive_until(b, "chat")["text"] == "only me"  # alice's line never came
 
 
-def test_walking_through_a_portal_moves_the_player_to_the_other_room(client: TestClient) -> None:
-    alice, bob = signup(client, "alice"), signup(client, "bob")
-    with client.websocket_connect("/ws") as other:
-        join(other, bob, map="outdoor")
-        with client.websocket_connect("/ws") as office:
-            welcome = join(office, alice)
-            # the client opens a new session on the target map; the office one gets replaced
-            with client.websocket_connect("/ws") as outdoor:
-                welcome_out = join(outdoor, alice, map="outdoor", x=0.0, z=6.0)
-                assert sorted(p["name"] for p in welcome_out["players"]) == ["alice", "bob"]
-                assert receive_until(other, "player_joined")["player"]["id"] == welcome["id"]
+def test_welcome_carries_the_map(client: TestClient) -> None:
+    with client.websocket_connect("/ws") as ws:
+        welcome = join(ws, signup(client, "alice"))
+        assert welcome["map"]["id"] == "office"
+        assert welcome["map"]["layout"] and welcome["map"]["portals"]
+
+
+def test_travel_through_a_portal_moves_the_player_to_the_other_map(client: TestClient) -> None:
+    alice, bob, carol = signup(client, "alice"), signup(client, "bob"), signup(client, "carol")
+    with (
+        client.websocket_connect("/ws") as a,
+        client.websocket_connect("/ws") as inside,
+        client.websocket_connect("/ws") as outside,
+    ):
+        me = join(a, alice)["id"]
+        join(inside, bob)
+        join(outside, carol, map="outdoor")
+        # the office's south exit: x -3.5..1.5, z -6..-5
+        a.send_json({"type": "move", "x": -1.0, "z": -5.4, "facing": "down", "moving": True})
+        a.send_json({"type": "travel", "to": "outdoor"})
+        welcome = receive_until(a, "welcome")
+        assert welcome["map"]["id"] == "outdoor"
+        mine = next(p for p in welcome["players"] if p["id"] == me)
+        assert (mine["x"], mine["z"]) == (0.0, 6.0)  # the portal's spawn point
+        assert sorted(p["name"] for p in welcome["players"]) == ["alice", "carol"]
+        assert receive_until(inside, "player_left")["id"] == me
+        assert receive_until(outside, "player_joined")["player"]["id"] == me
+
+
+def test_travel_away_from_a_portal_is_refused(client: TestClient) -> None:
+    with client.websocket_connect("/ws") as ws:
+        join(ws, signup(client, "alice"))  # at the origin, far from the exit
+        ws.send_json({"type": "travel", "to": "outdoor"})
+        assert receive_until(ws, "error")["message"] == "not at a portal"
+        ws.send_json({"type": "chat", "text": "still here"})
+        assert receive_until(ws, "chat")["text"] == "still here"
 
 
 def test_join_unknown_map_is_rejected(client: TestClient) -> None:

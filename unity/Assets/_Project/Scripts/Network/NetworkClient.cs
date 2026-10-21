@@ -6,7 +6,7 @@ using UnityEngine;
 namespace DgVillage
 {
     /// <summary>
-    /// 서버와 WebSocket 으로 연결해 채널(ChannelClient.Current, 안 골랐으면 광장)의 이 씬 맵(MapId) 방에 들어가고,
+    /// 서버와 WebSocket 으로 연결해 채널(ChannelClient.Current, 안 골랐으면 광장)에 들어가고 (첫 맵 = 서버 기본 맵),
     /// 내 위치를 보내고, 받은 메시지를 이벤트로 알린다.
     /// 다른 플레이어를 화면에 그리는 일은 RemotePlayerSpawner 가 이 이벤트를 구독해서 한다.
     /// </summary>
@@ -17,9 +17,6 @@ namespace DgVillage
 
         [Tooltip("계정 프로필의 characterId 로 내 캐릭터를 찾을 목록")]
         [SerializeField] private CharacterRegistry _characters;
-
-        [Tooltip("이 씬의 맵 id (서버 maps/<id>.json). 마을 맵 메뉴가 채운다")]
-        [SerializeField] private string _mapId = MapClient.DefaultMapId;
 
         [Tooltip("초당 위치 전송 횟수. 서버 tick(10Hz)과 맞춘다")]
         [SerializeField] private float _sendRate = 10f;
@@ -49,6 +46,8 @@ namespace DgVillage
         private WebSocket _socket;
         private float _sendTimer;
         private MoveMessage _lastSent;
+        // travel 을 보내고 새 맵 welcome 을 기다리는 중: 옛 맵 좌표를 새 맵 방에 보내지 않도록 move 를 멈춘다
+        private bool _traveling;
 
         private void Awake()
         {
@@ -63,12 +62,6 @@ namespace DgVillage
                 Debug.LogError("NetworkClient: Local Player 또는 Characters 가 비어 있다. Inspector 에서 연결할 것.", this);
                 enabled = false;
                 return;
-            }
-
-            // 포탈로 왔으면 그 도착 위치에서 시작 (CameraFollow 는 첫 프레임에 바로 따라붙는다)
-            if (MapClient.TryTakeSpawn(out Vector3 spawn))
-            {
-                _localPlayer.transform.position = spawn;
             }
 
             var localAnimator = _localPlayer.GetComponentInChildren<DirectionalSpriteAnimator>();
@@ -126,13 +119,9 @@ namespace DgVillage
         {
             Profile profile = AccountClient.Profile;
             string room = ChannelClient.CurrentId;
-            Debug.Log($"NetworkClient: 연결됨. 채널 {room} 맵 {_mapId} 에 {profile.displayName}({profile.characterId}) 로 입장", this);
-            // 이름 · 캐릭터는 서버가 계정에서 읽는다. 여기서는 채널 · 맵 · 토큰과 시작 위치만 보낸다
-            Vector3 position = _localPlayer.transform.position;
-            Send(new JoinMessage
-            {
-                room = room, token = AccountClient.AccessToken, map = _mapId, x = position.x, z = position.z,
-            });
+            Debug.Log($"NetworkClient: 연결됨. 채널 {room} 에 {profile.displayName}({profile.characterId}) 로 입장", this);
+            // 이름 · 캐릭터는 서버가 계정에서 읽는다. 여기서는 채널과 토큰만 보낸다
+            Send(new JoinMessage { room = room, token = AccountClient.AccessToken });
         }
 
         private void OnClose(WebSocketCloseCode code)
@@ -140,6 +129,7 @@ namespace DgVillage
             Debug.Log($"NetworkClient: 연결 종료 ({code})", this);
             LocalPlayerId = null;
             _lastSent = null;
+            _traveling = false;
             if (_localSeat != "" || LocalFocused)
             {
                 _localSeat = "";
@@ -151,7 +141,7 @@ namespace DgVillage
 
         private void Update()
         {
-            if (LocalPlayerId == null)
+            if (LocalPlayerId == null || _traveling)
             {
                 return;
             }
@@ -193,6 +183,8 @@ namespace DgVillage
                 case "welcome":
                     var welcome = JsonUtility.FromJson<WelcomeMessage>(json);
                     LocalPlayerId = welcome.id;
+                    _traveling = false;
+                    _lastSent = null;
                     Welcomed?.Invoke(welcome);
                     UpdateLocalSeat(welcome.players);
                     break;
@@ -212,6 +204,7 @@ namespace DgVillage
                     break;
                 case "error":
                     string message = JsonUtility.FromJson<ErrorMessage>(json).message;
+                    _traveling = false; // 거절된 travel ("not at a portal") 이면 그 자리에서 계속
                     Debug.LogWarning($"NetworkClient: 서버 에러 - {message}", this);
                     ServerError?.Invoke(message);
                     break;
@@ -244,6 +237,19 @@ namespace DgVillage
         public void SendSit(string seatId) => Send(new SitMessage { seat = seatId });
 
         public void SendStand() => Send(new StandMessage());
+
+        /// <summary>포탈을 지나 다른 맵으로. 서버가 새 맵의 welcome 으로 답한다 (포탈에서 멀면 error)</summary>
+        public void SendTravel(string mapId)
+        {
+            // 서버는 내 마지막 위치로 포탈 안인지 확인한다: 다음 전송 주기를 기다리지 않고 지금 위치부터
+            Vector3 position = _localPlayer.transform.position;
+            Send(new MoveMessage
+            {
+                x = position.x, z = position.z, facing = FacingWire.ToWire(_localPlayer.Facing), moving = _localPlayer.IsMoving,
+            });
+            Send(new TravelMessage { to = mapId });
+            _traveling = true;
+        }
 
         /// <summary>
         /// 채팅을 보낸다. 말풍선은 서버가 되돌려준 chat 메시지를 받았을 때 띄운다 (내 것도 마찬가지).
