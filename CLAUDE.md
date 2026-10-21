@@ -52,7 +52,7 @@ Single git repo at the root, one `.gitignore` covering both.
 6. ~~Create/join channels.~~ **Done 2026-10-20** (ChannelSelect scene, `channels` table, leave button in the village).
 7. **In progress**: Deploy for external testing. Server is **live** at `https://13-54-176-157.sslip.io` (2026-10-21). ServerSettings `ProductionUrl` points there (builds use it, editor stays local). Auto-deploy on push via GitHub Actions **done 2026-10-21**. Remaining: build clients for testers.
 8. Social login (Google/Discord OAuth).
-9. Art pass (map tiles, buildings — the floor currently looks flat/2D because it's a plain ortho plane).
+9. Art pass (map tiles, buildings — the floor currently looks flat/2D because it's a plain ortho plane). Researched 2026-10-21 → see **Map art direction** below.
 10. Voice.
 
 Accounts (owner request 2026-10-20; "no signup screen like Steam games, but extensible"):
@@ -142,6 +142,17 @@ Scripts (`Assets/_Project/Scripts/`, namespace `DgVillage`):
 - Local multiplayer test: Postgres + server running + macOS build (Build And Run into `unity/Builds/`, gitignored, windowed mode) + editor Play.
 - Tests share helpers via `tests/conftest.py` (`client` fixture, `signup(client, name)` → token); ruff isort knows `conftest` as local.
 - Test gotcha: Starlette `TestClient` cancels the server task when a `websocket_connect` block exits; call `ws.close()` inside the block to test disconnect handling.
+
+## Map art direction (research 2026-10-21, not started)
+
+Full report + raw notes: `docs/research/2026-10-21-map-art/` (`report.md`, `report.html`, `notes/`). Decisions to follow:
+
+- **Approach = "RO hybrid"** (how Ragnarok Online built maps): ground = low-poly 3D mesh with 32px tiling pixel textures (+ vertex-color variation, ProBuilder curbs/steps for height), props (trees, benches, lamps, fountain) = upright pixel sprites exactly like characters (32 PPU, Alpha Clip, X 35° tilt) + blob shadow. Rejected: one big painted 2D background. Later experiment: low-res render-texture pixelation (needs render graph; would resample the 64px characters too).
+- **One pixel density everywhere**: 32 PPU sprites, 1 unit = 32 texels on meshes, integer scales only (mixels = #1 amateur tell). Planned camera fix: Ortho Size 5 → **5.625** (= 640×360 internal → ×2/×3/×4 at 720p/1080p/1440p); unverified.
+- **URP**: stay on Universal (3D) renderer — 2D Lights, "Sort 3D As 2D" and Pixel Perfect Camera are 2D-renderer features. Unity 6.4 removed URP Compatibility Mode → old `cmd.Blit` renderer-feature tutorials don't work; custom passes need `RecordRenderGraph`. WebGL2: no compute → Shuriken not VFX Graph. Sprite top clipping into walls: keep distance with colliders first; proper fix = bgolus vertical-billboard depth trick in hand-written HLSL.
+- **Tools**: PixelLab first (`create-tileset` / `map-objects` support `view = low top-down`, `target_palette`; feed references at native resolution). Perspective-drawn vertical objects must stand upright, never lie on the ground (double perspective). Meshy/Tripo = blockout only (no pixel textures; Meshy free = CC BY 4.0 attribution). **Don't use Mana Seed** (author: incompatible with gen-AI content). LimeZu OK with credit.
+- **Art direction**: readability via value contrast — ground lineless, mid-saturation; strongest colors/outlines reserved for characters; grayscale test. Palette from girl01/boy01 → nearest Lospec palette → desaturated map subset (hue-shift ramps). Plaza ≈ 28×28 units (Gather: 20–40 tiles per concurrent player), central fountain, 3–4 conversation islands, building entrances at edges (future channel portals), edges closed by walls/bushes (also fixes walking off the map).
+- First plaza plan = 10 steps over two weekends (table in the report).
 
 ## Character art pipeline (PixelLab)
 
