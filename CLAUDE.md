@@ -50,7 +50,7 @@ Single git repo at the root, one `.gitignore` covering both.
 4. ~~Player character selection.~~ **Done 2026-10-20** (CharacterSelect scene + `characterId` sync). Characters: `girl01` (default), `boy01` (black hoodie, green cargo pants, laptop).
 5. ~~Accounts + DB (phase 1: anonymous accounts).~~ **Done 2026-10-20** (verified with build + editor as two accounts).
 6. ~~Create/join channels.~~ **Done 2026-10-20** (ChannelSelect scene, `channels` table, leave button in the village).
-7. **In progress**: Deploy for external testing. Server is **live** at `https://13-54-176-157.sslip.io` (2026-10-21). ServerSettings `ProductionUrl` points there (builds use it, editor stays local). Remaining: build clients for testers, auto-deploy on push (GitHub Actions).
+7. **In progress**: Deploy for external testing. Server is **live** at `https://13-54-176-157.sslip.io` (2026-10-21). ServerSettings `ProductionUrl` points there (builds use it, editor stays local). Auto-deploy on push via GitHub Actions **done 2026-10-21**. Remaining: build clients for testers.
 8. Social login (Google/Discord OAuth).
 9. Art pass (map tiles, buildings — the floor currently looks flat/2D because it's a plain ortho plane).
 10. Voice.
