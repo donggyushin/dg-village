@@ -20,6 +20,7 @@ from .db import (
     create_sessionmaker,
     ensure_default_channel,
 )
+from .maps import load_map
 from .protocol import (
     ChatMessage,
     ErrorMessage,
@@ -49,7 +50,8 @@ def create_app(settings: Settings | None = None, *, create_tables: bool = False)
         app.state.settings = settings
         app.state.sessionmaker = create_sessionmaker(engine)
         await ensure_default_channel(app.state.sessionmaker)
-        rooms = RoomManager()
+        # Every channel is the office room: chat reaches only players in the same zone
+        rooms = RoomManager(load_map("office"))
         app.state.rooms = rooms
         tick_task = asyncio.create_task(rooms.run_tick_loop(1 / TICK_RATE_HZ))
         yield
