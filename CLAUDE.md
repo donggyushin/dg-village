@@ -4,6 +4,16 @@ Gather.town-style social space game: users create channels, walk around as chara
 
 Solo hobby project (weekends + spare time). Owner is strong on Python/server, new to Unity and art — **explain Unity concepts when introducing them**.
 
+## Game concept (owner, 2026-10-21)
+
+"A game you keep open while working" — like chatting on KakaoTalk with friends during work, but gamified. Players are **not** coworkers; they just work at the same time. First map = an **office** with three zone types:
+
+1. **Desk (개인 자리)** — sitting at your desk = focus mode: you can't hear/see chat (or later voice) from others.
+2. **Hallway (복도)** — everything else; proximity chat like Gather (only players within a set distance hear you).
+3. **Lounge (휴게 공간)** — everyone inside the same lounge hears each other regardless of distance.
+
+Theme: **not** a modern office — fantasy (medieval European / Harry Potter-like), e.g. a wizard guild hall / magic academy study.
+
 ## Communication
 
 - Always respond in Korean. Keep technical terms and code identifiers in original form.
@@ -128,7 +138,8 @@ Scripts (`Assets/_Project/Scripts/`, namespace `DgVillage`):
 | `Editor/SceneUIBuilder` | Shared helpers for the scene builders: camera + EventSystem, 1280x720 canvas, default UI sprites, `Place`/`CreateText`/`CreateButton` |
 | `Editor/ServerSettingsMenu` | Menu **DgVillage → Server Settings** (selects/creates the asset). `IPreprocessBuildWithReport`: fails the build if builds use production but `ProductionUrl` is empty — uncheck `BuildsUseProduction` for local-only test builds |
 | `GroundMesh` | Builds the ground mesh from a corner-grid text `Layout` ('#' = stone, else grass) using the 4×4 Wang atlas (index = NE·1+SE·2+SW·4+NW·8); 1 tile = 1 unit. `[ExecuteAlways]`, mesh not saved (rebuilt on enable/edit) |
-| `Editor/MapTestSceneBuilder` | Menu **DgVillage → Create Map Test Scene**: `Assets/Scenes/MapTest.unity` (no network) — ground, girl01 player, boy01 standing, benches/trees with blob shadows (`sortingOrder -1`), `Materials/Ground_Plaza.mat` (URP Unlit, created if missing) |
+| `FloorMesh` | Indoor floor: one char per tile in `Layout` (`s` stone = hallway, `w` wood = desks, `c` carpet = lounge, else no floor); atlas row = material, column = edge mask N·1+E·2+S·4+W·8 (neighbor differs → trim). `[ExecuteAlways]`, mesh not saved |
+| `Editor/MapTestSceneBuilder` | Menu **DgVillage → Create Map Test Scene**: `Assets/Scenes/MapTest.unity` (no network) — wizard-guild office room 19×12 (desks · hallway · lounge), girl01 player, boy01 behind a desk, furniture with blob shadows (`sortingOrder -1`), `Materials/Floor_Office.mat` (URP Unlit, created if missing). The earlier plaza version is in git history (54b3e82) |
 | `Editor/DynamicFontCleaner` | Clears dynamic TMP font atlases in `Fonts/` on returning to Edit mode (also menu **DgVillage → Clear Dynamic Font Data**) |
 
 ## Server (`python/`)
@@ -161,6 +172,9 @@ Full report + raw notes: `docs/research/2026-10-21-map-art/` (`report.md`, `repo
   - Ground: PixelLab tileset (Wang, 32px) → `art/tilesets/plaza/pixellab-wang.png` → `uv run --no-project --with pillow python art/tilesets/make_ground_atlas.py` (tileset form has **no palette option** → script snaps grass to palette grass ramp, repacks the 5×4 sheet into the 4×4 Wang-index atlas `Sprites/Environment/Ground/plaza_ground.png`, writes `art/tilesets/preview.png`). Extra full-stone variant tile is skipped for now. 35° tilt squashes tiles vertically (expected).
   - Props: Object Creator Pro with palette image + girl01 as style reference (locks size to 64px). 32 candidates in `art/props/pixellab-2026-10-21/`; picks + names in `art/props/export_props.py` (trims empty bottom rows so the bottom-center pivot = ground contact, also writes `blob_shadow.png`) → `Sprites/Environment/Props/`.
   - Next: trees are too small at 64px (≈ character height) → generate trees at 128px; shadows faint; camera SmoothDamp isn't pixel-snapped.
+- **Office floor (2026-10-21, first indoor map)**: PixelLab Pro tilesets (Pro = palette option, 15 gen; Standard has none) still bleed the two terrains' colors into each other (pink stone, brick-like planks) → don't use their transitions indoors. `art/tilesets/make_floor_atlas.py` takes one full tile per material from `art/tilesets/office/` (Wang sheet cell (1,1) = full lower, (1,3) = full upper), snaps it to a palette ramp by brightness rank, draws edge trims → `Sprites/Environment/Ground/office_floor.png` (16 × 3 tiles) + `art/tilesets/floor-preview.png` (grayscale check). Give PixelLab one-material palettes; mixing ramps in one palette makes it mix the materials.
+  - Office props: Object Creator Pro with girl01 style ref + palette, **"Describe each item" = 16 different objects in one 10-gen run** (all came out right). Sources `art/props/pixellab-2026-10-21-office/`, picks/names in `export_props.py`.
+  - Next: walls (north wall standing, low trims elsewhere, also blocks walking off), zone data shared with the server, sitting.
 - **Map palette**: `art/palettes/dg-village-map.{gpl,hex}` (48 colors: grass/foliage/stone/dirt/wood/water/brick ramps × 6 + 6 character anchors), regenerate with `uv run --no-project --with pillow python art/palettes/make_map_palette.py` (also writes `preview.png` incl. grayscale check). Large ground areas use ramp steps 4–5 (index 3–4); dark steps only for shadows/edges — boy01's black hoodie vanishes on dark grass in grayscale. Give PixelLab `target_palette` only the ramps a generation needs.
 
 ## Character art pipeline (PixelLab)

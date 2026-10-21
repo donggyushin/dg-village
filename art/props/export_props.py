@@ -15,18 +15,35 @@ from PIL import Image
 
 HERE = Path(__file__).parent
 ROOT = HERE.parents[1]
-SOURCE = HERE / "pixellab-2026-10-21"
 OUT = ROOT / "unity/Assets/_Project/Sprites/Environment/Props"
 
+# source (relative to this folder, no .png) → Unity name
 PICKS = {
-    "bench_03": "bench_plain",
-    "bench_06": "bench_double",
-    "bench_07": "bench_iron",
-    "bench_14": "bench_arch",
-    "tree_07": "tree_round",
-    "tree_12": "tree_blossom",
-    "tree_15": "tree_round_b",
-    "tree_16": "tree_twin",
+    "pixellab-2026-10-21/bench_03": "bench_plain",
+    "pixellab-2026-10-21/bench_06": "bench_double",
+    "pixellab-2026-10-21/bench_07": "bench_iron",
+    "pixellab-2026-10-21/bench_14": "bench_arch",
+    "pixellab-2026-10-21/tree_07": "tree_round",
+    "pixellab-2026-10-21/tree_12": "tree_blossom",
+    "pixellab-2026-10-21/tree_15": "tree_round_b",
+    "pixellab-2026-10-21/tree_16": "tree_twin",
+    # wizard guild office (first indoor map)
+    "pixellab-2026-10-21-office/wooden_writing_desk_with_parch": "desk_quill",
+    "pixellab-2026-10-21-office/wizard_study_desk_with_open_sp": "desk_spellbook",
+    "pixellab-2026-10-21-office/oak_work_desk_with_stacked_boo": "desk_crystal",
+    "pixellab-2026-10-21-office/wooden_chair_with_red_cushion": "chair_cushion",
+    "pixellab-2026-10-21-office/high-backed_carved_wooden_chai": "chair_high",
+    "pixellab-2026-10-21-office/tall_wooden_bookshelf_full_of": "bookshelf",
+    "pixellab-2026-10-21-office/bookshelf_with_potion_bottles": "bookshelf_potion",
+    "pixellab-2026-10-21-office/stone_fireplace_with_warm_glow": "fireplace",
+    "pixellab-2026-10-21-office/cozy_burgundy_velvet_sofa": "sofa",
+    "pixellab-2026-10-21-office/plump_leather_armchair": "armchair",
+    "pixellab-2026-10-21-office/small_round_tea_table_with_tea": "tea_table",
+    "pixellab-2026-10-21-office/large_potted_leafy_plant_in_cl": "plant_pot",
+    "pixellab-2026-10-21-office/tall_iron_standing_candelabra": "candelabra",
+    "pixellab-2026-10-21-office/wooden_owl_perch_stand_with_a": "owl_perch",
+    "pixellab-2026-10-21-office/brass_globe_on_wooden_stand": "globe",
+    "pixellab-2026-10-21-office/wooden_notice_board_with_pinne": "notice_board",
 }
 
 SHADOW_SIZE = (32, 16)  # px → 1 × 0.5 units at 32 PPU
@@ -51,7 +68,7 @@ def blob_shadow() -> Image.Image:
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     for src, name in PICKS.items():
-        im = Image.open(SOURCE / f"{src}.png").convert("RGBA")
+        im = Image.open(HERE / f"{src}.png").convert("RGBA")
         bbox = im.getchannel("A").getbbox()
         if bbox is None:
             raise SystemExit(f"{src}.png is empty")
