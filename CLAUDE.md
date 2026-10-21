@@ -14,7 +14,9 @@ Solo hobby project (weekends + spare time). Owner is strong on Python/server, ne
 dg-village/
 ├── unity/    # Game client (Unity 6, URP, Universal 3D template)
 ├── python/   # WebSocket server (FastAPI, uv) + Dockerfile
-└── deploy/   # Production docker compose (Caddy + server + Postgres), README.md = runbook
+├── deploy/   # Production docker compose (Caddy + server + Postgres), README.md = runbook
+├── art/      # Art sources outside Unity (palettes/: map palette .gpl/.hex + generator)
+└── docs/     # Research reports (docs/research/)
 ```
 
 Single git repo at the root, one `.gitignore` covering both.
@@ -153,6 +155,7 @@ Full report + raw notes: `docs/research/2026-10-21-map-art/` (`report.md`, `repo
 - **Tools**: PixelLab first (`create-tileset` / `map-objects` support `view = low top-down`, `target_palette`; feed references at native resolution). Perspective-drawn vertical objects must stand upright, never lie on the ground (double perspective). Meshy/Tripo = blockout only (no pixel textures; Meshy free = CC BY 4.0 attribution). **Don't use Mana Seed** (author: incompatible with gen-AI content). LimeZu OK with credit.
 - **Art direction**: readability via value contrast — ground lineless, mid-saturation; strongest colors/outlines reserved for characters; grayscale test. Palette from girl01/boy01 → nearest Lospec palette → desaturated map subset (hue-shift ramps). Plaza ≈ 28×28 units (Gather: 20–40 tiles per concurrent player), central fountain, 3–4 conversation islands, building entrances at edges (future channel portals), edges closed by walls/bushes (also fixes walking off the map).
 - First plaza plan = 10 steps over two weekends (table in the report).
+- **Map palette**: `art/palettes/dg-village-map.{gpl,hex}` (48 colors: grass/foliage/stone/dirt/wood/water/brick ramps × 6 + 6 character anchors), regenerate with `uv run --no-project --with pillow python art/palettes/make_map_palette.py` (also writes `preview.png` incl. grayscale check). Large ground areas use ramp steps 4–5 (index 3–4); dark steps only for shadows/edges — boy01's black hoodie vanishes on dark grass in grayscale. Give PixelLab `target_palette` only the ramps a generation needs.
 
 ## Character art pipeline (PixelLab)
 
