@@ -22,12 +22,15 @@ namespace DgVillage
         }
 
         [SerializeField] private Material _floorMaterial;
+        [Tooltip("쿼터뷰 바닥 (화면 기준 패턴 아틀라스, make_iso_floor.py). 비면 FloorMaterial")]
+        [SerializeField] private Material _quarterViewFloorMaterial;
         [SerializeField] private Material _wallMaterial;
         [SerializeField] private Material _spriteMaterial;
         [SerializeField] private Sprite _shadow;
         [SerializeField] private List<Entry> _entries = new();
 
         public Material FloorMaterial => _floorMaterial;
+        public Material QuarterViewFloorMaterial => _quarterViewFloorMaterial != null ? _quarterViewFloorMaterial : _floorMaterial;
         public Material WallMaterial => _wallMaterial;
         public Material SpriteMaterial => _spriteMaterial;
         public Sprite Shadow => _shadow;
@@ -36,9 +39,10 @@ namespace DgVillage
 
 #if UNITY_EDITOR
         /// <summary>에디터 메뉴(PropCatalogBuilder)가 채운다</summary>
-        public void Set(Material floor, Material wall, Material sprite, Sprite shadow, List<Entry> entries)
+        public void Set(Material floor, Material quarterViewFloor, Material wall, Material sprite, Sprite shadow, List<Entry> entries)
         {
             _floorMaterial = floor;
+            _quarterViewFloorMaterial = quarterViewFloor;
             _wallMaterial = wall;
             _spriteMaterial = sprite;
             _shadow = shadow;

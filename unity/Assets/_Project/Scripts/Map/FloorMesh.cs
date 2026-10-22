@@ -21,6 +21,7 @@ namespace DgVillage
     public class FloorMesh : MonoBehaviour
     {
         private const string Materials = "swcgp";
+        public static int MaterialCount => Materials.Length;
         private const int AtlasColumns = 16;
         // 칸 경계에서 이웃 칸 픽셀을 집어오지 않도록 UV 를 아주 조금 안쪽으로
         private const float UvInset = 0.0002f;
@@ -29,7 +30,11 @@ namespace DgVillage
         private const float WallHeight = 3f;
         private const float CapWidth = 0.5f;
         private const float CapV = 1f - 16f / 96f;
-        private static readonly Vector3 WallUp = Quaternion.Euler(35f, 0f, 0f) * Vector3.up;
+
+        // 쿼터뷰 바닥 아틀라스(make_iso_floor.py): 재질마다 화면 픽셀 기준 256×128 반복 패턴. 1 unit = 32 화면 픽셀
+        private const float TexelsPerUnit = 32f;
+        private const float IsoCellWidth = 256f;
+        private const float IsoCellHeight = 128f;
 
         [Tooltip("타일 격자. 첫 줄이 북쪽(화면 위). s = 돌, w = 나무, c = 카펫, g = 잔디, p = 길, 그 외 = 바닥 없음")]
         [SerializeField, TextArea(5, 30)] private string _layout = "ss\nss";
@@ -115,9 +120,13 @@ namespace DgVillage
             _dirty = false;
             var vertices = new List<Vector3>();
             var uvs = new List<Vector2>();
+            var rows = new List<Vector2>(); // uv1.x = 쿼터뷰 아틀라스 행
             var floorTriangles = new List<int>();
             var wallTriangles = new List<int>();
             int atlasRows = Materials.Length;
+            // 벽면은 스프라이트처럼 카메라 쪽 위 방향으로 세운다. 쿼터뷰면 뒤쪽 두 변(북 · 동)이 벽면
+            Vector3 wallUp = ViewAngle.Billboard * Vector3.up;
+            bool quarterView = ViewAngle.IsQuarterView;
 
             // 꼭짓점 네 개를 SW · NW · NE · SE (보는 쪽에서 왼아래부터 시계 방향) 순서로 받는다
             void AddQuad(List<int> triangles, Vector3 sw, Vector3 nw, Vector3 ne, Vector3 se, Vector2 uvMin, Vector2 uvMax, bool rotateUv = false)
@@ -143,6 +152,22 @@ namespace DgVillage
                     uvs.Add(new Vector2(uvMax.x, uvMin.y));
                 }
                 triangles.AddRange(new[] { v, v + 1, v + 2, v, v + 2, v + 3 });
+                rows.AddRange(new[] { Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero });
+            }
+
+            // 쿼터뷰: 꼭짓점이 화면에 찍히는 픽셀 위치 / 셀 크기 = UV. 바닥 위 점이 카메라 앞쪽으로 d 가면 화면에선 d·sin(pitch) 위로
+            Quaternion yaw = Quaternion.Euler(0f, ViewAngle.Yaw, 0f);
+            Vector3 screenRight = yaw * Vector3.right;
+            Vector3 screenUp = yaw * Vector3.forward * Mathf.Sin(ViewAngle.Pitch * Mathf.Deg2Rad);
+            void UseScreenUv(int material)
+            {
+                for (int i = vertices.Count - 4; i < vertices.Count; i++)
+                {
+                    Vector3 p = vertices[i];
+                    uvs[i] = new Vector2(Vector3.Dot(p, screenRight) * TexelsPerUnit / IsoCellWidth,
+                        Vector3.Dot(p, screenUp) * TexelsPerUnit / IsoCellHeight);
+                    rows[i] = new Vector2(material, 0f);
+                }
             }
 
             var faceMin = new Vector2(UvInset, UvInset);
@@ -173,6 +198,10 @@ namespace DgVillage
                         new Vector3(x, 0f, z - 1f), new Vector3(x, 0f, z), new Vector3(x + 1f, 0f, z), new Vector3(x + 1f, 0f, z - 1f),
                         new Vector2((float)mask / AtlasColumns + UvInset, 1f - (float)(material + 1) / atlasRows + UvInset),
                         new Vector2((float)(mask + 1) / AtlasColumns - UvInset, 1f - (float)material / atlasRows - UvInset));
+                    if (quarterView)
+                    {
+                        UseScreenUv(material);
+                    }
 
                     bool openN = !IsFloorTile(tx, ty - 1);
                     bool openE = !IsFloorTile(tx + 1, ty);
@@ -182,7 +211,14 @@ namespace DgVillage
                     {
                         var baseL = new Vector3(x, 0f, z);
                         var baseR = new Vector3(x + 1f, 0f, z);
-                        AddQuad(wallTriangles, baseL, baseL + WallUp * WallHeight, baseR + WallUp * WallHeight, baseR, faceMin, faceMax);
+                        AddQuad(wallTriangles, baseL, baseL + wallUp * WallHeight, baseR + wallUp * WallHeight, baseR, faceMin, faceMax);
+                    }
+                    if (openE && quarterView)
+                    {
+                        // 서쪽(-X)에서 보므로 왼쪽 = 북쪽 끝
+                        var baseL = new Vector3(x + 1f, 0f, z);
+                        var baseR = new Vector3(x + 1f, 0f, z - 1f);
+                        AddQuad(wallTriangles, baseL, baseL + wallUp * WallHeight, baseR + wallUp * WallHeight, baseR, faceMin, faceMax);
                     }
                     if (openS)
                     {
@@ -190,7 +226,7 @@ namespace DgVillage
                             new Vector3(x, capY, z - 1f - CapWidth), new Vector3(x, capY, z - 1f),
                             new Vector3(x + 1f, capY, z - 1f), new Vector3(x + 1f, capY, z - 1f - CapWidth), capMin, capMax);
                     }
-                    if (openE)
+                    if (openE && !quarterView)
                     {
                         AddQuad(wallTriangles,
                             new Vector3(x + 1f, capY, z - 1f), new Vector3(x + 1f, capY, z),
@@ -203,7 +239,7 @@ namespace DgVillage
                             new Vector3(x, capY, z), new Vector3(x, capY, z - 1f), capMin, capMax, true);
                     }
                     // 바깥 모서리: 남쪽 띠와 옆 띠 사이의 빈 사각형을 메운다
-                    if (openS && openE && !IsFloorTile(tx + 1, ty + 1))
+                    if (openS && openE && !quarterView && !IsFloorTile(tx + 1, ty + 1))
                     {
                         AddQuad(wallTriangles,
                             new Vector3(x + 1f, capY, z - 1f - CapWidth), new Vector3(x + 1f, capY, z - 1f),
@@ -225,6 +261,7 @@ namespace DgVillage
             _mesh.Clear();
             _mesh.SetVertices(vertices);
             _mesh.SetUVs(0, uvs);
+            _mesh.SetUVs(1, rows);
             _mesh.subMeshCount = 2;
             _mesh.SetTriangles(floorTriangles, 0);
             _mesh.SetTriangles(wallTriangles, 1);

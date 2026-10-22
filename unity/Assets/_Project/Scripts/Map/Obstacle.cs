@@ -15,8 +15,27 @@ namespace DgVillage
         [Tooltip("바닥에서 차지하는 크기 (x = 가로, y = 깊이) unit")]
         [SerializeField] private Vector2 _size = new(1f, 0.5f);
 
+        // 영역의 남서 모서리가 pivot 에서 떨어진 거리 (x = X, y = Z). 기본 = 앞쪽 변 가운데가 pivot
+        [SerializeField, HideInInspector] private Vector2 _cornerOffset;
+        [SerializeField, HideInInspector] private bool _hasCornerOffset;
+
         /// <summary>런타임에 만들 때 (MapBuilder)</summary>
         public void Init(Vector2 size) => _size = size;
+
+        /// <summary>
+        /// 쿼터뷰: 화면에서 가구 그림의 맨 아래 = 남서 모서리이고, pivot(그림 아래 가운데)은
+        /// 그 모서리에서 화면 가로로 영역 너비의 반쯤 떨어져 있다 → 남서 모서리를 화면 가로 방향으로 되돌려 찾는다.
+        /// </summary>
+        public void InitQuarterView(Vector2 size)
+        {
+            _size = size;
+            Vector3 right = Quaternion.Euler(0f, ViewAngle.Yaw, 0f) * Vector3.right;
+            // 영역 네 모서리의 화면 가로 위치는 남서 = 0 · 남동 = size.x·right.x · 북서 = size.y·right.z → 가운데
+            float center = (size.x * right.x + size.y * right.z) / 2f;
+            Vector3 corner = -right * center;
+            _cornerOffset = new Vector2(corner.x, corner.z);
+            _hasCornerOffset = true;
+        }
 
         private void OnEnable() => Active.Add(this);
 
@@ -43,7 +62,8 @@ namespace DgVillage
             get
             {
                 Vector3 p = transform.position;
-                return new Rect(p.x - _size.x / 2f, p.z, _size.x, _size.y);
+                Vector2 corner = _hasCornerOffset ? _cornerOffset : new Vector2(-_size.x / 2f, 0f);
+                return new Rect(p.x + corner.x, p.z + corner.y, _size.x, _size.y);
             }
         }
 

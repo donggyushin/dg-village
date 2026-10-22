@@ -15,9 +15,6 @@ namespace DgVillage
     {
         public const string RootName = "Map";
 
-        // 캐릭터 Visual 과 같은 기울기: 카메라(X 35°)를 정면으로 본다
-        private static readonly Quaternion StandUp = Quaternion.Euler(35f, 0f, 0f);
-
         public static GameObject Build(GameMapData map, PropCatalog catalog)
         {
             var root = new GameObject(RootName).transform;
@@ -25,7 +22,8 @@ namespace DgVillage
             var floor = new GameObject("Floor", typeof(MeshFilter), typeof(MeshRenderer), typeof(FloorMesh));
             floor.transform.SetParent(root, false);
             // submesh 0 = 바닥, 1 = 벽 (FloorMesh 가 바닥 끝에 자동으로 만든다)
-            floor.GetComponent<MeshRenderer>().sharedMaterials = new[] { catalog.FloorMaterial, catalog.WallMaterial };
+            Material floorMaterial = ViewAngle.IsQuarterView ? catalog.QuarterViewFloorMaterial : catalog.FloorMaterial;
+            floor.GetComponent<MeshRenderer>().sharedMaterials = new[] { floorMaterial, catalog.WallMaterial };
             floor.GetComponent<FloorMesh>().SetLayout(string.Join("\n", map.layout));
 
             var props = Child(root, "Props");
@@ -46,7 +44,15 @@ namespace DgVillage
                 sprite.AddComponent<SunShadow>();
                 if (entry.Footprint != Vector2.zero)
                 {
-                    item.gameObject.AddComponent<Obstacle>().Init(entry.Footprint);
+                    var obstacle = item.gameObject.AddComponent<Obstacle>();
+                    if (ViewAngle.IsQuarterView)
+                    {
+                        obstacle.InitQuarterView(QuarterViewFootprint(prop, entry, catalog));
+                    }
+                    else
+                    {
+                        obstacle.Init(entry.Footprint);
+                    }
                 }
                 if (prop.shadow > 0)
                 {
@@ -80,11 +86,34 @@ namespace DgVillage
         {
             var go = new GameObject(name, typeof(SpriteRenderer));
             go.transform.SetParent(parent, false);
-            go.transform.localRotation = StandUp;
+            // 캐릭터 Visual 과 같은 기울기: 카메라를 정면으로 본다
+            go.transform.localRotation = ViewAngle.Billboard;
             var renderer = go.GetComponent<SpriteRenderer>();
             renderer.sprite = sprite;
             renderer.sharedMaterial = material;
             return go;
+        }
+
+        // 쿼터뷰(카메라 yaw 45°)에선 월드 축에 맞춘 가구가 화면에 대각선으로 보인다:
+        // 남쪽을 보는 가구 = _southeast 그림, 동쪽 = _northeast, 반전하면 서쪽 · 북쪽.
+        // 그래서 크기는 정면(남쪽) 크기에서, 반전 · northeast 면 가로 · 깊이를 맞바꾼다
+        private static Vector2 QuarterViewFootprint(GameMapData.Prop prop, PropCatalog.Entry entry, PropCatalog catalog)
+        {
+            foreach ((string suffix, bool swap) in new[] { ("_southeast", false), ("_northeast", true) })
+            {
+                if (!prop.sprite.EndsWith(suffix))
+                {
+                    continue;
+                }
+                PropCatalog.Entry front = catalog.Find(prop.sprite[..^suffix.Length]);
+                if (front == null || front.Footprint == Vector2.zero)
+                {
+                    break;
+                }
+                Vector2 size = front.Footprint;
+                return swap != prop.flip ? new Vector2(size.y, size.x) : size;
+            }
+            return entry.Footprint;
         }
 
         private static Transform Child(Transform parent, string name)
@@ -100,10 +129,12 @@ namespace DgVillage
             Sprite sprite = catalog.Shadow;
             var go = new GameObject("Shadow", typeof(SpriteRenderer));
             go.transform.SetParent(parent, false);
-            go.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            // 화면 가로로 넓은 타원이 되도록 카메라 yaw 만큼 돌린다
+            Quaternion yaw = Quaternion.Euler(0f, ViewAngle.Yaw, 0f);
+            go.transform.localRotation = yaw * Quaternion.Euler(90f, 0f, 0f);
             go.transform.localScale = new Vector3(scale, scale, 1f);
             float halfDepth = sprite != null ? sprite.bounds.size.y * scale / 2f : 0f;
-            go.transform.localPosition = new Vector3(0f, 0.01f, -halfDepth);
+            go.transform.localPosition = yaw * new Vector3(0f, 0.01f, -halfDepth);
             var renderer = go.GetComponent<SpriteRenderer>();
             renderer.sprite = sprite;
             renderer.sharedMaterial = catalog.SpriteMaterial;

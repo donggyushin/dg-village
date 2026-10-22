@@ -2,6 +2,8 @@
 // 조명 · 구름은 MapLighting 이 정하는 전역 값으로 켜진다 — 둘 다 꺼진 맵(이나 씬)에선 그냥 Unlit 과 같다.
 // 벽 머티리얼은 _Clouds = 0 (세운 벽면에 바닥 구름이 줄무늬로 지나가지 않게).
 // 구름 노이즈는 월드 XZ 를 1/32 unit(= 1 texel) 격자로 끊어서 샘플한다: 그림자 가장자리도 픽셀 격자에 맞는다.
+// 쿼터뷰 바닥(_IsoRows > 0, art/tilesets/make_iso_floor.py): uv = 화면 픽셀 기준 반복 좌표, uv1.x = 아틀라스 행(재질).
+// 행 하나 안에서 frac 으로 반복한다 (재질별 패턴이 화면에 붙어 있어 텍셀이 돌아가지 않는다).
 Shader "DgVillage/Ground"
 {
     Properties
@@ -9,6 +11,7 @@ Shader "DgVillage/Ground"
         [MainTexture] _BaseMap ("Texture", 2D) = "white" {}
         [MainColor] _BaseColor ("Color", Color) = (1, 1, 1, 1)
         _Clouds ("Cloud Shadows", Range(0, 1)) = 1
+        _IsoRows ("Quarter-view Atlas Rows (0 = off)", Float) = 0
     }
 
     SubShader
@@ -32,6 +35,7 @@ Shader "DgVillage/Ground"
                 float4 _BaseMap_ST;
                 half4 _BaseColor;
                 half _Clouds;
+                float _IsoRows;
             CBUFFER_END
 
             // MapLighting 이 Shader.SetGlobal* 로 넣는다
@@ -46,6 +50,7 @@ Shader "DgVillage/Ground"
             {
                 float4 positionOS : POSITION;
                 float2 uv : TEXCOORD0;
+                float2 uv1 : TEXCOORD1;
             };
 
             struct Varyings
@@ -53,6 +58,7 @@ Shader "DgVillage/Ground"
                 float4 positionCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
                 float3 positionWS : TEXCOORD1;
+                nointerpolation float row : TEXCOORD2;
             };
 
             float Hash(float2 p)
@@ -85,13 +91,20 @@ Shader "DgVillage/Ground"
                 Varyings output;
                 output.positionWS = TransformObjectToWorld(input.positionOS.xyz);
                 output.positionCS = TransformWorldToHClip(output.positionWS);
-                output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
+                output.uv = _IsoRows > 0.0 ? input.uv : TRANSFORM_TEX(input.uv, _BaseMap);
+                output.row = input.uv1.x;
                 return output;
             }
 
             half4 Frag(Varyings input) : SV_Target
             {
-                half4 color = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv) * _BaseColor;
+                float2 uv = input.uv;
+                if (_IsoRows > 0.0)
+                {
+                    // 행 0 = 이미지 맨 위
+                    uv = float2(frac(uv.x), (_IsoRows - 1.0 - input.row + frac(uv.y)) / _IsoRows);
+                }
+                half4 color = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
                 color.rgb *= DgLight(input.positionWS);
                 if (_DgCloudStrength * _Clouds > 0.0)
                 {

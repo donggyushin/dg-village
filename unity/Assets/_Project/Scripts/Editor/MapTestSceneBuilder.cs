@@ -7,15 +7,16 @@ namespace DgVillage.Editor
     /// <summary>
     /// 메뉴 "DgVillage → Create Map Test Scene".
     /// 맵 아트 실험용 씬 Assets/Scenes/MapTest.unity 를 만든다 (네트워크 없음, 걸어다니며 보기만):
-    ///   Main Camera   마을과 같은 각도 · Size 5.625 + CameraFollow
-    ///   Floor · Props OfficeRoomBuilder 가 서버의 maps/office.json 으로 깐 방
+    ///   View          ViewAngleOverride — 쿼터뷰 실험 (카메라 X 30° · Y 45°, 2026-10-22)
+    ///   Main Camera   그 각도 · Size 5.625 + CameraFollow
+    ///   Floor · Props OfficeRoomBuilder 가 서버의 maps/office_quarter.json 으로 깐 방 (서버는 안 쓰는 실험용 맵)
     ///   Player        PlayerMovement + Visual (girl01)
     ///   Boy01         서 있는 비교용 캐릭터 (책상 뒤)
     /// </summary>
     public static class MapTestSceneBuilder
     {
         private const string ScenePath = "Assets/Scenes/MapTest.unity";
-        private const string MapId = "office";
+        private const string MapId = "office_quarter";
         private const string Title = "Create Map Test Scene";
 
         [MenuItem("DgVillage/Create Map Test Scene")]
@@ -58,6 +59,8 @@ namespace DgVillage.Editor
         private static void Build(GameMapData map)
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            // 가장 먼저: 켜지면서 ViewAngle 을 바꿔야 아래에서 만드는 스프라이트 · 벽이 이 각도를 본다
+            new GameObject("View", typeof(ViewAngleOverride));
             // 에셋은 NewScene 다음에 불러온다 (그 전에 불러오면 "가짜 null" 이 된다)
             GameObject floor = OfficeRoomBuilder.CreateRoom(map);
             Material spriteMaterial = OfficeRoomBuilder.SpriteMaterial;
@@ -65,7 +68,7 @@ namespace DgVillage.Editor
             var boy = AssetDatabase.LoadAssetAtPath<CharacterDefinition>("Assets/_Project/Characters/boy01.asset");
 
             var player = new GameObject("Player", typeof(PlayerMovement));
-            player.transform.position = new Vector3(-0.5f, 0f, 0f);
+            player.transform.position = new Vector3(0f, 0f, -1f);
             GameObject visual = MapBuilder.CreateSprite("Visual", player.transform, girl != null ? girl.Preview : null, spriteMaterial);
             var animator = visual.AddComponent<DirectionalSpriteAnimator>();
             var animatorSo = new SerializedObject(animator);
@@ -73,12 +76,14 @@ namespace DgVillage.Editor
             animatorSo.ApplyModifiedPropertiesWithoutUndo();
 
             var boyRoot = new GameObject("Boy01");
-            boyRoot.transform.position = new Vector3(-4.5f, 0f, 3.5f);
+            boyRoot.transform.position = new Vector3(-1.6f, 0f, 5.6f);
             MapBuilder.CreateSprite("Visual", boyRoot.transform, boy != null ? boy.Preview : null, spriteMaterial);
 
             var cameraGo = new GameObject("Main Camera", typeof(Camera));
             cameraGo.tag = "MainCamera";
-            cameraGo.transform.SetPositionAndRotation(new Vector3(0f, 8f, -11.5f), Quaternion.Euler(35f, 0f, 0f));
+            // 플레이어에서 카메라 반대 방향으로 물러난 자리 (정면 카메라 때 거리 ≈ 14)
+            Quaternion view = Quaternion.Euler(ViewAngle.Pitch, ViewAngle.Yaw, 0f);
+            cameraGo.transform.SetPositionAndRotation(player.transform.position - view * Vector3.forward * 14f, view);
             var camera = cameraGo.GetComponent<Camera>();
             camera.orthographic = true;
             camera.orthographicSize = 5.625f;

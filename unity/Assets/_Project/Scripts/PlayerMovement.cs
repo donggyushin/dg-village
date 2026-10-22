@@ -102,8 +102,9 @@ namespace DgVillage
                 return;
             }
 
-            // 화면 위쪽(입력 y+) = 월드 +Z (카메라가 -Z 쪽에서 +Z 를 바라보므로)
-            var delta = new Vector3(input.x, 0f, input.y) * (_moveSpeed * Time.deltaTime);
+            // 입력은 화면 기준: 정면 카메라면 위쪽(y+) = 월드 +Z, 쿼터뷰면 카메라 yaw 만큼 돌린 방향.
+            // Facing 도 화면 기준이라 스프라이트 방향은 카메라와 상관없이 맞는다
+            Vector3 delta = ViewAngle.ScreenToGround(input) * (_moveSpeed * Time.deltaTime);
             transform.position = Constrain(transform.position, delta);
 
             Facing = FacingFromInput(input);

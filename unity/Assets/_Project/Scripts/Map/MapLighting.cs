@@ -31,8 +31,6 @@ namespace DgVillage
         private static readonly int LightsId = Shader.PropertyToID("_DgLights");
         private static readonly int LightColorsId = Shader.PropertyToID("_DgLightColors");
         private static readonly int LightCountId = Shader.PropertyToID("_DgLightCount");
-        // 캐릭터 · 소품과 같은 기울기: 빛무리도 카메라를 정면으로 본다
-        private static readonly Quaternion StandUp = Quaternion.Euler(35f, 0f, 0f);
         private static readonly Dictionary<int, Sprite> GlowSprites = new Dictionary<int, Sprite>();
 
         [SerializeField] private GameMapData.Lighting _lighting = new GameMapData.Lighting();
@@ -149,8 +147,10 @@ namespace DgVillage
         {
             var go = new GameObject("Glow", typeof(SpriteRenderer)) { hideFlags = HideFlags.DontSave };
             go.transform.SetParent(_glowRoot.transform, false);
+            // 캐릭터 · 소품과 같은 기울기: 빛무리도 카메라를 정면으로 본다
+            Quaternion standUp = ViewAngle.Billboard;
             go.transform.SetPositionAndRotation(
-                new Vector3(light.x, 0f, light.z) + StandUp * Vector3.up * light.glowY, StandUp);
+                new Vector3(light.x, 0f, light.z) + standUp * Vector3.up * light.glowY, standUp);
             var renderer = go.GetComponent<SpriteRenderer>();
             renderer.sprite = GlowSprite(Mathf.Max(2, Mathf.RoundToInt(light.glow * TexelsPerUnit)));
             renderer.sharedMaterial = material;

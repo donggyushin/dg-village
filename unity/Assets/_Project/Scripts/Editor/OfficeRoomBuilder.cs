@@ -17,6 +17,8 @@ namespace DgVillage.Editor
     {
         private const string FloorTexturePath = "Assets/_Project/Sprites/Environment/Ground/office_floor.png";
         private const string FloorMaterialPath = "Assets/_Project/Materials/Floor_Office.mat";
+        private const string IsoFloorTexturePath = "Assets/_Project/Sprites/Environment/Ground/office_floor_iso.png";
+        private const string IsoFloorMaterialPath = "Assets/_Project/Materials/Floor_Office_Iso.mat";
         private const string WallTexturePath = "Assets/_Project/Sprites/Environment/Ground/office_wall.png";
         private const string WallMaterialPath = "Assets/_Project/Materials/Wall_Office.mat";
         private const string PropFolder = "Assets/_Project/Sprites/Environment/Props";
@@ -136,6 +138,7 @@ namespace DgVillage.Editor
             }
             catalog.Set(
                 LoadOrCreateMaterial(FloorMaterialPath, FloorTexturePath, "DgVillage/Ground"),
+                IsoFloorMaterial(),
                 WallMaterial(),
                 SpriteMaterial,
                 AssetDatabase.LoadAssetAtPath<Sprite>(ShadowPath),
@@ -143,6 +146,22 @@ namespace DgVillage.Editor
             EditorUtility.SetDirty(catalog);
             AssetDatabase.SaveAssetIfDirty(catalog);
             return catalog;
+        }
+
+        // 쿼터뷰 바닥: 아틀라스 행 수(재질 수)를 셰이더에 알려 준다. 텍스처가 없으면(스크립트 안 돌림) 없이 간다
+        private static Material IsoFloorMaterial()
+        {
+            if (AssetDatabase.LoadAssetAtPath<Texture2D>(IsoFloorTexturePath) == null)
+            {
+                return null;
+            }
+            Material material = LoadOrCreateMaterial(IsoFloorMaterialPath, IsoFloorTexturePath, "DgVillage/Ground");
+            if (material.GetFloat("_IsoRows") != FloorMesh.MaterialCount)
+            {
+                material.SetFloat("_IsoRows", FloorMesh.MaterialCount);
+                EditorUtility.SetDirty(material);
+            }
+            return material;
         }
 
         // 벽도 맵 조명을 받는다 (촛불 옆 벽이 밝게). 세운 벽면에 바닥 구름은 줄무늬가 되므로 끈다
