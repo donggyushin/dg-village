@@ -13,11 +13,13 @@ Run from the repo root:
   The front view keeps using the original pick above (same art; the 8-rotation canvas is 68px).
   Expand ignores the palette the front view was made with (rotations come out redder), so every
   rotation is snapped to the colors of its own front view → it reads as the same piece.
+  PixelLab's object "south-east" image actually faces screen down-LEFT (east and north-east are
+  right), so it is mirrored here: <name>_southeast always faces screen down-right.
 """
 
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageOps
 
 HERE = Path(__file__).parent
 ROOT = HERE.parents[1]
@@ -99,8 +101,10 @@ def snap_to_colors(im: Image.Image, reference: Image.Image) -> Image.Image:
     return out
 
 
-def export(src: Path, name: str, reference: Path | None = None) -> None:
+def export(src: Path, name: str, reference: Path | None = None, mirror: bool = False) -> None:
     im = Image.open(src).convert("RGBA")
+    if mirror:
+        im = ImageOps.mirror(im)
     if reference is not None:
         im = snap_to_colors(im, Image.open(reference).convert("RGBA"))
     bbox = im.getchannel("A").getbbox()
@@ -118,7 +122,8 @@ def main() -> None:
         for direction, suffix in ROTATION_SUFFIXES.items():
             path = folder / f"{direction}.png"
             if path.exists():
-                export(path, f"{folder.name}_{suffix}", reference=folder / "south.png")
+                mirror = direction == "south-east"  # see the module docstring
+                export(path, f"{folder.name}_{suffix}", reference=folder / "south.png", mirror=mirror)
                 rotated += 1
     blob_shadow().save(OUT / "blob_shadow.png")
     print(f"{len(PICKS)} props + {rotated} rotated + blob_shadow → {OUT.relative_to(ROOT)}")
