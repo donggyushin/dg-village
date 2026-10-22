@@ -5,9 +5,9 @@ namespace DgVillage
     /// <summary>
     /// ICharacterMotion(PlayerMovement 또는 RemotePlayer)의 Facing · IsMoving 을 읽어
     /// CharacterDefinition 의 방향별 서기/걷기 스프라이트를 재생한다.
-    /// Left 는 Right 를 좌우 반전해서 쓴다 (스프라이트 1방향 절약).
+    /// 8방향: 왼쪽 계열은 오른쪽 그림을 좌우 반전해서 쓴다 (그림은 5방향만). 대각선이 없는 캐릭터는 위/아래로 대신.
     /// Visual(SpriteRenderer) 오브젝트에 붙이고, ICharacterMotion 은 부모에서 찾는다.
-    /// 앉아 있으면 캐릭터의 앉은 그림(SitDown)을, 없으면 서기 그림을 위로 올려 쓴다.
+    /// 앉아 있으면 의자 방향의 앉은 그림(GetSit)을, 없으면 그 방향 서기 그림을 위로 올려 쓴다.
     /// </summary>
     [RequireComponent(typeof(SpriteRenderer))]
     public class DirectionalSpriteAnimator : MonoBehaviour
@@ -63,21 +63,22 @@ namespace DgVillage
                 return;
             }
 
-            Sprite sitDown = _motion.IsSeated ? _character.SitDown : null;
-            float lift = !_motion.IsSeated ? 0f : sitDown != null ? _sitSpriteLift : _seatedLift;
+            bool sitFlip = false;
+            Sprite sit = _motion.IsSeated ? _character.GetSit(_motion.Facing, out sitFlip) : null;
+            float lift = !_motion.IsSeated ? 0f : sit != null ? _sitSpriteLift : _seatedLift;
             // 스프라이트 면을 따라 위로 (Visual 이 35° 기울어 있어서 로컬 up 방향)
             transform.localPosition = _baseLocalPosition + transform.localRotation * Vector3.up * lift;
 
-            if (sitDown != null)
+            if (sit != null)
             {
-                _renderer.flipX = false;
-                _renderer.sprite = sitDown;
+                _renderer.flipX = sitFlip;
+                _renderer.sprite = sit;
                 return;
             }
 
             Facing facing = _motion.Facing;
-            CharacterDefinition.DirectionSprites set = _character.Get(facing);
-            _renderer.flipX = facing == Facing.Left;
+            CharacterDefinition.DirectionSprites set = _character.Get(facing, out bool flipX);
+            _renderer.flipX = flipX;
 
             if (!_motion.IsMoving || set.Walk == null || set.Walk.Length == 0)
             {

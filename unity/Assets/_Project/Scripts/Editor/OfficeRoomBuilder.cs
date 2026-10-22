@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
@@ -41,6 +42,32 @@ namespace DgVillage.Editor
             // 나무는 줄기만 막는다 (잎 아래로는 지나가도 자연스럽다)
             ["tree_round"] = new(0.6f, 0.3f), ["tree_blossom"] = new(0.5f, 0.3f), ["tree_round_b"] = new(0.6f, 0.3f),
             ["tree_twin"] = new(1.0f, 0.3f),
+        };
+
+        // 돌린 가구({id}_east 등, export_props.py)는 정면 크기에서 계산한다.
+        // 옆(east) = 가로 · 깊이 맞바꿈, 뒤(north) = 그대로, 대각선 = 둘 다 걸치는 중간 크기
+        private static Vector2 FootprintOf(string id)
+        {
+            if (Footprints.TryGetValue(id, out Vector2 footprint))
+            {
+                return footprint;
+            }
+            foreach ((string suffix, Func<Vector2, Vector2> rotate) in Rotations)
+            {
+                if (id.EndsWith(suffix) && Footprints.TryGetValue(id[..^suffix.Length], out Vector2 front))
+                {
+                    return rotate(front);
+                }
+            }
+            return Vector2.zero;
+        }
+
+        private static readonly (string Suffix, Func<Vector2, Vector2> Rotate)[] Rotations =
+        {
+            ("_southeast", f => new Vector2((f.x + f.y) * 0.7f, (f.x + f.y) * 0.5f)),
+            ("_northeast", f => new Vector2((f.x + f.y) * 0.7f, (f.x + f.y) * 0.5f)),
+            ("_east", f => new Vector2(f.y, f.x)),
+            ("_north", f => f),
         };
 
         internal static string MapPath(string mapId) =>
@@ -95,7 +122,7 @@ namespace DgVillage.Editor
                 {
                     Id = id,
                     Sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path),
-                    Footprint = Footprints.TryGetValue(id, out Vector2 footprint) ? footprint : Vector2.zero,
+                    Footprint = FootprintOf(id),
                 });
             }
             entries.Sort((a, b) => string.CompareOrdinal(a.Id, b.Id));

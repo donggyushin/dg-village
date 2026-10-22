@@ -55,6 +55,16 @@ def test_move_is_broadcast_in_state(client: TestClient) -> None:
         assert (bob["x"], bob["z"], bob["facing"], bob["moving"]) == (1.5, -2.0, "left", True)
 
 
+def test_diagonal_facing_is_accepted(client: TestClient) -> None:
+    with client.websocket_connect("/ws") as a:
+        welcome = join(a, signup(client, "alice"))
+
+        a.send_json({"type": "move", "x": 1.0, "z": 1.0, "facing": "upright", "moving": True})
+        state = receive_until(a, "state")
+        alice = next(p for p in state["players"] if p["id"] == welcome["id"])
+        assert alice["facing"] == "upright"
+
+
 def test_leave_is_broadcast(client: TestClient) -> None:
     with client.websocket_connect("/ws") as a:
         join(a, signup(client, "alice"))

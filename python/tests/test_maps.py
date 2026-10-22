@@ -129,6 +129,20 @@ def test_sit_snaps_onto_the_seat_and_desks_focus() -> None:
     assert room.players["b"].state.focused is False  # lounge seat: just sitting
 
 
+def test_sit_faces_the_seats_way() -> None:
+    sideways = GameMap(
+        {
+            "id": "sideways",
+            "hearingRadius": 2.0,
+            "layout": ["ssss"],
+            "seats": [{"id": "s", "kind": "lounge", "x": 0.5, "z": 0.0, "facing": "left"}],
+        }
+    )
+    room, _ = make_room(sideways, {"a": (0.0, 0.0)})
+    assert room.sit("a", "s") is None
+    assert room.players["a"].state.facing == "left"
+
+
 @pytest.mark.parametrize(
     ("seat", "position", "error"),
     [

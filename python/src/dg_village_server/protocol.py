@@ -10,7 +10,9 @@ from pydantic.alias_generators import to_camel
 
 from .maps import DEFAULT_MAP_ID
 
-Facing = Literal["down", "up", "left", "right"]
+# Diagonals added 2026-10-22 (8-direction characters). Clients built before that map
+# unknown values to "down", so new values never break them.
+Facing = Literal["down", "up", "left", "right", "downleft", "downright", "upleft", "upright"]
 
 CHAT_MAX_LENGTH = 200
 DISPLAY_NAME_MAX_LENGTH = 16

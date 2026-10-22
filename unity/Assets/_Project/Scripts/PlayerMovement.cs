@@ -9,11 +9,16 @@ namespace DgVillage
         Up,
         Left,
         Right,
+        // 대각선 (2026-10-22, 8방향). 뒤에 붙여서 기존 값은 그대로
+        DownLeft,
+        DownRight,
+        UpLeft,
+        UpRight,
     }
 
     /// <summary>
     /// 키보드(WASD · 방향키) / 게임패드 입력으로 바닥(XZ 평면) 위를 이동한다.
-    /// 이동 방향으로 4방향 Facing 을 계산해 둔다 — 나중에 방향별 걷기 스프라이트가 이 값을 쓴다.
+    /// 이동 방향으로 8방향 Facing 을 계산해 둔다 — DirectionalSpriteAnimator 가 방향별 스프라이트를 고른다.
     /// </summary>
     public class PlayerMovement : MonoBehaviour, ICharacterMotion
     {
@@ -44,11 +49,11 @@ namespace DgVillage
         /// <summary>앉아 있는데 이동 키를 누르고 있다</summary>
         public bool WantsToStand { get; private set; }
 
-        /// <summary>좌석 위치로 옮겨 앉힌다 (서버가 앉기를 허락했을 때). 정면(카메라)을 본다</summary>
-        public void SitAt(Vector3 position)
+        /// <summary>좌석 위치로 옮겨 앉힌다 (서버가 앉기를 허락했을 때). 의자 방향(facing)을 본다</summary>
+        public void SitAt(Vector3 position, Facing facing)
         {
             transform.position = position;
-            Facing = Facing.Down;
+            Facing = facing;
             IsMoving = false;
             Seated = true;
         }
@@ -101,9 +106,25 @@ namespace DgVillage
             var delta = new Vector3(input.x, 0f, input.y) * (_moveSpeed * Time.deltaTime);
             transform.position = Constrain(transform.position, delta);
 
-            Facing = Mathf.Abs(input.x) > Mathf.Abs(input.y)
-                ? (input.x > 0f ? Facing.Right : Facing.Left)
-                : (input.y > 0f ? Facing.Up : Facing.Down);
+            Facing = FacingFromInput(input);
+        }
+
+        // 입력 각도를 45° 씩 8칸으로 나눈다 (키보드 대각선 = 정확히 45° → 대각선 칸 한가운데)
+        private static Facing FacingFromInput(Vector2 input)
+        {
+            float angle = Mathf.Atan2(input.y, input.x) * Mathf.Rad2Deg; // 0 = 오른쪽, 90 = 위
+            int sector = (Mathf.RoundToInt(angle / 45f) + 8) % 8;
+            return sector switch
+            {
+                0 => Facing.Right,
+                1 => Facing.UpRight,
+                2 => Facing.Up,
+                3 => Facing.UpLeft,
+                4 => Facing.Left,
+                5 => Facing.DownLeft,
+                6 => Facing.Down,
+                _ => Facing.DownRight,
+            };
         }
 
         // 바닥(FloorMesh) 밖이나 가구(Obstacle) 안으로는 못 간다.

@@ -41,7 +41,9 @@ namespace DgVillage
                 var item = new GameObject(prop.sprite).transform;
                 item.SetParent(props, false);
                 item.position = new Vector3(prop.x, 0f, prop.z);
-                CreateSprite("Sprite", item, entry.Sprite, catalog.SpriteMaterial).AddComponent<SunShadow>();
+                GameObject sprite = CreateSprite("Sprite", item, entry.Sprite, catalog.SpriteMaterial);
+                sprite.GetComponent<SpriteRenderer>().flipX = prop.flip;
+                sprite.AddComponent<SunShadow>();
                 if (entry.Footprint != Vector2.zero)
                 {
                     item.gameObject.AddComponent<Obstacle>().Init(entry.Footprint);

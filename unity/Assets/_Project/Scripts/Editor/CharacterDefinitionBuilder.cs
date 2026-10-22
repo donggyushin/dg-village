@@ -8,9 +8,9 @@ namespace DgVillage.Editor
     /// Project 창에서 캐릭터 스프라이트 폴더 우클릭 → DgVillage → Create Character Definition.
     /// 폴더 이름을 id 로 CharacterDefinition 에셋을 만들고(이미 있으면 갱신) 파일명 규칙으로 스프라이트를 채운 뒤
     /// CharacterRegistry 에 등록한다.
-    ///   {name}_idle_{south|north|east}.png
-    ///   {name}_walk_{south|north|east}_{0..n}.png
-    ///   {name}_sit_south.png   (선택 — 앉은 모습)
+    ///   {name}_idle_{south|north|east|southeast|northeast}.png   (대각선은 선택)
+    ///   {name}_walk_{south|north|east|southeast|northeast}_{0..n}.png
+    ///   {name}_sit_{south|east|north}.png   (선택 — 앉은 모습, 의자 방향별)
     /// </summary>
     public static class CharacterDefinitionBuilder
     {
@@ -47,10 +47,11 @@ namespace DgVillage.Editor
                 FillDirection(so, "_down", folder, "south");
                 FillDirection(so, "_up", folder, "north");
                 FillDirection(so, "_right", folder, "east");
-                so.FindProperty("_sitDown").objectReferenceValue = AssetDatabase.FindAssets("t:Sprite", new[] { folder })
-                    .Select(AssetDatabase.GUIDToAssetPath)
-                    .Select(AssetDatabase.LoadAssetAtPath<Sprite>)
-                    .FirstOrDefault(s => s != null && s.name.EndsWith("_sit_south"));
+                FillDirection(so, "_downRight", folder, "southeast", optional: true);
+                FillDirection(so, "_upRight", folder, "northeast", optional: true);
+                so.FindProperty("_sitDown").objectReferenceValue = FindSprite(folder, "_sit_south");
+                so.FindProperty("_sitRight").objectReferenceValue = FindSprite(folder, "_sit_east");
+                so.FindProperty("_sitUp").objectReferenceValue = FindSprite(folder, "_sit_north");
                 so.ApplyModifiedProperties();
 
                 Register(registry, character);
@@ -60,6 +61,12 @@ namespace DgVillage.Editor
             AssetDatabase.SaveAssets();
             Selection.activeObject = registry;
         }
+
+        private static Sprite FindSprite(string folder, string suffix) =>
+            AssetDatabase.FindAssets("t:Sprite", new[] { folder })
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .Select(AssetDatabase.LoadAssetAtPath<Sprite>)
+                .FirstOrDefault(s => s != null && s.name.EndsWith(suffix));
 
         private static void Register(CharacterRegistry registry, CharacterDefinition character)
         {
@@ -77,7 +84,7 @@ namespace DgVillage.Editor
             so.ApplyModifiedProperties();
         }
 
-        private static void FillDirection(SerializedObject so, string field, string folder, string direction)
+        private static void FillDirection(SerializedObject so, string field, string folder, string direction, bool optional = false)
         {
             Sprite[] sprites = AssetDatabase.FindAssets("t:Sprite", new[] { folder })
                 .Select(AssetDatabase.GUIDToAssetPath)
@@ -101,7 +108,9 @@ namespace DgVillage.Editor
                 walkProp.GetArrayElementAtIndex(i).objectReferenceValue = walk[i];
             }
 
-            if (idle == null || walk.Length == 0)
+            bool missing = idle == null || walk.Length == 0;
+            bool absent = idle == null && walk.Length == 0;
+            if (missing && !(optional && absent))
             {
                 Debug.LogWarning($"{folder} {direction}: idle={(idle != null)} walk={walk.Length}장 — 파일명 규칙 확인 필요");
             }

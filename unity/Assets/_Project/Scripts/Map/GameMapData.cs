@@ -26,6 +26,7 @@ namespace DgVillage
             public string kind; // "desk" | "lounge"
             public float x;
             public float z;
+            public string facing; // 앉으면 보는 방향 (의자 방향) down|up|left|right, "" = down
         }
 
         [Serializable]
@@ -47,6 +48,7 @@ namespace DgVillage
             public float x;
             public float z;
             public int shadow; // 그림자 배율, 0 = 없음
+            public bool flip; // 좌우 반전 (오른쪽 보는 가구 그림으로 왼쪽 보는 가구)
         }
 
         /// <summary>

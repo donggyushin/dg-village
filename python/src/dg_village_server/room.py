@@ -76,7 +76,7 @@ class Room:
         self.dirty = True
 
     def sit(self, player_id: str, seat_id: str) -> str | None:
-        """Seat the player (snapped onto the seat, facing the camera). Returns why not, or None."""
+        """Seat the player (snapped onto the seat, facing its way). Returns why not, or None."""
         seat = self.game_map.seats.get(seat_id) if self.game_map else None
         if seat is None:
             return "unknown seat"
@@ -86,7 +86,7 @@ class Room:
         if math.dist((state.x, state.z), (seat.x, seat.z)) > SIT_RANGE:
             return "too far from the seat"
         state.seat, state.focused = seat.id, seat.kind == "desk"
-        state.x, state.z, state.facing, state.moving = seat.x, seat.z, "down", False
+        state.x, state.z, state.facing, state.moving = seat.x, seat.z, seat.facing, False
         self.dirty = True
         return None
 

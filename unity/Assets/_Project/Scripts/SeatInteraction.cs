@@ -67,7 +67,7 @@ namespace DgVillage
             }
             if (me.IsSeated)
             {
-                _localPlayer.SitAt(new Vector3(me.x, _localPlayer.transform.position.y, me.z));
+                _localPlayer.SitAt(new Vector3(me.x, _localPlayer.transform.position.y, me.z), FacingWire.Parse(me.facing));
             }
             else
             {

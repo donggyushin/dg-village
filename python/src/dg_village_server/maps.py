@@ -39,6 +39,7 @@ class Seat:
     kind: str  # "desk" | "lounge"
     x: float
     z: float
+    facing: str = "down"  # where a seated player looks (chair orientation); 4 directions
 
 
 @dataclass(frozen=True)
@@ -60,7 +61,8 @@ class GameMap:
         self.hearing_radius: float = float(data["hearingRadius"])
         self.layout: list[str] = data["layout"]
         self.seats = {
-            s["id"]: Seat(s["id"], s["kind"], s["x"], s["z"]) for s in data.get("seats", [])
+            s["id"]: Seat(s["id"], s["kind"], s["x"], s["z"], s.get("facing", "down"))
+            for s in data.get("seats", [])
         }
         self.portals = [
             Portal(p["x"], p["z"], p["w"], p["d"], p["to"], p["spawnX"], p["spawnZ"])

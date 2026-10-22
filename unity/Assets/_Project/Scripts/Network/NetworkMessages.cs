@@ -201,6 +201,10 @@ namespace DgVillage
             Facing.Up => "up",
             Facing.Left => "left",
             Facing.Right => "right",
+            Facing.DownLeft => "downleft",
+            Facing.DownRight => "downright",
+            Facing.UpLeft => "upleft",
+            Facing.UpRight => "upright",
             _ => "down",
         };
 
@@ -209,6 +213,10 @@ namespace DgVillage
             "up" => Facing.Up,
             "left" => Facing.Left,
             "right" => Facing.Right,
+            "downleft" => Facing.DownLeft,
+            "downright" => Facing.DownRight,
+            "upleft" => Facing.UpLeft,
+            "upright" => Facing.UpRight,
             _ => Facing.Down,
         };
     }
