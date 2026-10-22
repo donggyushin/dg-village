@@ -48,9 +48,33 @@ MonoBehaviour:
   - Id: bookshelf
     Sprite: {fileID: 21300000, guid: 9b92a1f73a6744fce8c02edcdf41b85c, type: 3}
     Footprint: {x: 1.1, y: 0.4}
+  - Id: bookshelf_east
+    Sprite: {fileID: 21300000, guid: 9d993ec071f5841aa85d889e6bef62e9, type: 3}
+    Footprint: {x: 0.4, y: 1.1}
+  - Id: bookshelf_north
+    Sprite: {fileID: 21300000, guid: 31a3b2951729c4737b2a2885bd5f2b72, type: 3}
+    Footprint: {x: 1.1, y: 0.4}
+  - Id: bookshelf_northeast
+    Sprite: {fileID: 21300000, guid: 9bcf4693fb087424a92c1cdb1a670e85, type: 3}
+    Footprint: {x: 1.05, y: 0.75}
   - Id: bookshelf_potion
     Sprite: {fileID: 21300000, guid: 65c02ef693cb140a3a0d0245765e66f1, type: 3}
     Footprint: {x: 1.1, y: 0.4}
+  - Id: bookshelf_potion_east
+    Sprite: {fileID: 21300000, guid: 5c85ddfcf2ac74be5ad082917dcb9274, type: 3}
+    Footprint: {x: 0.4, y: 1.1}
+  - Id: bookshelf_potion_north
+    Sprite: {fileID: 21300000, guid: 61944d2ee490e43869aa13eda90a3ad5, type: 3}
+    Footprint: {x: 1.1, y: 0.4}
+  - Id: bookshelf_potion_northeast
+    Sprite: {fileID: 21300000, guid: e49b2a30e5e9c42749f2474d4830721e, type: 3}
+    Footprint: {x: 1.05, y: 0.75}
+  - Id: bookshelf_potion_southeast
+    Sprite: {fileID: 21300000, guid: bc669dd7cd8564005aaa6b732f071e61, type: 3}
+    Footprint: {x: 1.05, y: 0.75}
+  - Id: bookshelf_southeast
+    Sprite: {fileID: 21300000, guid: e6c3d691d1fb04dfb82c3b225065b9fc, type: 3}
+    Footprint: {x: 1.05, y: 0.75}
   - Id: candelabra
     Sprite: {fileID: 21300000, guid: 371de8b18ca6e4b259a563e81b6fa610, type: 3}
     Footprint: {x: 0.4, y: 0.3}
@@ -132,12 +156,36 @@ MonoBehaviour:
   - Id: fireplace
     Sprite: {fileID: 21300000, guid: f944af65cdfaf49aaacc7c10a05e586c, type: 3}
     Footprint: {x: 1.4, y: 0.4}
+  - Id: fireplace_east
+    Sprite: {fileID: 21300000, guid: d8f83a7c12716485e85dd59db775f6ac, type: 3}
+    Footprint: {x: 0.4, y: 1.4}
+  - Id: fireplace_north
+    Sprite: {fileID: 21300000, guid: fe70e0737c8b44d6ca748764a2666907, type: 3}
+    Footprint: {x: 1.4, y: 0.4}
+  - Id: fireplace_northeast
+    Sprite: {fileID: 21300000, guid: 19736cd1de06847bfba0ddd90f947016, type: 3}
+    Footprint: {x: 1.26, y: 0.9}
+  - Id: fireplace_southeast
+    Sprite: {fileID: 21300000, guid: a98211c1e98ab4c0481731fd5ba05cbc, type: 3}
+    Footprint: {x: 1.26, y: 0.9}
   - Id: globe
     Sprite: {fileID: 21300000, guid: 997c96db5211d453d90b5fc1ae111fae, type: 3}
     Footprint: {x: 0.8, y: 0.5}
   - Id: notice_board
     Sprite: {fileID: 21300000, guid: 54a0d36e0569a40aa93b1410ec81aaf9, type: 3}
     Footprint: {x: 1.1, y: 0.3}
+  - Id: notice_board_east
+    Sprite: {fileID: 21300000, guid: 9fdbd012fb69544f890785e04248f1e1, type: 3}
+    Footprint: {x: 0.3, y: 1.1}
+  - Id: notice_board_north
+    Sprite: {fileID: 21300000, guid: 273ce8f245d2b4d3d9f7570864fd3c81, type: 3}
+    Footprint: {x: 1.1, y: 0.3}
+  - Id: notice_board_northeast
+    Sprite: {fileID: 21300000, guid: e4ce34fd06def4e72a43cba64fe691e3, type: 3}
+    Footprint: {x: 0.98, y: 0.70000005}
+  - Id: notice_board_southeast
+    Sprite: {fileID: 21300000, guid: 30a345f9f2cb44abe80829a3b546125c, type: 3}
+    Footprint: {x: 0.98, y: 0.70000005}
   - Id: owl_perch
     Sprite: {fileID: 21300000, guid: 7ab7953ad5cb6425ea0ee3b76e127170, type: 3}
     Footprint: {x: 0.4, y: 0.3}
