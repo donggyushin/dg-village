@@ -58,9 +58,16 @@ def received_chat(connections: dict[str, FakeConnection]) -> set[str]:
 
 def test_chat_reaches_everyone_on_the_map() -> None:
     # far apart, on different floors, one of them sitting at a desk: everyone still hears
+    office = load_map("office")
+    desk = office.seats["desk-1"]
     room, connections = make_room(
-        load_map("office"),
-        {"speaker": (-0.5, 0.0), "far": (8.0, -4.0), "lounge": (5.5, 3.0), "desk": (-7.5, 3.85)},
+        office,
+        {
+            "speaker": (-0.5, 0.0),
+            "far": (6.0, -6.0),
+            "lounge": (5.5, 3.0),
+            "desk": (desk.x, desk.z),
+        },
     )
     assert room.sit("desk", "desk-1") is None
     asyncio.run(room.chat("speaker", "hi"))
@@ -82,7 +89,7 @@ def test_sit_snaps_onto_the_seat() -> None:
     room, _ = make_room(OFFICE, {"a": (DESK.x + 1.0, DESK.z - 0.5), "b": (SOFA.x, SOFA.z - 1.0)})
     assert room.sit("a", "desk-1") is None
     a = room.players["a"].state
-    assert (a.x, a.z, a.facing, a.seat) == (DESK.x, DESK.z, "down", "desk-1")
+    assert (a.x, a.z, a.facing, a.seat) == (DESK.x, DESK.z, DESK.facing, "desk-1")
     assert room.sit("b", "sofa") is None
 
 

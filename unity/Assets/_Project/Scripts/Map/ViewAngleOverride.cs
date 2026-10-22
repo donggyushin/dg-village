@@ -10,8 +10,8 @@ namespace DgVillage
     [DefaultExecutionOrder(-1000)]
     public class ViewAngleOverride : MonoBehaviour
     {
-        [SerializeField] private float _pitch = 30f;
-        [SerializeField] private float _yaw = 45f;
+        [SerializeField] private float _pitch = ViewAngle.QuarterPitch;
+        [SerializeField] private float _yaw = ViewAngle.QuarterYaw;
 
         private void OnEnable() => ViewAngle.Set(_pitch, _yaw);
 

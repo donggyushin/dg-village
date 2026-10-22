@@ -34,6 +34,14 @@ namespace DgVillage
         /// <summary>다음 LateUpdate 에서 대상에 바로 붙는다 (대상이 순간이동했을 때)</summary>
         public void Snap() => _snapped = false;
 
+        /// <summary>카메라 각도를 바꾼다 (맵마다 정면 · 쿼터뷰). 대상과의 거리는 그대로, 그 각도의 반대 방향으로 물러난다</summary>
+        public void SetRotation(Quaternion rotation)
+        {
+            transform.rotation = rotation;
+            _offset = -(rotation * Vector3.forward) * _offset.magnitude;
+            _snapped = false;
+        }
+
         // 대상 이동(Update)이 끝난 뒤에 따라가야 떨림이 없다
         private void LateUpdate()
         {

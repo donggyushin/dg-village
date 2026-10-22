@@ -63,6 +63,9 @@ namespace DgVillage
                 return;
             }
 
+            // 카메라를 정면으로 (맵마다 각도가 바뀔 수 있다 — ViewAngle)
+            transform.localRotation = ViewAngle.Billboard;
+
             bool sitFlip = false;
             Sprite sit = _motion.IsSeated ? _character.GetSit(_motion.Facing, out sitFlip) : null;
             float lift = !_motion.IsSeated ? 0f : sit != null ? _sitSpriteLift : _seatedLift;

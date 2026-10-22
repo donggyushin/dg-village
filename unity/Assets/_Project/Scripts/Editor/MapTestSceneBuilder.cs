@@ -9,14 +9,14 @@ namespace DgVillage.Editor
     /// 맵 아트 실험용 씬 Assets/Scenes/MapTest.unity 를 만든다 (네트워크 없음, 걸어다니며 보기만):
     ///   View          ViewAngleOverride — 쿼터뷰 실험 (카메라 X 30° · Y 45°, 2026-10-22)
     ///   Main Camera   그 각도 · Size 5.625 + CameraFollow
-    ///   Floor · Props OfficeRoomBuilder 가 서버의 maps/office_quarter.json 으로 깐 방 (서버는 안 쓰는 실험용 맵)
+    ///   Floor · Props OfficeRoomBuilder 가 서버의 maps/office.json (마을과 같은 사무실) 으로 깐 방
     ///   Player        PlayerMovement + Visual (girl01)
     ///   Boy01         서 있는 비교용 캐릭터 (책상 뒤)
     /// </summary>
     public static class MapTestSceneBuilder
     {
         private const string ScenePath = "Assets/Scenes/MapTest.unity";
-        private const string MapId = "office_quarter";
+        private const string MapId = "office";
         private const string Title = "Create Map Test Scene";
 
         [MenuItem("DgVillage/Create Map Test Scene")]

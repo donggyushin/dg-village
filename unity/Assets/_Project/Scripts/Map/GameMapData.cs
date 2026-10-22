@@ -11,6 +11,7 @@ namespace DgVillage
     public class GameMapData
     {
         public string id;
+        public string view; // 카메라 각도: "quarter" = 쿼터뷰 (X 30° · Y 45°), "" = 정면 (ViewAngle.SetForMap)
         public string[] layout;
         public Seat[] seats;
         public Portal[] portals;
@@ -25,7 +26,7 @@ namespace DgVillage
             public string kind; // "desk" | "lounge"
             public float x;
             public float z;
-            public string facing; // 앉으면 보는 방향 (의자 방향) down|up|left|right, "" = down
+            public string facing; // 앉으면 보는 방향 (의자 방향, 화면 기준 — 쿼터뷰는 대각선) FacingWire 값, "" = down
         }
 
         [Serializable]

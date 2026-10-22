@@ -56,6 +56,12 @@ namespace DgVillage
                 _room.SetActive(false);
                 Destroy(_room);
             }
+            // 각도를 먼저: 바닥 · 벽 · 소품이 만들어질 때 이 각도를 본다
+            ViewAngle.SetForMap(welcome.map.view);
+            if (_camera != null)
+            {
+                _camera.SetRotation(ViewAngle.Billboard);
+            }
             _room = MapBuilder.Build(welcome.map, _catalog);
             CurrentMapId = welcome.map.id;
 
