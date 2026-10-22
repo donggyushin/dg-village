@@ -124,8 +124,6 @@ class PlayerState(CamelModel):
     moving: bool = False
     # Seat id while sitting, else None.
     seat: str | None = None
-    # Sitting at a desk: hears no chat and isn't heard (focus mode).
-    focused: bool = False
 
 
 class WelcomeMessage(CamelModel):

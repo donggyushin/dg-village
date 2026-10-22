@@ -83,8 +83,6 @@ namespace DgVillage
         public bool moving;
         /// <summary>앉아 있는 좌석 id. 서 있으면 null 또는 "" (JsonUtility)</summary>
         public string seat;
-        /// <summary>책상에 앉아 집중 모드: 채팅을 듣지도 보내지도 못한다</summary>
-        public bool focused;
 
         public bool IsSeated => !string.IsNullOrEmpty(seat);
     }

@@ -11,7 +11,6 @@ namespace DgVillage
     public class GameMapData
     {
         public string id;
-        public float hearingRadius;
         public string[] layout;
         public Seat[] seats;
         public Portal[] portals;

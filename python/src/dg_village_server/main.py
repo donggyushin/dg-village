@@ -53,7 +53,7 @@ def create_app(settings: Settings | None = None, *, create_tables: bool = False)
         app.state.settings = settings
         app.state.sessionmaker = create_sessionmaker(engine)
         await ensure_default_channel(app.state.sessionmaker)
-        # Every channel has the same maps (office + outdoor); chat follows each map's zones
+        # Every channel has the same maps (office + outdoor); chat goes to everyone on the map
         rooms = RoomManager(load_maps())
         app.state.rooms = rooms
         tick_task = asyncio.create_task(rooms.run_tick_loop(1 / TICK_RATE_HZ))

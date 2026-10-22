@@ -1,6 +1,5 @@
 {
   "id": "office",
-  "hearingRadius": 4.0,
   "lighting": {
     "exposure": 0.0, "contrast": 8, "saturation": 6, "temperature": 14, "colorFilter": "#fff4e2",
     "vignette": 0.3, "ambient": "#3c3654"

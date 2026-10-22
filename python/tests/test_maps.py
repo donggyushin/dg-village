@@ -2,51 +2,9 @@ import asyncio
 
 import pytest
 
-from dg_village_server.maps import HALLWAY, MAP_IDS, GameMap, load_map, load_maps
+from dg_village_server.maps import MAP_IDS, GameMap, load_map, load_maps
 from dg_village_server.protocol import MoveMessage, PlayerState
 from dg_village_server.room import Player, Room
-
-# 6 × 4 tiles → x from -3 to 3, z from 2 (north) to -2. Two separate carpet areas.
-SMALL = GameMap(
-    {
-        "id": "small",
-        "hearingRadius": 2.0,
-        "layout": [
-            "cc..cc",
-            "cc..cc",
-            "ssssss",
-            "ssssss",
-        ],
-    }
-)
-
-
-def test_zones_follow_the_layout() -> None:
-    assert SMALL.zone_at(-2.5, 1.5) == "lounge:0"  # top-left carpet
-    assert SMALL.zone_at(2.5, 1.5) == "lounge:1"  # top-right carpet, not connected
-    assert SMALL.zone_at(0.0, -1.0) == HALLWAY
-    assert SMALL.zone_at(50.0, 50.0) == HALLWAY  # off the map
-
-
-def test_lounge_hears_regardless_of_distance() -> None:
-    assert SMALL.can_hear((-2.9, 1.9), (-1.1, 0.1))
-
-
-def test_hallway_hears_only_within_radius() -> None:
-    assert SMALL.can_hear((-2.0, -1.0), (-0.5, -1.0))
-    assert not SMALL.can_hear((-2.5, -1.0), (2.5, -1.0))
-
-
-@pytest.mark.parametrize(
-    ("speaker", "listener"),
-    [
-        ((-2.5, 0.5), (-2.5, -0.5)),  # lounge edge ↔ hallway right next to it
-        ((-2.5, 1.5), (2.5, 1.5)),  # two different lounges
-    ],
-)
-def test_zones_dont_hear_each_other(speaker, listener) -> None:
-    assert not SMALL.can_hear(speaker, listener)
-    assert not SMALL.can_hear(listener, speaker)
 
 
 def test_portals_lead_to_walkable_spots_on_existing_maps() -> None:
@@ -69,8 +27,6 @@ def test_portals_lead_to_walkable_spots_on_existing_maps() -> None:
 def test_office_map_loads() -> None:
     office = load_map("office")
     assert office.id == "office"
-    assert office.zone_at(5.5, 3.0) == "lounge:0"  # the carpet lounge
-    assert office.zone_at(-0.5, 0.0) == HALLWAY
     assert {s.kind for s in office.seats.values()} == {"desk", "lounge"}
 
 
@@ -100,13 +56,15 @@ def received_chat(connections: dict[str, FakeConnection]) -> set[str]:
     return {pid for pid, c in connections.items() if any('"chat"' in m for m in c.sent)}
 
 
-def test_room_chat_goes_only_to_hearers() -> None:
+def test_chat_reaches_everyone_on_the_map() -> None:
+    # far apart, on different floors, one of them sitting at a desk: everyone still hears
     room, connections = make_room(
-        SMALL,
-        {"speaker": (-2.0, -1.0), "near": (-1.0, -1.0), "far": (2.5, -1.5), "lounge": (-2.5, 1.5)},
+        load_map("office"),
+        {"speaker": (-0.5, 0.0), "far": (8.0, -4.0), "lounge": (5.5, 3.0), "desk": (-7.5, 3.85)},
     )
+    assert room.sit("desk", "desk-1") is None
     asyncio.run(room.chat("speaker", "hi"))
-    assert received_chat(connections) == {"speaker", "near"}
+    assert received_chat(connections) == {"speaker", "far", "lounge", "desk"}
 
 
 def test_room_without_map_broadcasts_to_everyone() -> None:
@@ -120,20 +78,18 @@ DESK = OFFICE.seats["desk-1"]
 SOFA = OFFICE.seats["sofa"]
 
 
-def test_sit_snaps_onto_the_seat_and_desks_focus() -> None:
+def test_sit_snaps_onto_the_seat() -> None:
     room, _ = make_room(OFFICE, {"a": (DESK.x + 1.0, DESK.z - 0.5), "b": (SOFA.x, SOFA.z - 1.0)})
     assert room.sit("a", "desk-1") is None
     a = room.players["a"].state
-    assert (a.x, a.z, a.facing, a.seat, a.focused) == (DESK.x, DESK.z, "down", "desk-1", True)
+    assert (a.x, a.z, a.facing, a.seat) == (DESK.x, DESK.z, "down", "desk-1")
     assert room.sit("b", "sofa") is None
-    assert room.players["b"].state.focused is False  # lounge seat: just sitting
 
 
 def test_sit_faces_the_seats_way() -> None:
     sideways = GameMap(
         {
             "id": "sideways",
-            "hearingRadius": 2.0,
             "layout": ["ssss"],
             "seats": [{"id": "s", "kind": "lounge", "x": 0.5, "z": 0.0, "facing": "left"}],
         }
@@ -175,16 +131,4 @@ def test_moving_away_stands_up_but_resending_the_seat_position_doesnt() -> None:
     assert room.players["a"].state.seat == "desk-1"
     room.apply_move("a", move(DESK.x, DESK.z - 0.3))
     a = room.players["a"].state
-    assert (a.seat, a.focused, a.z) == (None, False, DESK.z - 0.3)
-
-
-def test_focused_player_neither_hears_nor_is_heard() -> None:
-    near = (DESK.x + 1.0, DESK.z - 1.0)  # hallway-rules area, well within the radius
-    room, connections = make_room(OFFICE, {"desk": (DESK.x, DESK.z), "near": near})
-    room.sit("desk", "desk-1")
-    asyncio.run(room.chat("near", "hi"))
-    asyncio.run(room.chat("desk", "hello?"))
-    assert [m for m in connections["desk"].sent if '"chat"' in m] == [
-        m for m in connections["desk"].sent if "hello?" in m
-    ]  # only its own echo
-    assert all("hello?" not in m for m in connections["near"].sent)
+    assert (a.seat, a.z) == (None, DESK.z - 0.3)

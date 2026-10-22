@@ -51,10 +51,6 @@ namespace DgVillage
             Facing = FacingWire.Parse(state.facing);
             IsMoving = state.moving;
             IsSeated = state.IsSeated;
-            if (_nameTag != null)
-            {
-                _nameTag.SetFocused(state.focused);
-            }
 
             if ((transform.position - _targetPosition).sqrMagnitude > _snapDistance * _snapDistance)
             {

@@ -47,7 +47,7 @@ class Room:
     name: str
     # Channel id (hex) the room belongs to; a channel has one room per map.
     channel: str = ""
-    # None = everyone in the room hears every chat message (no zones).
+    # Seats and portals; None = a bare room (tests).
     game_map: GameMap | None = None
     players: dict[str, Player] = field(default_factory=dict)
     # Set when a position changes; the tick loop only broadcasts dirty rooms.
@@ -85,7 +85,7 @@ class Room:
             return "seat taken"
         if math.dist((state.x, state.z), (seat.x, seat.z)) > SIT_RANGE:
             return "too far from the seat"
-        state.seat, state.focused = seat.id, seat.kind == "desk"
+        state.seat = seat.id
         state.x, state.z, state.facing, state.moving = seat.x, seat.z, seat.facing, False
         self.dirty = True
         return None
@@ -93,31 +93,14 @@ class Room:
     def stand(self, player_id: str) -> None:
         state = self.players[player_id].state
         if state.seat is not None:
-            state.seat, state.focused = None, False
+            state.seat = None
             self.dirty = True
 
     async def chat(self, player_id: str, text: str) -> None:
         speaker = self.players[player_id].state
         message = ChatBroadcastMessage(id=player_id, name=speaker.name, text=text).to_json()
-        await self.send_to(self.hearers(player_id), message)
-
-    def hearers(self, player_id: str) -> list[Player]:
-        """Who receives a chat message from this player (always including the speaker's echo)."""
-        if self.game_map is None:
-            return list(self.players.values())
-        speaker = self.players[player_id].state
-        game_map = self.game_map
-        return [
-            p
-            for pid, p in self.players.items()
-            if pid == player_id
-            or (
-                # focus mode (sitting at a desk): neither side hears the other
-                not speaker.focused
-                and not p.state.focused
-                and game_map.can_hear((speaker.x, speaker.z), (p.state.x, p.state.z))
-            )
-        ]
+        # everyone on the map, the speaker included (their bubble comes from this echo)
+        await self.broadcast(message)
 
     def snapshot(self) -> list[PlayerState]:
         return [p.state for p in self.players.values()]
@@ -125,7 +108,7 @@ class Room:
 
 class RoomManager:
     def __init__(self, maps: dict[str, GameMap] | None = None) -> None:
-        # Map id -> map (chat zones, seats). A map id not in here = whole room hears everything.
+        # Map id -> map (seats, portals). A map id not in here = bare room without seats (tests).
         self.maps = maps or {}
         # "<channel>/<map>" -> room
         self.rooms: dict[str, Room] = {}
@@ -164,7 +147,7 @@ class RoomManager:
         if portal is None or to not in self.maps:
             return room, "not at a portal"
         await self.leave(room, player_id, player.connection)
-        state.seat, state.focused, state.moving = None, False, False
+        state.seat, state.moving = None, False
         state.x, state.z = portal.spawn_x, portal.spawn_z
         target = self._room(room.channel, to)
         target.players[player_id] = player

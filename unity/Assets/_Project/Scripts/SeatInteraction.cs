@@ -25,7 +25,6 @@ namespace DgVillage
         private const float StandRetrySeconds = 1f;
 
         private float _standRequestedAt = float.NegativeInfinity;
-        private NameTag _nameTag;
         private string _error;
         private float _errorUntil;
 
@@ -35,9 +34,7 @@ namespace DgVillage
             {
                 Debug.LogError("SeatInteraction: Client · Local Player · Hint 를 Inspector 에서 연결할 것.", this);
                 enabled = false;
-                return;
             }
-            _nameTag = _localPlayer.GetComponentInChildren<NameTag>();
         }
 
         private void OnEnable()
@@ -61,10 +58,6 @@ namespace DgVillage
         private void OnLocalSeatChanged(PlayerState me)
         {
             _standRequestedAt = float.NegativeInfinity;
-            if (_nameTag != null)
-            {
-                _nameTag.SetFocused(me.focused);
-            }
             if (me.IsSeated)
             {
                 _localPlayer.SitAt(new Vector3(me.x, _localPlayer.transform.position.y, me.z), FacingWire.Parse(me.facing));
@@ -99,7 +92,7 @@ namespace DgVillage
                     _standRequestedAt = Time.time;
                     _client.SendStand();
                 }
-                SetHint(_client.LocalFocused ? "집중 모드 — 채팅이 들리지 않아요  ·  E 일어나기" : "E 일어나기");
+                SetHint("E 일어나기");
                 return;
             }
 
@@ -114,7 +107,7 @@ namespace DgVillage
             }
             else
             {
-                SetHint(seat == null ? "" : seat.IsDesk ? "E 앉아서 집중하기" : "E 앉기");
+                SetHint(seat == null ? "" : "E 앉기");
             }
         }
 

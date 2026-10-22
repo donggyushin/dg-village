@@ -1,6 +1,5 @@
 {
   "id": "outdoor",
-  "hearingRadius": 4.0,
   "lighting": {
     "shadowX": 0.5, "shadowZ": -0.75, "shadowStrength": 0.5, "shadowColor": "#4a5a8c",
     "clouds": 0.55,

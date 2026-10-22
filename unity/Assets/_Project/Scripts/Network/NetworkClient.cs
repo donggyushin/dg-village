@@ -38,9 +38,6 @@ namespace DgVillage
         /// <summary>서버가 정해준 내 id (= 계정 id). 방에 들어가기 전이나 연결이 끊기면 null.</summary>
         public string LocalPlayerId { get; private set; }
 
-        /// <summary>책상에 앉아 집중 모드인가 (서버 기준). 채팅 입력을 막는 데 쓴다</summary>
-        public bool LocalFocused { get; private set; }
-
         private string _localSeat = "";
 
         private WebSocket _socket;
@@ -130,10 +127,9 @@ namespace DgVillage
             LocalPlayerId = null;
             _lastSent = null;
             _traveling = false;
-            if (_localSeat != "" || LocalFocused)
+            if (_localSeat != "")
             {
                 _localSeat = "";
-                LocalFocused = false;
                 LocalSeatChanged?.Invoke(new PlayerState());
             }
             Disconnected?.Invoke();
@@ -224,10 +220,9 @@ namespace DgVillage
                     continue;
                 }
                 string seat = player.seat ?? "";
-                if (seat != _localSeat || player.focused != LocalFocused)
+                if (seat != _localSeat)
                 {
                     _localSeat = seat;
-                    LocalFocused = player.focused;
                     LocalSeatChanged?.Invoke(player);
                 }
                 return;

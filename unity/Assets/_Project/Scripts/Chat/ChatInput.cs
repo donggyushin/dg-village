@@ -72,8 +72,7 @@ namespace DgVillage
             }
 
             bool enterPressed = keyboard.enterKey.wasPressedThisFrame || keyboard.numpadEnterKey.wasPressedThisFrame;
-            // 집중 모드(책상에 앉음)에서는 채팅을 열지 않는다 — 보내도 아무도 못 듣는다
-            if (enterPressed && Time.frameCount != _closedFrame && !_client.LocalFocused)
+            if (enterPressed && Time.frameCount != _closedFrame)
             {
                 _openedFrame = Time.frameCount;
                 SetVisible(true);
