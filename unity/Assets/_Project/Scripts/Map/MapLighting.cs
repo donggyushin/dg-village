@@ -45,6 +45,7 @@ namespace DgVillage
         private readonly Vector4[] _lightColors = new Vector4[MaxLights];
         private int _lightCount;
         private bool _flickers;
+        private bool _dirty;
 
         /// <summary>해 그림자가 높이 1 unit 당 바닥에서 밀리는 거리 (x, z). zero = 해 그림자 없음</summary>
         public static Vector2 SunShadowOffset { get; private set; }
@@ -94,8 +95,16 @@ namespace DgVillage
             }
         }
 
+        // 인스펙터에서 값을 바꾸면 바로 반영. OnValidate 안에서는 빛무리를 지울 수 없어서 다음 Update 에서 다시 만든다
+        private void OnValidate() => _dirty = true;
+
         private void Update()
         {
+            if (_dirty)
+            {
+                _dirty = false;
+                Apply();
+            }
             if (_flickers)
             {
                 UpdateLights();
