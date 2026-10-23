@@ -751,6 +751,7 @@ MonoBehaviour:
   _client: {fileID: 165079888}
   _remotePlayerPrefab: {fileID: 5352026829569415875, guid: 129adc9f8328c47668eda0f575eb8d39, type: 3}
   _characters: {fileID: 11400000, guid: 7d3c7cc30e4604412872401125027ab1, type: 2}
+  _pets: {fileID: 11400000, guid: ae9e36a25842f46728b410d8b9a46ade, type: 2}
 --- !u!114 &165079888
 MonoBehaviour:
   m_ObjectHideFlags: 0

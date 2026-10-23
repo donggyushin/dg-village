@@ -16,6 +16,7 @@ namespace DgVillage
         public bool noWalls; // true = 바닥 끝에 벽 · 벽 윗면을 안 만든다 (야외)
         public Seat[] seats;
         public Portal[] portals;
+        public Pet[] pets; // 혼자 돌아다니는 동물 (서버 pets.py 가 움직인다)
         public Prop[] props;
         public Window[] windows;
         public Lighting lighting; // 낮 (night 가 없으면 하루 종일)
@@ -43,6 +44,17 @@ namespace DgVillage
             public string to; // 갈 맵 id
             public float spawnX; // 도착 맵에서 시작할 발 위치
             public float spawnZ;
+        }
+
+        /// <summary>맵을 돌아다니는 동물. 서버가 집(x, z) 둘레 roam 안에서 걷게 하고 state.pets 로 보낸다</summary>
+        [Serializable]
+        public class Pet
+        {
+            public string id;
+            public string character; // Characters/Pets 의 CharacterDefinition id (PetRegistry)
+            public float x; // 집 = 처음 서 있는 곳
+            public float z;
+            public float roam; // 집에서 이만큼 (unit) 안에서만 걷는다
         }
 
         [Serializable]

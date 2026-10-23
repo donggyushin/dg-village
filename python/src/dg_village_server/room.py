@@ -7,10 +7,12 @@ from dataclasses import dataclass, field
 from typing import Protocol
 
 from .maps import GameMap
+from .pets import PetHerd, make_herd
 from .protocol import (
     ChatBroadcastMessage,
     ErrorMessage,
     MoveMessage,
+    PetState,
     PlayerJoinedMessage,
     PlayerLeftMessage,
     PlayerState,
@@ -59,6 +61,8 @@ class Room:
     # Seats and portals; None = a bare room (tests).
     game_map: GameMap | None = None
     players: dict[str, Player] = field(default_factory=dict)
+    # Animals wandering the map (pets.py); None = the map has none.
+    pets: PetHerd | None = None
     # Set when a position changes; the tick loop only broadcasts dirty rooms.
     dirty: bool = False
 
@@ -117,6 +121,16 @@ class Room:
     def snapshot(self) -> list[PlayerState]:
         return [p.state for p in self.players.values()]
 
+    def pet_snapshot(self) -> list[PetState]:
+        return self.pets.snapshot() if self.pets else []
+
+    def step_pets(self, dt: float) -> None:
+        if self.pets is None:
+            return
+        players = [(p.state.x, p.state.z) for p in self.players.values()]
+        if self.pets.step(dt, players):
+            self.dirty = True
+
 
 class RoomManager:
     def __init__(self, maps: dict[str, GameMap] | None = None) -> None:
@@ -172,7 +186,10 @@ class RoomManager:
         name = f"{channel}/{map_id}"
         room = self.rooms.get(name)
         if room is None:
-            room = self.rooms[name] = Room(name, channel, map_id, self.maps.get(map_id))
+            game_map = self.maps.get(map_id)
+            room = self.rooms[name] = Room(name, channel, map_id, game_map)
+            if game_map is not None:
+                room.pets = make_herd(game_map.data, game_map.is_floor)
         return room
 
     def player_count(self, channel: str) -> int:
@@ -210,16 +227,18 @@ class RoomManager:
         except Exception as e:  # already closing
             logger.debug("kick of %s: %r", player_id, e)
 
-    async def tick(self) -> None:
+    async def tick(self, dt: float = 0.0) -> None:
         for room in list(self.rooms.values()):
+            room.step_pets(dt)
             if room.dirty:
                 room.dirty = False
-                await room.broadcast(StateMessage(players=room.snapshot()).to_json())
+                state = StateMessage(players=room.snapshot(), pets=room.pet_snapshot())
+                await room.broadcast(state.to_json())
 
     async def run_tick_loop(self, interval: float) -> None:
         while True:
             await asyncio.sleep(interval)
             try:
-                await self.tick()
+                await self.tick(interval)
             except Exception:
                 logger.exception("tick failed")

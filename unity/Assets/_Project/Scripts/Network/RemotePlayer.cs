@@ -45,6 +45,15 @@ namespace DgVillage
             transform.position = _targetPosition;
         }
 
+        /// <summary>동물(펫)처럼 이름표가 필요 없을 때</summary>
+        public void HideNameTag()
+        {
+            if (_nameTag != null)
+            {
+                _nameTag.gameObject.SetActive(false);
+            }
+        }
+
         public void ApplyState(PlayerState state)
         {
             _targetPosition = new Vector3(state.x, transform.position.y, state.z);

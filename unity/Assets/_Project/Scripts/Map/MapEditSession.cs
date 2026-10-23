@@ -5,7 +5,7 @@ namespace DgVillage
 {
     /// <summary>
     /// 맵 에디터(DgVillage → Map Editor)로 연 맵의 루트에 붙는다. 오브젝트로 나타나지 않는 맵 데이터를 들고 있다:
-    /// id · view · 바닥 layout · 분위기(lighting) · 점광원(lights) · 창문(windows).
+    /// id · view · 바닥 layout · 분위기(lighting) · 점광원(lights) · 창문(windows) · 동물(pets).
     /// 인스펙터에서 고치면 바로 바닥 · 조명에 반영한다 (점광원 · 창문 위치는 Scene 뷰 핸들로도 옮긴다).
     /// 소품 · 좌석 · 포탈은 오브젝트(MapProp · Seat · Portal) 쪽이 원본이다.
     /// </summary>
@@ -30,6 +30,8 @@ namespace DgVillage
         [SerializeField] private GameMapData.Light[] _lights = Array.Empty<GameMapData.Light>();
         [Tooltip("창문 가운데 (x, z). 북쪽 벽 = 벽 선의 z · 정수 x, 동쪽 벽 = 벽 선의 x · 정수 z. 폭 2 칸")]
         [SerializeField] private GameMapData.Window[] _windows = Array.Empty<GameMapData.Window>();
+        [Tooltip("돌아다니는 동물: character = PetRegistry id, (x, z) = 집, roam = 집에서 걷는 반경. 움직임은 서버가 정한다")]
+        [SerializeField] private GameMapData.Pet[] _pets = Array.Empty<GameMapData.Pet>();
 
         private bool _dirty;
 
@@ -48,6 +50,7 @@ namespace DgVillage
             _dusk = map.dusk ?? new GameMapData.Lighting();
             _lights = map.lights ?? Array.Empty<GameMapData.Light>();
             _windows = map.windows ?? Array.Empty<GameMapData.Window>();
+            _pets = map.pets ?? Array.Empty<GameMapData.Pet>();
         }
 
         public void AddLight(GameMapData.Light light) => _lights = Append(_lights, light);
@@ -84,6 +87,7 @@ namespace DgVillage
             dusk = _dusk,
             lights = _lights,
             windows = _windows,
+            pets = _pets,
         };
 
         // OnValidate 안에서는 메시 · 빛무리를 못 바꿔서 다음 Update 에서

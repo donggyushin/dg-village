@@ -168,7 +168,9 @@ def create_app(settings: Settings | None = None, *, create_tables: bool = False)
 
 def _welcome(room: Room, player_id: str) -> str:
     game_map = room.game_map.data if room.game_map else None
-    return WelcomeMessage(id=player_id, players=room.snapshot(), map=game_map).to_json()
+    return WelcomeMessage(
+        id=player_id, players=room.snapshot(), pets=room.pet_snapshot(), map=game_map
+    ).to_json()
 
 
 async def _send_error(ws: WebSocket, message: str) -> None:

@@ -346,3 +346,12 @@ def test_an_explicit_map_overrides_the_saved_spot(
     with client.websocket_connect("/ws") as ws:
         welcome = join(ws, token, map="outdoor", x=0.0, z=6.0)
         assert position_of(welcome) == ("outdoor", 0.0, 6.0)
+
+
+def test_outdoor_pets_come_with_welcome_and_state(client: TestClient) -> None:
+    with client.websocket_connect("/ws") as ws:
+        welcome = join(ws, signup(client, "alice"), map="outdoor", x=0.0, z=8.6)
+        assert {p["id"] for p in welcome["pets"]} == {"corgi", "poodle"}
+        assert welcome["pets"][0]["characterId"] in {"corgi", "poodle"}
+        state = receive_until(ws, "state")
+        assert {p["id"] for p in state["pets"]} == {"corgi", "poodle"}

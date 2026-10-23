@@ -125,12 +125,24 @@ class PlayerState(CamelModel):
     seat: str | None = None
 
 
+class PetState(CamelModel):
+    """An animal wandering the map on its own (pets.py). Drawn like a player, without a name."""
+
+    id: str
+    character_id: str
+    x: float = 0.0
+    z: float = 0.0
+    facing: Facing = "down"
+    moving: bool = False
+
+
 class WelcomeMessage(CamelModel):
     """Sent on join and after each travel: own id, everyone in the room (incl. self) and the map."""
 
     type: Literal["welcome"] = "welcome"
     id: str
     players: list[PlayerState]
+    pets: list[PetState] = []
     # maps/<id>.json as-is; None for a room without a map (tests)
     map: dict | None = None
 
@@ -150,6 +162,8 @@ class StateMessage(CamelModel):
 
     type: Literal["state"] = "state"
     players: list[PlayerState]
+    # Old clients ignore this (JsonUtility skips unknown fields)
+    pets: list[PetState] = []
 
 
 class ChatBroadcastMessage(CamelModel):

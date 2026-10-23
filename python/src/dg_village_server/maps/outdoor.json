@@ -144,6 +144,10 @@
   "portals": [
     {"x": 0.0, "z": 9.5, "w": 2.0, "d": 1.0, "to": "office", "spawnX": 0.0, "spawnZ": -5.3}
   ],
+  "pets": [
+    {"id": "corgi", "character": "corgi", "x": -2.0, "z": -2.0, "roam": 6.0},
+    {"id": "poodle", "character": "poodle", "x": 6.0, "z": -10.0, "roam": 6.0}
+  ],
   "props": [
     {"sprite": "guild_hall", "x": -2.72, "z": 9.36, "shadow": 0},
     {"sprite": "street_lamp", "x": -4.5, "z": 4.5, "shadow": 1},

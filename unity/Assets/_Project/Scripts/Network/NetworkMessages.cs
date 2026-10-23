@@ -92,6 +92,8 @@ namespace DgVillage
     {
         public string id;
         public PlayerState[] players;
+        /// <summary>맵을 돌아다니는 동물 (서버 PetState — 필드가 PlayerState 와 같다, name · seat 은 비어 있음)</summary>
+        public PlayerState[] pets;
         /// <summary>서버의 maps/{id}.json 그대로. 옛 서버는 안 보낸다 (그러면 id 가 빈 객체)</summary>
         public GameMapData map;
     }
@@ -112,6 +114,7 @@ namespace DgVillage
     public class StateMessage
     {
         public PlayerState[] players;
+        public PlayerState[] pets;
     }
 
     [Serializable]

@@ -7,7 +7,8 @@ namespace DgVillage.Editor
     /// <summary>
     /// Project 창에서 캐릭터 스프라이트 폴더 우클릭 → DgVillage → Create Character Definition.
     /// 폴더 이름을 id 로 CharacterDefinition 에셋을 만들고(이미 있으면 갱신) 파일명 규칙으로 스프라이트를 채운 뒤
-    /// CharacterRegistry 에 등록한다.
+    /// CharacterRegistry 에 등록한다. Sprites/Characters/Pets/ 아래 폴더(돌아다니는 동물)는 캐릭터 선택에 안 나오게
+    /// PetRegistry 에 등록한다.
     ///   {name}_idle_{south|north|east|southeast|northeast}.png   (대각선은 선택)
     ///   {name}_walk_{south|north|east|southeast|northeast}_{0..n}.png
     ///   {name}_sit_{south|east|north|southeast|northeast}.png   (선택 — 앉은 모습, 의자 방향별)
@@ -17,6 +18,7 @@ namespace DgVillage.Editor
         private const string MenuPath = "Assets/DgVillage/Create Character Definition";
         private const string CharactersFolder = "Assets/_Project/Characters";
         private const string RegistryPath = CharactersFolder + "/CharacterRegistry.asset";
+        private const string PetRegistryPath = CharactersFolder + "/PetRegistry.asset";
 
         [MenuItem(MenuPath, true)]
         private static bool Validate()
@@ -36,6 +38,7 @@ namespace DgVillage.Editor
 
             EnsureFolder(CharactersFolder);
             CharacterRegistry registry = LoadOrCreate<CharacterRegistry>(RegistryPath);
+            CharacterRegistry petRegistry = null;
 
             foreach (string folder in folders)
             {
@@ -56,7 +59,12 @@ namespace DgVillage.Editor
                 so.FindProperty("_sitUpRight").objectReferenceValue = FindSprite(folder, "_sit_northeast");
                 so.ApplyModifiedProperties();
 
-                Register(registry, character);
+                bool isPet = folder.Contains("/Pets/");
+                if (isPet)
+                {
+                    petRegistry ??= LoadOrCreate<CharacterRegistry>(PetRegistryPath);
+                }
+                Register(isPet ? petRegistry : registry, character);
                 Debug.Log($"CharacterDefinition '{id}' 생성/갱신: {folder}", character);
             }
 

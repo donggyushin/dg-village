@@ -50,6 +50,13 @@ namespace DgVillage.Editor
             sections.Add(List("layout", (map.layout ?? Array.Empty<string>()).Select(Str)));
             sections.Add(List("seats", (map.seats ?? Array.Empty<GameMapData.Seat>()).Select(s => Obj(SeatFields(s)))));
             sections.Add(List("portals", (map.portals ?? Array.Empty<GameMapData.Portal>()).Select(p => Obj(PortalFields(p)))));
+            if (map.pets is { Length: > 0 })
+            {
+                sections.Add(List("pets", map.pets.Select(p => Obj(new()
+                {
+                    ("id", Str(p.id)), ("character", Str(p.character)), ("x", Num(p.x)), ("z", Num(p.z)), ("roam", Num(p.roam)),
+                }))));
+            }
             sections.Add(List("props", (map.props ?? Array.Empty<GameMapData.Prop>()).Select(p => Obj(PropFields(p)))));
             return "{\n" + string.Join(",\n", sections) + "\n}\n";
         }
