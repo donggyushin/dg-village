@@ -7,7 +7,7 @@ namespace DgVillage
     /// <summary>
     /// 앉기 · 일어나기. 자리(Seat) 근처에서 E → 서버에 앉기 요청, 앉아 있을 때 E 나 이동 키 → 일어나기 요청.
     /// 실제로 앉히고 일으키는 건 서버 답(NetworkClient.LocalSeatChanged)을 받았을 때 — 빈자리 · 거리는 서버가 판단한다.
-    /// 화면 아래 안내 문구(_hint)에 지금 할 수 있는 일을 보여준다.
+    /// 화면 아래 안내 문구(_hint)에 지금 할 수 있는 일을 보여준다 (포탈 위면 "E … 가기" — 이동은 PortalTraveler).
     /// </summary>
     public class SeatInteraction : MonoBehaviour
     {
@@ -93,6 +93,14 @@ namespace DgVillage
                     _client.SendStand();
                 }
                 SetHint("E 일어나기");
+                return;
+            }
+
+            // 포탈 위에서는 E = 맵 이동 (PortalTraveler). 옆에 자리가 있어도 앉지 않는다
+            Portal portal = Portal.At(_localPlayer.transform.position);
+            if (portal != null)
+            {
+                SetHint($"E {portal.Label}{Portal.DirectionParticle(portal.Label)} 가기");
                 return;
             }
 
