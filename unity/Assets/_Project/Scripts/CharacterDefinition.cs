@@ -34,6 +34,10 @@ namespace DgVillage
         [SerializeField] private Sprite _sitRight;
         [SerializeField] private Sprite _sitUp;
 
+        [Tooltip("대각선 의자에 앉은 모습 (선택). 왼쪽은 오른쪽을 반전. 없으면 정면/뒷모습 앉기 그림으로 대신한다")]
+        [SerializeField] private Sprite _sitDownRight;
+        [SerializeField] private Sprite _sitUpRight;
+
         public string Id => _id;
         public string DisplayName => string.IsNullOrEmpty(_displayName) ? _id : _displayName;
         public Sprite Preview => _down.Idle;
@@ -41,16 +45,40 @@ namespace DgVillage
         /// <summary>정면 앉은 모습 (캐릭터 선택 등). 없으면 null</summary>
         public Sprite SitDown => _sitDown;
 
-        /// <summary>facing 방향 의자에 앉은 모습. 대각선은 위/아래로 친다. 없으면 null (서기 그림을 올려 쓴다)</summary>
+        /// <summary>
+        /// facing 방향 의자에 앉은 모습. 왼쪽 계열은 오른쪽 그림을 반전 (flipX = true).
+        /// 대각선 그림이 없으면 위/아래 그림으로 대신한다. 그것도 없으면 null (서기 그림을 올려 쓴다)
+        /// </summary>
         public Sprite GetSit(Facing facing, out bool flipX)
         {
-            flipX = facing == Facing.Left;
-            return facing switch
+            flipX = false;
+            switch (facing)
             {
-                Facing.Left or Facing.Right => _sitRight,
-                Facing.Up or Facing.UpLeft or Facing.UpRight => _sitUp,
-                _ => _sitDown,
-            };
+                case Facing.Up:
+                    return _sitUp;
+                case Facing.Left:
+                case Facing.Right:
+                    flipX = facing == Facing.Left;
+                    return _sitRight;
+                case Facing.UpLeft:
+                case Facing.UpRight:
+                    if (_sitUpRight == null)
+                    {
+                        return _sitUp;
+                    }
+                    flipX = facing == Facing.UpLeft;
+                    return _sitUpRight;
+                case Facing.DownLeft:
+                case Facing.DownRight:
+                    if (_sitDownRight == null)
+                    {
+                        return _sitDown;
+                    }
+                    flipX = facing == Facing.DownLeft;
+                    return _sitDownRight;
+                default:
+                    return _sitDown;
+            }
         }
 
         /// <summary>Left 는 Right 를 좌우 반전해서 쓰므로 Right 세트를 돌려준다.</summary>

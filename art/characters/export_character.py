@@ -4,7 +4,7 @@
 
 Writes unity/Assets/_Project/Sprites/Characters/<name>/:
   <name>_idle_<dir>.png, <name>_walk_<dir>_<n>.png  for dir in south, north, east, southeast, northeast
-  <name>_sit_<dir>.png                              for dir in south, east, north (if the ZIP has a sitting state)
+  <name>_sit_<dir>.png                              same directions (if the ZIP has a sitting state)
 West-side directions are the east-side ones flipped in Unity, so they are not exported.
 
 All outputs are 64×64 with the feet ~10px above the bottom (importer pivot = 10/64):
@@ -34,7 +34,6 @@ DIRECTIONS = {
     "south-east": "southeast",
     "north-east": "northeast",
 }
-SIT_DIRECTIONS = ("south", "east", "north")
 
 
 def to_64(image: Image.Image) -> Image.Image:
@@ -82,11 +81,11 @@ def main(source: Path, name: str) -> None:
 
     sit_dirs = [d for d in source.iterdir() if d.name.startswith("sitting")]
     for sit in sit_dirs[:1]:
-        for direction in SIT_DIRECTIONS:
-            path = sit / "rotations" / f"{direction}.png"
+        for pixellab, ours in DIRECTIONS.items():
+            path = sit / "rotations" / f"{pixellab}.png"
             if path.exists():
-                place_sit(Image.open(path).convert("RGBA")).save(out / f"{name}_sit_{direction}.png")
-                print(f"sit {direction}")
+                place_sit(Image.open(path).convert("RGBA")).save(out / f"{name}_sit_{ours}.png")
+                print(f"sit {ours}")
 
 
 if __name__ == "__main__":

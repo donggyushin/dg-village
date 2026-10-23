@@ -10,7 +10,7 @@ namespace DgVillage.Editor
     /// CharacterRegistry 에 등록한다.
     ///   {name}_idle_{south|north|east|southeast|northeast}.png   (대각선은 선택)
     ///   {name}_walk_{south|north|east|southeast|northeast}_{0..n}.png
-    ///   {name}_sit_{south|east|north}.png   (선택 — 앉은 모습, 의자 방향별)
+    ///   {name}_sit_{south|east|north|southeast|northeast}.png   (선택 — 앉은 모습, 의자 방향별)
     /// </summary>
     public static class CharacterDefinitionBuilder
     {
@@ -52,6 +52,8 @@ namespace DgVillage.Editor
                 so.FindProperty("_sitDown").objectReferenceValue = FindSprite(folder, "_sit_south");
                 so.FindProperty("_sitRight").objectReferenceValue = FindSprite(folder, "_sit_east");
                 so.FindProperty("_sitUp").objectReferenceValue = FindSprite(folder, "_sit_north");
+                so.FindProperty("_sitDownRight").objectReferenceValue = FindSprite(folder, "_sit_southeast");
+                so.FindProperty("_sitUpRight").objectReferenceValue = FindSprite(folder, "_sit_northeast");
                 so.ApplyModifiedProperties();
 
                 Register(registry, character);

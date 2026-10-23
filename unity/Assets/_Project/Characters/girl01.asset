@@ -62,3 +62,5 @@ MonoBehaviour:
   _sitDown: {fileID: 21300000, guid: e23d14a86a50b4582a373411e14a0767, type: 3}
   _sitRight: {fileID: 21300000, guid: bb86dd897d100438f861b6f80179b02c, type: 3}
   _sitUp: {fileID: 21300000, guid: f38abb24464744a53b11ca0712ad7778, type: 3}
+  _sitDownRight: {fileID: 21300000, guid: a25a9d0d9cc8344189bfcb75f3cb58d8, type: 3}
+  _sitUpRight: {fileID: 21300000, guid: 1cced73a392744ffa931636804db8cf6, type: 3}

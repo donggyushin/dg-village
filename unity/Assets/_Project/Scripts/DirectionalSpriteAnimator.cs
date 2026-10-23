@@ -21,6 +21,14 @@ namespace DgVillage
         [Tooltip("앉은 그림을 올리는 높이 (unit). 0 = 발이 의자 앞 바닥에 닿는다 (책상 자리에선 머리만 보인다)")]
         [SerializeField] private float _sitSpriteLift = 0f;
 
+        [Tooltip("책상 자리(desk)에선 앉은 그림을 이만큼 더 올린다 (unit). 0 이면 책상 위로 머리만 겨우 보인다")]
+        [SerializeField] private float _deskSitLift = 10f / 32f;
+
+        [Tooltip("앉았을 때 깊이를 의자에서 떼는 거리 (unit). 의자 · 소파 스프라이트와 같은 자리라 깊이가 같으면 그리는 순서가 들쭉날쭉. " +
+                 "카메라를 보면 의자 앞(카메라 쪽), 등을 보이면 의자 뒤(등받이가 가린다). " +
+                 "직교 카메라라 화면 위치는 그대로. 책상(의자에서 0.38 이상)보다는 작게")]
+        [SerializeField] private float _seatedDepthBias = 0.1f;
+
         private Vector3 _baseLocalPosition;
 
         private SpriteRenderer _renderer;
@@ -68,9 +76,21 @@ namespace DgVillage
 
             bool sitFlip = false;
             Sprite sit = _motion.IsSeated ? _character.GetSit(_motion.Facing, out sitFlip) : null;
-            float lift = !_motion.IsSeated ? 0f : sit != null ? _sitSpriteLift : _seatedLift;
-            // 스프라이트 면을 따라 위로 (Visual 이 35° 기울어 있어서 로컬 up 방향)
-            transform.localPosition = _baseLocalPosition + transform.localRotation * Vector3.up * lift;
+            float lift = 0f;
+            float depthBias = 0f;
+            if (_motion.IsSeated)
+            {
+                lift = sit != null ? _sitSpriteLift : _seatedLift;
+                // 앉은 자리 = 서버가 맞춰 준 발 위치라 바로 아래에 Seat 가 있다
+                Seat seat = Seat.Nearest(transform.parent.position, 0.3f);
+                if (seat != null && seat.IsDesk)
+                {
+                    lift += _deskSitLift;
+                }
+                depthBias = FacesAway(_motion.Facing) ? -_seatedDepthBias : _seatedDepthBias;
+            }
+            // 스프라이트 면을 따라 위로 (Visual 이 35° 기울어 있어서 로컬 up 방향), 깊이는 로컬 back (= 카메라 쪽)
+            transform.localPosition = _baseLocalPosition + transform.localRotation * (Vector3.up * lift + Vector3.back * depthBias);
 
             if (sit != null)
             {
@@ -104,6 +124,9 @@ namespace DgVillage
 
             _renderer.sprite = set.Walk[_frameIndex % set.Walk.Length];
         }
+
+        private static bool FacesAway(Facing facing) =>
+            facing is Facing.Up or Facing.UpLeft or Facing.UpRight;
 
 #if UNITY_EDITOR
         // 인스펙터에서 캐릭터를 바꾸면 씬 뷰에서도 바로 정면 서기 모습이 보이도록
