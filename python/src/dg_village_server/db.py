@@ -6,7 +6,7 @@ Schema changes go through Alembic (python/migrations); never edit the tables by 
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, UniqueConstraint
+from sqlalchemy import DateTime, Float, ForeignKey, String, UniqueConstraint
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.pool import StaticPool
@@ -14,6 +14,7 @@ from sqlalchemy.pool import StaticPool
 from .protocol import CHANNEL_NAME_MAX_LENGTH, DISPLAY_NAME_MAX_LENGTH
 
 CHARACTER_ID_MAX_LENGTH = 32
+MAP_ID_MAX_LENGTH = 32
 
 # Fixed id so every server and client agrees on where "just play" goes.
 DEFAULT_CHANNEL_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
@@ -76,6 +77,26 @@ class Channel(Base):
         ForeignKey("users.id", ondelete="SET NULL"), index=True
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class SavedPosition(Base):
+    """Where a player last was in a channel; joining that channel again starts there.
+
+    Written when the player leaves (disconnect / server shutdown). One row per (user, channel).
+    """
+
+    __tablename__ = "player_positions"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    channel_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("channels.id", ondelete="CASCADE"), primary_key=True
+    )
+    map_id: Mapped[str] = mapped_column(String(MAP_ID_MAX_LENGTH))
+    x: Mapped[float] = mapped_column(Float)
+    z: Mapped[float] = mapped_column(Float)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
 async def ensure_default_channel(sessionmaker: async_sessionmaker) -> None:

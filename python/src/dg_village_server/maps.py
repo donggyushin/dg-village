@@ -23,6 +23,8 @@ from importlib import resources
 # (also for old clients that send no map).
 MAP_IDS = ("office", "outdoor")
 DEFAULT_MAP_ID = MAP_IDS[0]
+# Layout characters that are floor (anything else = no floor, can't stand there).
+FLOOR_TILES = "swcgp"
 
 
 @dataclass(frozen=True)
@@ -65,6 +67,13 @@ class GameMap:
 
     def tile_at(self, x: float, z: float) -> tuple[int, int]:
         return math.floor(x - self._left), math.floor(self._top - z)
+
+    def is_floor(self, x: float, z: float) -> bool:
+        """(x, z) is on a floor tile (furniture is not known here: the client owns footprints)."""
+        col, row = self.tile_at(x, z)
+        if not 0 <= row < len(self.layout) or not 0 <= col < len(self.layout[row]):
+            return False
+        return self.layout[row][col] in FLOOR_TILES
 
     def portal_to(self, to: str, x: float, z: float, slack: float) -> Portal | None:
         """A portal to `to` that (x, z) stands in, the rectangle grown by `slack` on every side."""

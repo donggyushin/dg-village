@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, status
 from pydantic import ValidationError
 
-from . import api
+from . import api, positions
 from .auth import AuthError, read_access_token
 from .config import Settings
 from .db import (
@@ -59,6 +59,8 @@ def create_app(settings: Settings | None = None, *, create_tables: bool = False)
         tick_task = asyncio.create_task(rooms.run_tick_loop(1 / TICK_RATE_HZ))
         yield
         tick_task.cancel()
+        # Deploys restart the server: keep the spot of anyone still connected
+        await positions.save(app.state.sessionmaker, rooms.everyone())
         await engine.dispose()
 
     app = FastAPI(title="dg-village server", lifespan=lifespan)
@@ -103,18 +105,23 @@ def create_app(settings: Settings | None = None, *, create_tables: bool = False)
         if channel is None:
             await _reject(ws, "unknown channel")
             return
-        if first.map not in rooms.maps:
+        sessionmaker = ws.app.state.sessionmaker
+        if first.map is None:
+            map_id, x, z = await positions.load_start(sessionmaker, rooms.maps, user.id, channel.id)
+        elif first.map in rooms.maps:
+            map_id, x, z = first.map, first.x, first.z
+        else:
             await _reject(ws, "unknown map")
             return
 
         room, me = await rooms.join(
             channel.id.hex,
-            first.map,
+            map_id,
             user.id.hex,
             user.display_name,
             user.character_id,
             ws,
-            (first.x, first.z),
+            (x, z),
         )
         last_chat_at = -math.inf
         try:
@@ -151,7 +158,9 @@ def create_app(settings: Settings | None = None, *, create_tables: bool = False)
         except WebSocketDisconnect:
             pass
         finally:
-            await rooms.leave(room, me.id, ws)
+            left = await rooms.leave(room, me.id, ws)
+            if left is not None:
+                await positions.save(sessionmaker, [(room, left)])
 
     return app
 

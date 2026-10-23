@@ -1,7 +1,10 @@
+import threading
+
 import pytest
 from fastapi.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 
+from dg_village_server import positions
 from dg_village_server.db import DEFAULT_CHANNEL_ID
 
 from conftest import create_channel, signup
@@ -234,3 +237,112 @@ def test_join_unknown_map_is_rejected(client: TestClient) -> None:
         assert ws.receive_json() == {"type": "error", "message": "unknown map"}
         with pytest.raises(WebSocketDisconnect):
             ws.receive_json()
+
+
+@pytest.fixture
+def saves(monkeypatch: pytest.MonkeyPatch) -> threading.Semaphore:
+    """Released once per finished positions.save (the server saves after the socket closes)."""
+    done = threading.Semaphore(0)
+    original = positions.save
+
+    async def save_and_signal(*args, **kwargs) -> None:
+        await original(*args, **kwargs)
+        done.release()
+
+    monkeypatch.setattr(positions, "save", save_and_signal)
+    return done
+
+
+def leave(ws, saves: threading.Semaphore) -> None:
+    """Disconnect like a real client and wait until the server saved where the player was.
+
+    Don't poll the database instead: tests share one SQLite connection, and a reader's rollback
+    would undo the server's unfinished insert.
+    """
+    ws.close()
+    assert saves.acquire(timeout=2), "position was not saved"
+
+
+def position_of(welcome: dict) -> tuple[str, float, float]:
+    mine = next(p for p in welcome["players"] if p["id"] == welcome["id"])
+    return welcome["map"]["id"], mine["x"], mine["z"]
+
+
+def test_rejoining_starts_where_the_player_left(
+    client: TestClient, saves: threading.Semaphore
+) -> None:
+    token = signup(client, "alice")
+    with client.websocket_connect("/ws") as ws:
+        assert position_of(join(ws, token)) == ("office", 0.0, 0.0)  # first visit
+        ws.send_json({"type": "move", "x": 3.0, "z": -2.0, "facing": "down", "moving": False})
+        leave(ws, saves)
+    with client.websocket_connect("/ws") as ws:
+        assert position_of(join(ws, token)) == ("office", 3.0, -2.0)
+
+
+def test_rejoining_after_a_portal_starts_on_the_other_map(
+    client: TestClient, saves: threading.Semaphore
+) -> None:
+    token = signup(client, "alice")
+    with client.websocket_connect("/ws") as ws:
+        join(ws, token)
+        ws.send_json({"type": "move", "x": 0.0, "z": -6.5, "facing": "down", "moving": True})
+        ws.send_json({"type": "travel", "to": "outdoor"})
+        assert receive_until(ws, "welcome")["map"]["id"] == "outdoor"
+        leave(ws, saves)
+    with client.websocket_connect("/ws") as ws:
+        assert position_of(join(ws, token)) == ("outdoor", 0.0, 6.0)
+
+
+def test_leaving_while_seated_resumes_standing_next_to_the_seat(
+    client: TestClient, saves: threading.Semaphore
+) -> None:
+    token = signup(client, "alice")
+    with client.websocket_connect("/ws") as ws:
+        join(ws, token)
+        ws.send_json({"type": "move", "x": 5.0, "z": 1.5, "facing": "up", "moving": False})
+        ws.send_json({"type": "sit", "seat": "sofa"})
+        assert any(p["seat"] == "sofa" for p in receive_until(ws, "state")["players"])
+        leave(ws, saves)
+    with client.websocket_connect("/ws") as ws:
+        # not on the sofa itself: that is inside its footprint and the player would be stuck
+        assert position_of(join(ws, token)) == ("office", 5.0, 1.5)
+
+
+def test_a_saved_spot_off_the_floor_falls_back_to_the_start(
+    client: TestClient, saves: threading.Semaphore
+) -> None:
+    token = signup(client, "alice")
+    with client.websocket_connect("/ws") as ws:
+        join(ws, token)
+        # e.g. the map layout shrank since the player left
+        ws.send_json({"type": "move", "x": 100.0, "z": 0.0, "facing": "down", "moving": False})
+        leave(ws, saves)
+    with client.websocket_connect("/ws") as ws:
+        assert position_of(join(ws, token)) == ("office", 0.0, 0.0)
+
+
+def test_each_channel_remembers_its_own_spot(
+    client: TestClient, saves: threading.Semaphore
+) -> None:
+    token = signup(client, "alice")
+    other = create_channel(client, token, "garden club")
+    with client.websocket_connect("/ws") as ws:
+        join(ws, token)
+        ws.send_json({"type": "move", "x": 3.0, "z": -2.0, "facing": "down", "moving": False})
+        leave(ws, saves)
+    with client.websocket_connect("/ws") as ws:
+        assert position_of(join(ws, token, room=other)) == ("office", 0.0, 0.0)
+
+
+def test_an_explicit_map_overrides_the_saved_spot(
+    client: TestClient, saves: threading.Semaphore
+) -> None:
+    token = signup(client, "alice")
+    with client.websocket_connect("/ws") as ws:
+        join(ws, token)
+        ws.send_json({"type": "move", "x": 3.0, "z": -2.0, "facing": "down", "moving": False})
+        leave(ws, saves)
+    with client.websocket_connect("/ws") as ws:
+        welcome = join(ws, token, map="outdoor", x=0.0, z=6.0)
+        assert position_of(welcome) == ("outdoor", 0.0, 6.0)

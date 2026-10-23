@@ -40,6 +40,14 @@ class Connection(Protocol):
 class Player:
     state: PlayerState
     connection: Connection
+    # Where the player stood before sitting (the seat itself is inside the chair's footprint).
+    stood_at: tuple[float, float] | None = None
+
+    def resume_position(self) -> tuple[float, float]:
+        """Where to put the player when they come back: standing, never inside a chair."""
+        if self.state.seat is not None and self.stood_at is not None:
+            return self.stood_at
+        return self.state.x, self.state.z
 
 
 @dataclass
@@ -47,6 +55,7 @@ class Room:
     name: str
     # Channel id (hex) the room belongs to; a channel has one room per map.
     channel: str = ""
+    map_id: str = ""
     # Seats and portals; None = a bare room (tests).
     game_map: GameMap | None = None
     players: dict[str, Player] = field(default_factory=dict)
@@ -80,11 +89,14 @@ class Room:
         seat = self.game_map.seats.get(seat_id) if self.game_map else None
         if seat is None:
             return "unknown seat"
-        state = self.players[player_id].state
+        player = self.players[player_id]
+        state = player.state
         if any(p.state.seat == seat_id for pid, p in self.players.items() if pid != player_id):
             return "seat taken"
         if math.dist((state.x, state.z), (seat.x, seat.z)) > SIT_RANGE:
             return "too far from the seat"
+        if state.seat is None:
+            player.stood_at = state.x, state.z
         state.seat = seat.id
         state.x, state.z, state.facing, state.moving = seat.x, seat.z, seat.facing, False
         self.dirty = True
@@ -160,18 +172,19 @@ class RoomManager:
         name = f"{channel}/{map_id}"
         room = self.rooms.get(name)
         if room is None:
-            room = self.rooms[name] = Room(name, channel, self.maps.get(map_id))
+            room = self.rooms[name] = Room(name, channel, map_id, self.maps.get(map_id))
         return room
 
     def player_count(self, channel: str) -> int:
         """Players in the channel, all maps together."""
         return sum(len(room.players) for room in self.rooms.values() if room.channel == channel)
 
-    async def leave(self, room: Room, player_id: str, connection: Connection) -> None:
+    async def leave(self, room: Room, player_id: str, connection: Connection) -> Player | None:
+        """Remove the player; returns them (to save where they were), or None if already gone."""
         player = room.players.get(player_id)
         # Already kicked and replaced by a newer session of the same account: leave that one be.
         if player is None or player.connection is not connection:
-            return
+            return None
         del room.players[player_id]
         self._player_rooms.pop(player_id, None)
         logger.info("%s (%s) left room %r", player.state.name, player_id, room.name)
@@ -179,6 +192,11 @@ class RoomManager:
             await room.broadcast(PlayerLeftMessage(id=player_id).to_json())
         else:
             self.rooms.pop(room.name, None)
+        return player
+
+    def everyone(self) -> list[tuple[Room, Player]]:
+        """Every connected player with their room (saving positions at shutdown)."""
+        return [(room, player) for room in self.rooms.values() for player in room.players.values()]
 
     async def kick(self, player_id: str, reason: str) -> None:
         room = self._player_rooms.get(player_id)

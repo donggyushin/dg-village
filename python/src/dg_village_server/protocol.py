@@ -8,8 +8,6 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, field_validator
 from pydantic.alias_generators import to_camel
 
-from .maps import DEFAULT_MAP_ID
-
 # Diagonals added 2026-10-22 (8-direction characters). Clients built before that map
 # unknown values to "down", so new values never break them.
 Facing = Literal["down", "up", "left", "right", "downleft", "downright", "upleft", "upright"]
@@ -55,9 +53,10 @@ class JoinMessage(CamelModel):
     room: str = Field(min_length=1, max_length=32)
     # Access token from POST /auth/login or /auth/anonymous.
     token: str = Field(min_length=1, max_length=2048)
-    # Map inside the channel (maps.MAP_IDS). Clients older than portals send none → the office.
-    map: str = Field(default=DEFAULT_MAP_ID, min_length=1, max_length=32)
-    # Where the player appears (a portal's spawn point); the first move takes over from here.
+    # Map inside the channel (maps.MAP_IDS). None = where the player last left this channel
+    # (db.SavedPosition), or the office at the origin the first time.
+    map: str | None = Field(default=None, min_length=1, max_length=32)
+    # Where the player appears on `map` (ignored without `map`); the first move takes over.
     x: float = Field(default=0.0, allow_inf_nan=False)
     z: float = Field(default=0.0, allow_inf_nan=False)
 
