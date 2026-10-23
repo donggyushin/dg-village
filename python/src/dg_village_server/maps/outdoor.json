@@ -41,7 +41,6 @@
     {"sprite": "tree_round", "x": -10.5, "z": -6.8, "shadow": 2},
     {"sprite": "tree_round", "x": 10.5, "z": -6.8, "shadow": 2},
     {"sprite": "plant_pot", "x": -3.6, "z": 2.6, "shadow": 1},
-    {"sprite": "plant_pot", "x": -3.6, "z": -2.4, "shadow": 1},
     {"sprite": "plant_pot", "x": 3.6, "z": 2.6, "shadow": 1},
     {"sprite": "plant_pot", "x": 3.6, "z": -2.4, "shadow": 1}
   ]
