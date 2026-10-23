@@ -16,6 +16,7 @@ namespace DgVillage
         public Seat[] seats;
         public Portal[] portals;
         public Prop[] props;
+        public Window[] windows;
         public Lighting lighting;
         public Light[] lights;
 
@@ -49,6 +50,14 @@ namespace DgVillage
             public float z;
             public int shadow; // 그림자 배율, 0 = 없음
             public bool flip; // 좌우 반전 (오른쪽 보는 가구 그림으로 왼쪽 보는 가구)
+        }
+
+        /// <summary>벽 창문 (FloorMesh.SetWindows). 가운데 점이 벽 선 위 칸 경계에 있어야 한다, 폭 = 2 칸</summary>
+        [Serializable]
+        public class Window
+        {
+            public float x;
+            public float z;
         }
 
         /// <summary>

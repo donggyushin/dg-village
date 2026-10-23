@@ -1,5 +1,6 @@
 // 바닥 · 벽 (FloorMesh). URP Unlit 처럼 텍스처 색 그대로 + 맵 조명(DgLighting.hlsl) + 구름 그림자.
 // 조명 · 구름은 MapLighting 이 정하는 전역 값으로 켜진다 — 둘 다 꺼진 맵(이나 씬)에선 그냥 Unlit 과 같다.
+// 알파가 0.75 미만인 텍셀(벽 아틀라스의 창문 유리)은 맵 조명을 받지 않는다 — 어두운 방에서도 바깥 하늘은 밝다.
 // 벽 머티리얼은 _Clouds = 0 (세운 벽면에 바닥 구름이 줄무늬로 지나가지 않게).
 // 구름 노이즈는 월드 XZ 를 1/32 unit(= 1 texel) 격자로 끊어서 샘플한다: 그림자 가장자리도 픽셀 격자에 맞는다.
 // 쿼터뷰 바닥(_IsoRows > 0, art/tilesets/make_iso_floor.py): uv = 화면 픽셀 기준 반복 좌표, uv1.x = 아틀라스 행(재질).
@@ -105,7 +106,8 @@ Shader "DgVillage/Ground"
                     uv = float2(frac(uv.x), (_IsoRows - 1.0 - input.row + frac(uv.y)) / _IsoRows);
                 }
                 half4 color = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
-                color.rgb *= DgLight(input.positionWS);
+                color.rgb *= color.a < 0.75 ? half3(1, 1, 1) : DgLight(input.positionWS);
+                color.a = 1.0;
                 if (_DgCloudStrength * _Clouds > 0.0)
                 {
                     float cover = CloudCover(input.positionWS.xz) * _DgCloudStrength * _Clouds;

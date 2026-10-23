@@ -3,7 +3,7 @@
   "view": "quarter",
   "lighting": {
     "exposure": 0.0, "contrast": 8, "saturation": 6, "temperature": 14, "colorFilter": "#fff4e2",
-    "vignette": 0.45, "ambient": "#3c3654"
+    "vignette": 0.45, "ambient": "#4d4768"
   },
   "lights": [
     {"x": 4.0, "z": 6.4, "radius": 5.0, "intensity": 1.7, "color": "#ff8a3d", "flicker": 0.35, "glow": 3.0, "glowY": 0.6},
@@ -13,7 +13,13 @@
     {"x": -2.5, "z": 5.0, "radius": 2.4, "intensity": 0.8, "color": "#ffc878"},
     {"x": -2.5, "z": 1.9, "radius": 2.4, "intensity": 0.8, "color": "#ffc878"},
     {"x": -4.0, "z": -4.6, "radius": 3.0, "intensity": 0.8, "color": "#ffc878"},
-    {"x": 0.0, "z": 0.0, "radius": 5.0, "intensity": 0.4, "color": "#ffe2b0", "flicker": 0.05}
+    {"x": 0.0, "z": 0.0, "radius": 5.0, "intensity": 0.4, "color": "#ffe2b0", "flicker": 0.05},
+    {"x": -1.0, "z": 5.6, "radius": 4.5, "intensity": 1.6, "color": "#d8ecff"},
+    {"x": 5.6, "z": 2.0, "radius": 4.5, "intensity": 1.6, "color": "#d8ecff"}
+  ],
+  "windows": [
+    {"x": -1.0, "z": 7.0},
+    {"x": 7.0, "z": 2.0}
   ],
   "layout": [
     "wwwwwwsscccccc",

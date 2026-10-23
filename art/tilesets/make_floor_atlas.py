@@ -92,14 +92,15 @@ def with_trim(base: Image.Image, mask: int, ramp: list[Rgb], carpet: bool) -> Im
 
 
 def make_walls(rows: list[list[Rgb]]) -> Image.Image:
-    """64×128 wall atlas: x 0–31 = wall face (repeats every 32px sideways), x 32–63 top 16 rows = wall cap.
+    """128×128 wall atlas: x 0–31 = wall face (repeats every 32px sideways), x 32–63 top 16 rows = wall cap,
+    x 64–127 = a 2-tile wall face with a window (see draw_window).
 
     Drawn instead of generated: a block pattern has to repeat seamlessly, which is trivial in code.
     Face, bottom→top: 16px wooden baseboard, stone blocks (16×12, every other row offset by 8), 4px top ledge.
     """
     stone, wood = rows[2], rows[4]
     rng = random.Random(7)
-    im = Image.new("RGBA", (TILE * 2, WALL_HEIGHT))
+    im = Image.new("RGBA", (TILE * 4, WALL_HEIGHT))
 
     def put(x: int, y: int, c: Rgb) -> None:
         im.putpixel((x, y), (*c, 255))
@@ -134,7 +135,51 @@ def make_walls(rows: list[list[Rgb]]) -> Image.Image:
             edge = x in (0, TILE - 1) or y in (0, CAP_HEIGHT - 1)
             c = stone[0] if edge else stone[3] if y == 1 else stone[2]
             put(TILE + x, y, c)
+    for i in range(2):
+        im.paste(im.crop((0, 0, TILE, WALL_HEIGHT)), (TILE * (2 + i), 0))
+    draw_window(im, TILE * 2, rows)
     return im
+
+
+def draw_window(im: Image.Image, left: int, rows: list[list[Rgb]]) -> None:
+    """Arched window over the wall face at x left..left+63: daylight glass, wooden frame and mullions, stone sill.
+
+    Glass pixels get alpha 128: the Ground shader skips map lighting there (the sky stays bright in a dark
+    room). The wall material is opaque, so alpha has no other effect.
+    """
+    stone, wood, water = rows[2], rows[4], rows[5]
+    x0, x1, arch_y, bottom, radius = 10, 53, 40, 92, 22  # opening (window-local px, inclusive)
+    cx = (x0 + x1) / 2
+
+    def opening(x: int, y: int) -> bool:
+        if not (x0 <= x <= x1 and arch_y - radius <= y <= bottom):
+            return False
+        return y >= arch_y or (x - cx) ** 2 + (y - arch_y) ** 2 <= radius**2
+
+    def frame_ring(x: int, y: int) -> int:
+        """1–3 = Chebyshev distance to the opening (frame width 3), 0 = farther."""
+        for d in (1, 2, 3):
+            if any(opening(x + dx, y + dy) for dx in range(-d, d + 1) for dy in range(-d, d + 1)):
+                return d
+        return 0
+
+    for y in range(WALL_HEIGHT):
+        for x in range(TILE * 2):
+            if opening(x, y):
+                if x in (31, 32) or y in (arch_y, 66):
+                    im.putpixel((left + x, y), (*wood[1], 255))  # mullions
+                    continue
+                # sky: pale at the top, bluer lower down, two diagonal glints per pane
+                c = water[5] if y < 30 else water[4] if y < 74 else water[3]
+                if (x + y) % 23 in (0, 1) and (x + y) // 23 % 2 == 0:
+                    c = water[5]
+                im.putpixel((left + x, y), (*c, 128))
+            elif ring := frame_ring(x, y):
+                c = wood[0] if ring == 3 else wood[3] if ring == 2 and y < arch_y else wood[2]
+                im.putpixel((left + x, y), (*c, 255))
+    for x in range(x0 - 5, x1 + 6):  # sill sticking out under the frame
+        for i, y in enumerate(range(bottom + 4, bottom + 9)):
+            im.putpixel((left + x, y), (*stone[[5, 4, 4, 2, 0][i]], 255))
 
 
 def main() -> None:

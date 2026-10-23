@@ -13,6 +13,7 @@ namespace DgVillage
     ///   북쪽 변 = 4 unit 높이 벽면. 캐릭터 스프라이트처럼 35° 뒤로 눕혀 카메라를 정면으로 본다
     ///             → 화면에선 똑바로 선 벽이고 텍셀도 1:1 (수직으로 세우면 세로가 찌그러진다)
     ///   나머지 변 = 바닥 밖으로 0.5 unit 폭의 벽 윗면 띠 (위에서 본 벽 두께)
+    ///   창문 = 벽면 두 칸을 아틀라스의 창문 그림으로 (SetWindows, 맵 JSON windows). 유리는 맵 조명을 받지 않는다 (Ground 셰이더)
     /// 바닥이 있는 칸만 걸을 수 있다: PlayerMovement 가 Current.IsWalkable 로 확인한다.
     /// 메시는 저장하지 않고 켜질 때마다 만든다 (Layout 을 고치면 바로 다시 그린다).
     /// </summary>
@@ -26,10 +27,12 @@ namespace DgVillage
         // 칸 경계에서 이웃 칸 픽셀을 집어오지 않도록 UV 를 아주 조금 안쪽으로
         private const float UvInset = 0.0002f;
 
-        // 벽 아틀라스 64×128: 왼쪽 절반 = 벽면 (128px = 4 unit), 오른쪽 절반 위 16px = 윗면
+        // 벽 아틀라스 128×128: 1열 = 벽면 (128px = 4 unit), 2열 위 16px = 윗면, 3 · 4열 = 창문 왼쪽 · 오른쪽 절반
         private const float WallHeight = 4f;
         private const float CapWidth = 0.5f;
         private const float CapV = 1f - 16f / 128f;
+        private const float WallColumns = 4f;
+        private const int WindowColumn = 2;
 
         // 쿼터뷰 바닥 아틀라스(make_iso_floor.py): 재질마다 화면 픽셀 기준 256×128 반복 패턴. 1 unit = 32 화면 픽셀
         private const float TexelsPerUnit = 32f;
@@ -43,6 +46,7 @@ namespace DgVillage
         public static FloorMesh Current { get; private set; }
 
         private string[] _rows = Array.Empty<string>();
+        private Vector2[] _windows = Array.Empty<Vector2>();
         private float _left;
         private float _top;
         private Mesh _mesh;
@@ -69,6 +73,34 @@ namespace DgVillage
         {
             _layout = layout;
             Parse();
+        }
+
+        /// <summary>
+        /// 창문 가운데 점들 (x, z). 벽면이 지나는 선 위, 칸 경계에 있어야 한다: 북쪽 벽은 z = 벽 선 · x = 정수,
+        /// 동쪽 벽(쿼터뷰)은 x = 벽 선 · z = 정수. 창문 하나 = 벽면 두 칸
+        /// </summary>
+        public void SetWindows(Vector2[] windows)
+        {
+            _windows = windows ?? Array.Empty<Vector2>();
+            _dirty = true;
+        }
+
+        // 벽면 한 칸(왼쪽 끝 left, 오른쪽 끝 right, 보는 쪽 기준)이 창문의 왼쪽(0) · 오른쪽(1) 절반이면 그 번호, 아니면 -1
+        private int WindowHalf(Vector3 left, Vector3 right)
+        {
+            foreach (Vector2 window in _windows)
+            {
+                var center = new Vector3(window.x, 0f, window.y);
+                if ((left - center).sqrMagnitude < 1.001f && (right - center).sqrMagnitude < 0.001f)
+                {
+                    return 0;
+                }
+                if ((left - center).sqrMagnitude < 0.001f && (right - center).sqrMagnitude < 1.001f)
+                {
+                    return 1;
+                }
+            }
+            return -1;
         }
 
         // OnValidate 안에서는 MeshFilter 를 바꿀 수 없어서 다음 Update 에서 다시 만든다
@@ -170,10 +202,16 @@ namespace DgVillage
                 }
             }
 
-            var faceMin = new Vector2(UvInset, UvInset);
-            var faceMax = new Vector2(0.5f - UvInset, 1f - UvInset);
-            var capMin = new Vector2(0.5f + UvInset, CapV + UvInset);
-            var capMax = new Vector2(1f - UvInset, 1f - UvInset);
+            Vector2 FaceMin(int column) => new(column / WallColumns + UvInset, UvInset);
+            Vector2 FaceMax(int column) => new((column + 1) / WallColumns - UvInset, 1f - UvInset);
+            void AddWallFace(Vector3 baseL, Vector3 baseR)
+            {
+                int half = WindowHalf(baseL, baseR);
+                int column = half < 0 ? 0 : WindowColumn + half;
+                AddQuad(wallTriangles, baseL, baseL + wallUp * WallHeight, baseR + wallUp * WallHeight, baseR, FaceMin(column), FaceMax(column));
+            }
+            var capMin = new Vector2(1f / WallColumns + UvInset, CapV + UvInset);
+            var capMax = new Vector2(2f / WallColumns - UvInset, 1f - UvInset);
             const float capY = 0.002f; // 바닥과 겹치는 곳에서 깜빡이지 않도록 살짝 위
 
             for (int ty = 0; ty < _rows.Length; ty++)
@@ -209,16 +247,12 @@ namespace DgVillage
                     bool openW = !IsFloorTile(tx - 1, ty);
                     if (openN)
                     {
-                        var baseL = new Vector3(x, 0f, z);
-                        var baseR = new Vector3(x + 1f, 0f, z);
-                        AddQuad(wallTriangles, baseL, baseL + wallUp * WallHeight, baseR + wallUp * WallHeight, baseR, faceMin, faceMax);
+                        AddWallFace(new Vector3(x, 0f, z), new Vector3(x + 1f, 0f, z));
                     }
                     if (openE && quarterView)
                     {
                         // 서쪽(-X)에서 보므로 왼쪽 = 북쪽 끝
-                        var baseL = new Vector3(x + 1f, 0f, z);
-                        var baseR = new Vector3(x + 1f, 0f, z - 1f);
-                        AddQuad(wallTriangles, baseL, baseL + wallUp * WallHeight, baseR + wallUp * WallHeight, baseR, faceMin, faceMax);
+                        AddWallFace(new Vector3(x + 1f, 0f, z), new Vector3(x + 1f, 0f, z - 1f));
                     }
                     if (openS)
                     {

@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace DgVillage
@@ -25,6 +26,7 @@ namespace DgVillage
             Material floorMaterial = ViewAngle.IsQuarterView ? catalog.QuarterViewFloorMaterial : catalog.FloorMaterial;
             floor.GetComponent<MeshRenderer>().sharedMaterials = new[] { floorMaterial, catalog.WallMaterial };
             floor.GetComponent<FloorMesh>().SetLayout(string.Join("\n", map.layout));
+            floor.GetComponent<FloorMesh>().SetWindows(Array.ConvertAll(map.windows ?? new GameMapData.Window[0], w => new Vector2(w.x, w.z)));
 
             var props = Child(root, "Props");
             foreach (GameMapData.Prop prop in map.props ?? new GameMapData.Prop[0])
