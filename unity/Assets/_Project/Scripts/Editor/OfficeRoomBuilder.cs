@@ -56,6 +56,9 @@ namespace DgVillage.Editor
         private static readonly Dictionary<string, (Vector2 Size, Vector2 CornerPx)> BuildingFootprints = new()
         {
             ["guild_hall"] = (new(3.6f, 4.4f), new(7f, 18f)),
+            // 길드 홀을 스타일 참조로 생성 → 벽 크기·위치가 같다
+            ["library"] = (new(3.6f, 4.4f), new(7f, 18f)),
+            ["shop"] = (new(3.6f, 4.4f), new(7f, 18f)),
         };
 
         // 돌린 가구({id}_east 등, export_props.py)는 정면 크기에서 계산한다.

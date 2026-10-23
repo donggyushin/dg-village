@@ -279,6 +279,11 @@ MonoBehaviour:
     Footprint: {x: 3.6, y: 4.4}
     Building: 1
     FootprintCornerPx: {x: 7, y: 18}
+  - Id: library
+    Sprite: {fileID: 21300000, guid: 0631c452e9cd4463697ade5fbcf8a69e, type: 3}
+    Footprint: {x: 3.6, y: 4.4}
+    Building: 1
+    FootprintCornerPx: {x: 7, y: 18}
   - Id: notice_board
     Sprite: {fileID: 21300000, guid: 54a0d36e0569a40aa93b1410ec81aaf9, type: 3}
     Footprint: {x: 1.1, y: 0.3}
@@ -314,6 +319,11 @@ MonoBehaviour:
     Footprint: {x: 0.7, y: 0.4}
     Building: 0
     FootprintCornerPx: {x: 0, y: 0}
+  - Id: shop
+    Sprite: {fileID: 21300000, guid: 77966f1ea98a746c29d61bd04c3f3536, type: 3}
+    Footprint: {x: 3.6, y: 4.4}
+    Building: 1
+    FootprintCornerPx: {x: 7, y: 18}
   - Id: sofa
     Sprite: {fileID: 21300000, guid: cd4d8170e651b4d00b44e1bb3a0cec5e, type: 3}
     Footprint: {x: 1.7, y: 0.6}

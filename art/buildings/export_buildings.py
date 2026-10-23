@@ -23,10 +23,14 @@ OUT = ROOT / "unity/Assets/_Project/Sprites/Environment/Buildings"
 # source (relative to this folder) → Unity name
 PICKS = {
     "pixellab-2026-10-23/guild_hall.png": "guild_hall",
+    "pixellab-2026-10-23/library.png": "library",
+    "pixellab-2026-10-23/shop.png": "shop",
 }
 
 # slab side: outline, dirt shades, the dark seam between the top and the side
-DIRT = {0x040102, 0x442A29, 0x744D3D, 0x60463B, 0x2A1619, 0x22201F}
+DIRT = {0x040102, 0x442A29, 0x744D3D, 0x60463B, 0x2A1619, 0x22201F,
+        # library / shop slabs use a few more shades
+        0x623E35, 0x180A08, 0x7D4D34, 0x784840, 0x21141B, 0x3E2324, 0x1E0F0F, 0x55352F, 0x0E0806}
 
 
 def strip_slab(im: Image.Image) -> Image.Image:
