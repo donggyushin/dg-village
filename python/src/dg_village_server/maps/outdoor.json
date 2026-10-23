@@ -5,7 +5,17 @@
   "night": {"shadowColor": "#4a5a8c", "clouds": 0.15, "exposure": -0.1, "contrast": 10.0, "saturation": -18.0, "temperature": -14.0, "colorFilter": "#dce4ff", "vignette": 0.4, "ambient": "#3e4a80"},
   "dusk": {"shadowX": 1.3, "shadowZ": -0.5, "shadowStrength": 0.45, "shadowColor": "#5a3f78", "clouds": 0.35, "exposure": 0.08, "contrast": 12.0, "saturation": 18.0, "temperature": 26.0, "colorFilter": "#ffd8c4", "vignette": 0.3, "ambient": "#ffe4dc"},
   "lights": [
-    {"x": 0.0, "z": 9.4, "radius": 4.0, "intensity": 1.1, "color": "#ff9a45", "flicker": 0.1, "when": "night"}
+    {"x": 0.0, "z": 9.4, "radius": 4.0, "intensity": 1.1, "color": "#ff9a45", "flicker": 0.1, "when": "night"},
+    {"x": -4.5, "z": 4.5, "radius": 3.5, "intensity": 1.0, "color": "#ffb35c", "flicker": 0.08, "glow": 1.4, "glowY": 2.7, "when": "night"},
+    {"x": 4.5, "z": 4.5, "radius": 3.5, "intensity": 1.0, "color": "#ffb35c", "flicker": 0.08, "glow": 1.4, "glowY": 2.7, "when": "night"},
+    {"x": -4.3, "z": -2.3, "radius": 3.5, "intensity": 1.0, "color": "#ffb35c", "flicker": 0.08, "glow": 1.4, "glowY": 2.7, "when": "night"},
+    {"x": 4.5, "z": -2.5, "radius": 3.5, "intensity": 1.0, "color": "#ffb35c", "flicker": 0.08, "glow": 1.4, "glowY": 2.7, "when": "night"},
+    {"x": -8.0, "z": 2.4, "radius": 3.5, "intensity": 1.0, "color": "#ffb35c", "flicker": 0.08, "glow": 1.4, "glowY": 2.7, "when": "night"},
+    {"x": 8.0, "z": 2.4, "radius": 3.5, "intensity": 1.0, "color": "#ffb35c", "flicker": 0.08, "glow": 1.4, "glowY": 2.7, "when": "night"},
+    {"x": -1.6, "z": -5.0, "radius": 3.5, "intensity": 1.0, "color": "#ffb35c", "flicker": 0.08, "glow": 1.4, "glowY": 2.7, "when": "night"},
+    {"x": 1.6, "z": -5.0, "radius": 3.5, "intensity": 1.0, "color": "#ffb35c", "flicker": 0.08, "glow": 1.4, "glowY": 2.7, "when": "night"},
+    {"x": -10.5, "z": -3.5, "radius": 3.5, "intensity": 1.0, "color": "#ffb35c", "flicker": 0.08, "glow": 1.4, "glowY": 2.7, "when": "night"},
+    {"x": 10.6, "z": -4.2, "radius": 3.5, "intensity": 1.0, "color": "#ffb35c", "flicker": 0.08, "glow": 1.4, "glowY": 2.7, "when": "night"}
   ],
   "noWalls": true,
   "layout": [
@@ -88,6 +98,16 @@
   ],
   "props": [
     {"sprite": "guild_hall", "x": -2.72, "z": 9.36, "shadow": 0},
+    {"sprite": "street_lamp", "x": -4.5, "z": 4.5, "shadow": 1},
+    {"sprite": "street_lamp", "x": 4.5, "z": 4.5, "shadow": 1},
+    {"sprite": "street_lamp", "x": -4.3, "z": -2.3, "shadow": 1},
+    {"sprite": "street_lamp", "x": 4.5, "z": -2.5, "shadow": 1},
+    {"sprite": "street_lamp_vine", "x": -8.0, "z": 2.4, "shadow": 1},
+    {"sprite": "street_lamp_vine", "x": 8.0, "z": 2.4, "shadow": 1},
+    {"sprite": "street_lamp", "x": -1.6, "z": -5.0, "shadow": 1},
+    {"sprite": "street_lamp", "x": 1.6, "z": -5.0, "shadow": 1},
+    {"sprite": "street_lamp_vine", "x": -10.5, "z": -3.5, "shadow": 1},
+    {"sprite": "street_lamp_vine", "x": 10.6, "z": -4.2, "shadow": 1},
     {"sprite": "tree_round", "x": -4.6, "z": 13.6, "shadow": 2},
     {"sprite": "tree_blossom", "x": -3.6, "z": 15.4, "shadow": 2},
     {"sprite": "tree_twin", "x": 3.8, "z": 13.2, "shadow": 2},

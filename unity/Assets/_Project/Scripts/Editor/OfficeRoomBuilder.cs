@@ -47,6 +47,7 @@ namespace DgVillage.Editor
             // 나무는 줄기만 막는다 (잎 아래로는 지나가도 자연스럽다)
             ["tree_round"] = new(0.6f, 0.3f), ["tree_blossom"] = new(0.5f, 0.3f), ["tree_round_b"] = new(0.6f, 0.3f),
             ["tree_twin"] = new(1.0f, 0.3f),
+            ["street_lamp"] = new(0.4f, 0.3f), ["street_lamp_vine"] = new(0.4f, 0.3f),
         };
 
         // 건물 그림: 벽이 차지하는 크기 (X 가로 = 오른쪽 아래 면, Z 깊이 = 왼쪽 아래 면) unit + 벽 남서 모서리(맨 아래 꼭짓점)가

@@ -53,6 +53,9 @@ PICKS = {
     "pixellab-2026-10-21-office/wooden_owl_perch_stand_with_a": "owl_perch",
     "pixellab-2026-10-21-office/brass_globe_on_wooden_stand": "globe",
     "pixellab-2026-10-21-office/wooden_notice_board_with_pinne": "notice_board",
+    # outdoor street lamps (Create Object Pro, 128px, no style ref/palette; 2026-10-23). Flame ≈ 2.7 units up
+    "pixellab-2026-10-23-lamps/street_lamp_iron": "street_lamp",
+    "pixellab-2026-10-23-lamps/street_lamp_vine": "street_lamp_vine",
 }
 
 ROTATIONS_DIR = "pixellab-2026-10-22-rotations"

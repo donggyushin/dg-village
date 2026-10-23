@@ -339,6 +339,16 @@ MonoBehaviour:
     Footprint: {x: 1.61, y: 1.1500001}
     Building: 0
     FootprintCornerPx: {x: 0, y: 0}
+  - Id: street_lamp
+    Sprite: {fileID: 21300000, guid: f092791b08f1347808697acd48e6d5bc, type: 3}
+    Footprint: {x: 0.4, y: 0.3}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
+  - Id: street_lamp_vine
+    Sprite: {fileID: 21300000, guid: e3ac901943e094e079e15c8534f9450b, type: 3}
+    Footprint: {x: 0.4, y: 0.3}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: tea_table
     Sprite: {fileID: 21300000, guid: e0082c84c5539484da71a4f78c5b80ab, type: 3}
     Footprint: {x: 1, y: 0.6}
