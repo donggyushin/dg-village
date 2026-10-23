@@ -38,17 +38,17 @@
     "gggggggggggggggggggggggggggggggggggggggg"
   ],
   "seats": [
-    {"id": "bench-1", "kind": "lounge", "x": 0.99, "z": 5.1, "facing": "downright"},
-    {"id": "bench-2", "kind": "lounge", "x": 2.55, "z": 3.55, "facing": "downleft"},
-    {"id": "bench-3", "kind": "lounge", "x": 4.1, "z": 1.99, "facing": "downleft"},
-    {"id": "bench-4", "kind": "lounge", "x": -11.29, "z": 10.4, "facing": "downright"},
-    {"id": "bench-5", "kind": "lounge", "x": -9.6, "z": 8.71, "facing": "downleft"},
-    {"id": "bench-6", "kind": "lounge", "x": 12.71, "z": 10.4, "facing": "downright"},
-    {"id": "bench-7", "kind": "lounge", "x": 14.4, "z": 8.71, "facing": "downleft"},
-    {"id": "bench-8", "kind": "lounge", "x": -11.29, "z": -5.6, "facing": "downright"},
-    {"id": "bench-9", "kind": "lounge", "x": -9.6, "z": -7.29, "facing": "downleft"},
-    {"id": "bench-10", "kind": "lounge", "x": 12.71, "z": -5.6, "facing": "downright"},
-    {"id": "bench-11", "kind": "lounge", "x": 14.4, "z": -7.29, "facing": "downleft"}
+    {"id": "bench-1", "kind": "lounge", "x": 0.99, "z": 5.1, "facing": "downleft"},
+    {"id": "bench-2", "kind": "lounge", "x": 2.55, "z": 3.55, "facing": "downright"},
+    {"id": "bench-3", "kind": "lounge", "x": 4.1, "z": 1.99, "facing": "downright"},
+    {"id": "bench-4", "kind": "lounge", "x": -11.29, "z": 10.4, "facing": "downleft"},
+    {"id": "bench-5", "kind": "lounge", "x": -9.6, "z": 8.71, "facing": "downright"},
+    {"id": "bench-6", "kind": "lounge", "x": 12.71, "z": 10.4, "facing": "downleft"},
+    {"id": "bench-7", "kind": "lounge", "x": 14.4, "z": 8.71, "facing": "downright"},
+    {"id": "bench-8", "kind": "lounge", "x": -11.29, "z": -5.6, "facing": "downleft"},
+    {"id": "bench-9", "kind": "lounge", "x": -9.6, "z": -7.29, "facing": "downright"},
+    {"id": "bench-10", "kind": "lounge", "x": 12.71, "z": -5.6, "facing": "downleft"},
+    {"id": "bench-11", "kind": "lounge", "x": 14.4, "z": -7.29, "facing": "downright"}
   ],
   "portals": [
     {"x": 0.0, "z": 15.5, "w": 2.0, "d": 1.0, "to": "office", "spawnX": 0.0, "spawnZ": -5.3}
