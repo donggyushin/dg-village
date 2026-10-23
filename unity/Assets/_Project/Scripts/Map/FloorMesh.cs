@@ -10,7 +10,7 @@ namespace DgVillage
     /// 바닥 아틀라스(art/tilesets/make_floor_atlas.py): 행 = 재질(Materials 순서), 열 = 테두리 마스크
     /// N·1 + E·2 + S·4 + W·8 (그 방향 이웃이 다른 재질이거나 비어 있으면 그쪽에 몰딩을 그린 타일).
     /// 벽은 바닥 끝(이웃이 비어 있는 변)에 자동으로 생긴다 — submesh 1, 두 번째 머티리얼(벽 아틀라스):
-    ///   북쪽 변 = 3 unit 높이 벽면. 캐릭터 스프라이트처럼 35° 뒤로 눕혀 카메라를 정면으로 본다
+    ///   북쪽 변 = 4 unit 높이 벽면. 캐릭터 스프라이트처럼 35° 뒤로 눕혀 카메라를 정면으로 본다
     ///             → 화면에선 똑바로 선 벽이고 텍셀도 1:1 (수직으로 세우면 세로가 찌그러진다)
     ///   나머지 변 = 바닥 밖으로 0.5 unit 폭의 벽 윗면 띠 (위에서 본 벽 두께)
     /// 바닥이 있는 칸만 걸을 수 있다: PlayerMovement 가 Current.IsWalkable 로 확인한다.
@@ -26,10 +26,10 @@ namespace DgVillage
         // 칸 경계에서 이웃 칸 픽셀을 집어오지 않도록 UV 를 아주 조금 안쪽으로
         private const float UvInset = 0.0002f;
 
-        // 벽 아틀라스 64×96: 왼쪽 절반 = 벽면 (96px = 3 unit), 오른쪽 절반 위 16px = 윗면
-        private const float WallHeight = 3f;
+        // 벽 아틀라스 64×128: 왼쪽 절반 = 벽면 (128px = 4 unit), 오른쪽 절반 위 16px = 윗면
+        private const float WallHeight = 4f;
         private const float CapWidth = 0.5f;
-        private const float CapV = 1f - 16f / 96f;
+        private const float CapV = 1f - 16f / 128f;
 
         // 쿼터뷰 바닥 아틀라스(make_iso_floor.py): 재질마다 화면 픽셀 기준 256×128 반복 패턴. 1 unit = 32 화면 픽셀
         private const float TexelsPerUnit = 32f;

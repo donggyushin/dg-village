@@ -26,7 +26,7 @@ HERE = Path(__file__).parent
 ROOT = HERE.parents[1]
 OUT = ROOT / "unity/Assets/_Project/Sprites/Environment/Ground/office_floor.png"
 WALL_OUT = ROOT / "unity/Assets/_Project/Sprites/Environment/Ground/office_wall.png"
-WALL_HEIGHT = 96  # px = 3 units, FloorMesh's wall height
+WALL_HEIGHT = 128  # px = 4 units, FloorMesh's wall height
 CAP_HEIGHT = 16  # px = 0.5 units
 PALETTE = ROOT / "art/palettes/dg-village-map.hex"
 CHARACTERS = ROOT / "unity/Assets/_Project/Sprites/Characters"
@@ -92,10 +92,10 @@ def with_trim(base: Image.Image, mask: int, ramp: list[Rgb], carpet: bool) -> Im
 
 
 def make_walls(rows: list[list[Rgb]]) -> Image.Image:
-    """64×96 wall atlas: x 0–31 = wall face (repeats every 32px sideways), x 32–63 top 16 rows = wall cap.
+    """64×128 wall atlas: x 0–31 = wall face (repeats every 32px sideways), x 32–63 top 16 rows = wall cap.
 
     Drawn instead of generated: a block pattern has to repeat seamlessly, which is trivial in code.
-    Face, bottom→top: 8px wooden baseboard, stone blocks (16×12, every other row offset by 8), 4px top ledge.
+    Face, bottom→top: 16px wooden baseboard, stone blocks (16×12, every other row offset by 8), 4px top ledge.
     """
     stone, wood = rows[2], rows[4]
     rng = random.Random(7)
@@ -104,7 +104,7 @@ def make_walls(rows: list[list[Rgb]]) -> Image.Image:
     def put(x: int, y: int, c: Rgb) -> None:
         im.putpixel((x, y), (*c, 255))
 
-    block_w, block_h, top_ledge, baseboard = 16, 12, 4, 8
+    block_w, block_h, top_ledge, baseboard = 16, 12, 4, 16  # 4 + 9 rows × 12 + 16 = 128
     for row, y0 in enumerate(range(top_ledge, WALL_HEIGHT - baseboard, block_h)):
         offset = (row % 2) * (block_w // 2)
         for b in range(TILE // block_w):
@@ -127,7 +127,7 @@ def make_walls(rows: list[list[Rgb]]) -> Image.Image:
         for y in range(top_ledge):
             put(x, y, stone[[4, 3, 3, 1][y]])
         for i, y in enumerate(range(WALL_HEIGHT - baseboard, WALL_HEIGHT)):
-            put(x, y, wood[[4, 3, 2, 2, 2, 2, 1, 0][i]])
+            put(x, y, wood[[4, 3, *[2] * (baseboard - 4), 1, 0][i]])
     # cap: wall top seen from above, 1px dark border so every tile reads as one capstone
     for x in range(TILE):
         for y in range(CAP_HEIGHT):
