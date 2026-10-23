@@ -5,7 +5,9 @@ client in `welcome`; the client lays the room (floor, walls, furniture) from it 
 
 Coordinates match Unity's FloorMesh: 1 tile = 1 unit, the layout is centered on the origin,
 the first row is north (+z). Layout characters: `s` stone, `w` wood, `c` carpet, `g` grass,
-`p` path (floor materials only), anything else = no floor.
+`p` path (floor materials only); the same letter in upper case = decor floor (drawn, but nobody
+can stand there — fills the view around a map, e.g. `G` grass outside the garden); anything else =
+no floor.
 
 Each map is its own room per channel (room.py): players see and hear everyone on the same map
 (no chat zones or focus mode since 2026-10-22).
@@ -23,7 +25,7 @@ from importlib import resources
 # (also for old clients that send no map).
 MAP_IDS = ("office", "outdoor")
 DEFAULT_MAP_ID = MAP_IDS[0]
-# Layout characters that are floor (anything else = no floor, can't stand there).
+# Layout characters that are floor (anything else, decor upper case included = can't stand there).
 FLOOR_TILES = "swcgp"
 
 

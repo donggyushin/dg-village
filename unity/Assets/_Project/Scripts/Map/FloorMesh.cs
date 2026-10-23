@@ -14,7 +14,8 @@ namespace DgVillage
     ///             → 화면에선 똑바로 선 벽이고 텍셀도 1:1 (수직으로 세우면 세로가 찌그러진다)
     ///   나머지 변 = 바닥 밖으로 0.5 unit 폭의 벽 윗면 띠 (위에서 본 벽 두께)
     ///   창문 = 벽면 두 칸을 아틀라스의 창문 그림으로 (SetWindows, 맵 JSON windows). 유리는 맵 조명을 받지 않는다 (Ground 셰이더)
-    /// 바닥이 있는 칸만 걸을 수 있다: PlayerMovement 가 Current.IsWalkable 로 확인한다.
+    /// 대문자 = 같은 재질의 장식 바닥 ('G' = 잔디): 그려지지만 걸을 수 없다 — 맵 바깥을 채워 검은 화면이 안 보이게 한다.
+    /// 소문자 바닥 칸만 걸을 수 있다: PlayerMovement 가 Current.IsWalkable 로 확인한다.
     /// 메시는 저장하지 않고 켜질 때마다 만든다 (Layout 을 고치면 바로 다시 그린다).
     /// </summary>
     [ExecuteAlways]
@@ -39,7 +40,7 @@ namespace DgVillage
         private const float IsoCellWidth = 256f;
         private const float IsoCellHeight = 128f;
 
-        [Tooltip("타일 격자. 첫 줄이 북쪽(화면 위). s = 돌, w = 나무, c = 카펫, g = 잔디, p = 길, 그 외 = 바닥 없음")]
+        [Tooltip("타일 격자. 첫 줄이 북쪽(화면 위). s = 돌, w = 나무, c = 카펫, g = 잔디, p = 길, 대문자 = 못 걷는 장식 바닥, 그 외 = 바닥 없음")]
         [SerializeField, TextArea(5, 30)] private string _layout = "ss\nss";
 
         /// <summary>씬에 켜져 있는 바닥 (없으면 null = 어디든 걸을 수 있음)</summary>
@@ -226,16 +227,16 @@ namespace DgVillage
             {
                 for (int tx = 0; tx < _rows[ty].Length; tx++)
                 {
-                    char c = At(_rows, tx, ty);
+                    char c = Drawn(At(_rows, tx, ty));
                     int material = Materials.IndexOf(c);
                     if (material < 0)
                     {
                         continue;
                     }
-                    int mask = (At(_rows, tx, ty - 1) != c ? 1 : 0)
-                        | (At(_rows, tx + 1, ty) != c ? 2 : 0)
-                        | (At(_rows, tx, ty + 1) != c ? 4 : 0)
-                        | (At(_rows, tx - 1, ty) != c ? 8 : 0);
+                    int mask = (Drawn(At(_rows, tx, ty - 1)) != c ? 1 : 0)
+                        | (Drawn(At(_rows, tx + 1, ty)) != c ? 2 : 0)
+                        | (Drawn(At(_rows, tx, ty + 1)) != c ? 4 : 0)
+                        | (Drawn(At(_rows, tx - 1, ty)) != c ? 8 : 0);
                     float x = _left + tx;
                     float z = _top - ty;
 
@@ -316,7 +317,11 @@ namespace DgVillage
             GetComponent<MeshFilter>().sharedMesh = _mesh;
         }
 
-        private bool IsFloorTile(int x, int y) => Materials.IndexOf(At(_rows, x, y)) >= 0;
+        // 그려지는 칸 (장식 바닥 포함) — 벽은 그 바깥에 선다
+        private bool IsFloorTile(int x, int y) => Materials.IndexOf(Drawn(At(_rows, x, y))) >= 0;
+
+        // 장식 바닥(대문자)은 같은 재질의 소문자로 그린다
+        private static char Drawn(char c) => char.ToLowerInvariant(c);
 
         // 격자 밖이나 짧은 줄의 빈 칸은 ' ' (= 바닥 없음)
         private static char At(string[] rows, int x, int y) =>

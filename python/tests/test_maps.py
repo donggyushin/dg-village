@@ -24,6 +24,13 @@ def test_portals_lead_to_walkable_spots_on_existing_maps() -> None:
                 assert not (inside_x and inside_z), f"{where} spawns inside a portal"
 
 
+def test_decor_floor_is_not_standable() -> None:
+    game_map = GameMap({"id": "t", "layout": ["GgG"]})
+    assert game_map.is_floor(0.0, 0.0)
+    assert not game_map.is_floor(-1.0, 0.0)
+    assert not game_map.is_floor(1.2, 0.0)
+
+
 def test_office_map_loads() -> None:
     office = load_map("office")
     assert office.id == "office"
