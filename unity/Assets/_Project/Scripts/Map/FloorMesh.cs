@@ -94,6 +94,34 @@ namespace DgVillage
             _dirty = true;
         }
 
+        /// <summary>
+        /// 창문 가운데 점(x, z)이 어느 벽에 있는지: along = 벽을 따라 (보는 쪽에서 오른쪽), inward = 방 안쪽.
+        /// 북쪽 벽이나 (쿼터뷰) 동쪽 벽 선 위가 아니면 false. 빛줄기(MapLighting)가 쓴다
+        /// </summary>
+        public bool TryGetWindowWall(Vector2 window, out Vector3 along, out Vector3 inward)
+        {
+            Vector3 local = new Vector3(window.x, 0f, window.y) - transform.position;
+            int tx = Mathf.RoundToInt(local.x - _left);
+            int ty = Mathf.RoundToInt(_top - local.z);
+            // 북쪽 벽: 선 바로 남쪽 두 칸이 바닥, 그 북쪽은 아님
+            if (_rows != null && IsFloorTile(tx - 1, ty) && IsFloorTile(tx, ty) && !IsFloorTile(tx - 1, ty - 1) && !IsFloorTile(tx, ty - 1))
+            {
+                along = Vector3.right;
+                inward = Vector3.back;
+                return true;
+            }
+            // 동쪽 벽: 선 바로 서쪽 두 칸(창문 북 · 남 절반)이 바닥, 그 동쪽은 아님
+            if (_rows != null && ViewAngle.IsQuarterView && IsFloorTile(tx - 1, ty - 1) && IsFloorTile(tx - 1, ty)
+                && !IsFloorTile(tx, ty - 1) && !IsFloorTile(tx, ty))
+            {
+                along = Vector3.back;
+                inward = Vector3.left;
+                return true;
+            }
+            along = inward = Vector3.zero;
+            return false;
+        }
+
         // 벽면 한 칸(왼쪽 끝 left, 오른쪽 끝 right, 보는 쪽 기준)이 창문의 왼쪽(0) · 오른쪽(1) 절반이면 그 번호, 아니면 -1
         private int WindowHalf(Vector3 left, Vector3 right)
         {

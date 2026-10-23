@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -15,6 +16,9 @@ namespace DgVillage
     ///   색감      URP 후처리 Volume (밝기 · 대비 · 채도 · 색온도 · 비네트)
     ///   낮 · 밤    night 가 있으면 실제 한국 시각(DayCycle)에 따라 lighting(낮) 과 night 를 섞는다 (1초마다).
     ///              점광원 when = "day" / "night" 은 그 때만 켜진다 (창문 햇빛 · 달빛). 창문 유리엔 sky 색을 곱한다
+    ///   저녁노을   dusk 가 있으면 해 질 무렵(DayCycle.Dusk) 그 값을 낮 · 밤 섞은 값 위에 다시 섞는다
+    ///   빛줄기     창문(windows)마다 창문 윗변에서 바닥까지 비스듬히 내려오는 더하기 블렌딩 면 (DgVillage/LightShaft).
+    ///              세기 · 색 · 길이(shaftReach) · 기울기(shaftSlant) 도 시각에 따라 섞인다 — 노을엔 길고 붉게
     /// 셰이더 값은 전역(Shader.SetGlobal*)이라 맵이 꺼지면 원래대로(= 효과 없음) 되돌린다.
     /// [ExecuteAlways]: 에디터 미리보기 방에서도 보인다. Volume · 빛무리는 저장하지 않는 자식에 매번 새로 만든다.
     /// </summary>
@@ -24,6 +28,10 @@ namespace DgVillage
         private const int MaxLights = 16; // DgLighting.hlsl 의 DG_MAX_LIGHTS 와 같게
         private const float TexelsPerUnit = 32f;
         private const string GlowMaterialName = "Glow"; // Resources/Glow.mat
+        private const string ShaftMaterialName = "LightShaft"; // Resources/LightShaft.mat
+        // 창문 그림(art/tilesets/make_floor_atlas.py draw_window)의 유리 구멍: 벽면 위 높이 (벽 4 unit = 128px) · 가운데에서 반 폭
+        private const float WindowTop = (128f - 18f) / TexelsPerUnit;
+        private const float WindowHalfWidth = 22f / TexelsPerUnit;
 
         private static readonly int ShadowColorId = Shader.PropertyToID("_DgShadowColor");
         private static readonly int ShadowStrengthId = Shader.PropertyToID("_DgShadowStrength");
@@ -34,12 +42,15 @@ namespace DgVillage
         private static readonly int LightColorsId = Shader.PropertyToID("_DgLightColors");
         private static readonly int LightCountId = Shader.PropertyToID("_DgLightCount");
         private static readonly int SkyId = Shader.PropertyToID("_DgSky");
+        private static readonly int ShaftColorId = Shader.PropertyToID("_Color");
         private const float DaylightCheckSeconds = 1f;
         private static readonly Dictionary<int, Sprite> GlowSprites = new Dictionary<int, Sprite>();
 
         [SerializeField] private GameMapData.Lighting _lighting = new GameMapData.Lighting();
         [SerializeField] private GameMapData.Lighting _night = new GameMapData.Lighting();
+        [SerializeField] private GameMapData.Lighting _dusk = new GameMapData.Lighting();
         [SerializeField] private GameMapData.Light[] _lights = new GameMapData.Light[0];
+        [SerializeField] private GameMapData.Window[] _windows = new GameMapData.Window[0];
 
         private GameObject _volumeObject;
         private VolumeProfile _profile;
@@ -48,6 +59,9 @@ namespace DgVillage
         private Vignette _vignette;
         private GameObject _glowRoot;
         private readonly List<SpriteRenderer> _glows = new List<SpriteRenderer>();
+        private GameObject _shaftObject;
+        private Mesh _shaftMesh;
+        private MaterialPropertyBlock _shaftBlock;
         // SetGlobalVectorArray 는 처음 넣은 길이로 고정되므로 항상 MaxLights 길이
         private readonly Vector4[] _lightData = new Vector4[MaxLights];
         private readonly Vector4[] _lightColors = new Vector4[MaxLights];
@@ -55,17 +69,22 @@ namespace DgVillage
         private bool _flickers;
         private bool _dirty;
         private bool _hasNight;
+        private bool _hasDusk;
         private float _daylight = 1f; // 0 = 밤, 1 = 낮 (DayCycle). night 가 없으면 항상 1
+        private float _duskWeight; // 0..1 (DayCycle.Dusk). dusk 가 없으면 항상 0
         private float _nextDaylightCheck;
 
         /// <summary>해 그림자가 높이 1 unit 당 바닥에서 밀리는 거리 (x, z). zero = 해 그림자 없음</summary>
         public static Vector2 SunShadowOffset { get; private set; }
 
-        public void Init(GameMapData.Lighting lighting, GameMapData.Lighting night, GameMapData.Light[] lights)
+        public void Init(GameMapData.Lighting lighting, GameMapData.Lighting night, GameMapData.Lighting dusk,
+            GameMapData.Light[] lights, GameMapData.Window[] windows)
         {
             _lighting = lighting ?? new GameMapData.Lighting();
             _night = night ?? new GameMapData.Lighting();
+            _dusk = dusk ?? new GameMapData.Lighting();
             _lights = lights ?? new GameMapData.Light[0];
+            _windows = windows ?? new GameMapData.Window[0];
             if (isActiveAndEnabled)
             {
                 Apply();
@@ -90,9 +109,11 @@ namespace DgVillage
             DestroyNow(_volumeObject);
             DestroyNow(_glowRoot);
             DestroyNow(_profile);
+            DestroyNow(_shaftObject);
+            DestroyNow(_shaftMesh);
         }
 
-        internal static void DestroyNow(Object target)
+        internal static void DestroyNow(UnityEngine.Object target)
         {
             if (target == null)
             {
@@ -119,13 +140,15 @@ namespace DgVillage
                 Apply();
             }
             float now = (float)Time.realtimeSinceStartupAsDouble;
-            if (_hasNight && now >= _nextDaylightCheck)
+            if ((_hasNight || _hasDusk) && now >= _nextDaylightCheck)
             {
                 _nextDaylightCheck = now + DaylightCheckSeconds;
-                float daylight = DayCycle.Daylight;
-                if (Mathf.Abs(daylight - _daylight) > 0.0005f)
+                float daylight = _hasNight ? DayCycle.Daylight : 1f;
+                float dusk = _hasDusk ? DayCycle.Dusk : 0f;
+                if (Mathf.Abs(daylight - _daylight) > 0.0005f || Mathf.Abs(dusk - _duskWeight) > 0.0005f)
                 {
                     _daylight = daylight;
+                    _duskWeight = dusk;
                     ApplyTimeOfDay();
                     return;
                 }
@@ -139,44 +162,130 @@ namespace DgVillage
         private void Apply()
         {
             _hasNight = !IsEmpty(_night);
+            _hasDusk = !IsEmpty(_dusk);
             _daylight = _hasNight ? DayCycle.Daylight : 1f;
+            _duskWeight = _hasDusk ? DayCycle.Dusk : 0f;
             _nextDaylightCheck = (float)Time.realtimeSinceStartupAsDouble + DaylightCheckSeconds;
             // 낮이나 밤 한쪽에만 ambient 가 있어도 켠다 (야외: 낮 = 조명 없음, 밤 = 어둡게). 빈 쪽은 흰색 = 그대로
-            bool on = !string.IsNullOrEmpty(_lighting.ambient) || (_hasNight && !string.IsNullOrEmpty(_night.ambient));
+            bool on = !string.IsNullOrEmpty(_lighting.ambient) || (_hasNight && !string.IsNullOrEmpty(_night.ambient))
+                || (_hasDusk && !string.IsNullOrEmpty(_dusk.ambient));
             CreateGlows(on);
             CreateVolume();
+            CreateShafts();
             ApplyTimeOfDay();
         }
 
-        // 지금 _daylight 로 낮 · 밤 값을 섞어 셰이더 전역 값 · Volume · 점광원에 넣는다
+        // 지금 _daylight 로 낮 · 밤 값을 섞고, 그 위에 _duskWeight 만큼 노을을 섞어 셰이더 전역 값 · Volume · 점광원 · 빛줄기에 넣는다
         private void ApplyTimeOfDay()
         {
             GameMapData.Lighting day = _lighting;
             GameMapData.Lighting night = _hasNight ? _night : _lighting;
+            GameMapData.Lighting dusk = _dusk;
             float t = _daylight;
-            float Mix(float atNight, float atDay) => Mathf.Lerp(atNight, atDay, t);
-            Color MixColor(string atNight, string atDay, Color empty) =>
-                Color.Lerp(ParseColor(atNight, empty), ParseColor(atDay, empty), t);
+            float w = _hasDusk ? _duskWeight : 0f;
+            float Mix(Func<GameMapData.Lighting, float> value) =>
+                Mathf.Lerp(Mathf.Lerp(value(night), value(day), t), value(dusk), w);
+            Color MixColor(Func<GameMapData.Lighting, string> value, Color empty) =>
+                Color.Lerp(Color.Lerp(ParseColor(value(night), empty), ParseColor(value(day), empty), t), ParseColor(value(dusk), empty), w);
 
-            // 그림자 방향은 섞지 않는다 (밤엔 진하기만 0 으로)
-            SunShadowOffset = day.shadowX != 0f || day.shadowZ != 0f
+            // 그림자 방향은 낮 · 밤을 섞지 않는다 (밤엔 진하기만 0 으로). 노을에 방향이 있으면 그쪽으로 (해가 낮아 길게)
+            Vector2 sun = day.shadowX != 0f || day.shadowZ != 0f
                 ? new Vector2(day.shadowX, day.shadowZ)
                 : new Vector2(night.shadowX, night.shadowZ);
-            Shader.SetGlobalColor(ShadowColorId, MixColor(night.shadowColor, day.shadowColor, Color.black));
-            Shader.SetGlobalFloat(ShadowStrengthId, Mathf.Clamp01(Mix(night.shadowStrength, day.shadowStrength)));
-            Shader.SetGlobalFloat(CloudStrengthId, Mathf.Clamp01(Mix(night.clouds, day.clouds)));
-            Shader.SetGlobalColor(AmbientId, MixColor(night.ambient, day.ambient, Color.white));
-            Color sky = MixColor(night.sky, day.sky, Color.white);
+            if (dusk.shadowX != 0f || dusk.shadowZ != 0f)
+            {
+                sun = Vector2.Lerp(sun, new Vector2(dusk.shadowX, dusk.shadowZ), w);
+            }
+            SunShadowOffset = sun;
+            Shader.SetGlobalColor(ShadowColorId, MixColor(l => l.shadowColor, Color.black));
+            Shader.SetGlobalFloat(ShadowStrengthId, Mathf.Clamp01(Mix(l => l.shadowStrength)));
+            Shader.SetGlobalFloat(CloudStrengthId, Mathf.Clamp01(Mix(l => l.clouds)));
+            Shader.SetGlobalColor(AmbientId, MixColor(l => l.ambient, Color.white));
+            Color sky = MixColor(l => l.sky, Color.white);
             sky.a = 1f; // a = 0 (MapLighting 없음) 이면 셰이더가 유리를 그대로 둔다
             Shader.SetGlobalColor(SkyId, sky);
 
-            _colorAdjustments.postExposure.Override(Mix(night.exposure, day.exposure));
-            _colorAdjustments.contrast.Override(Mix(night.contrast, day.contrast));
-            _colorAdjustments.saturation.Override(Mix(night.saturation, day.saturation));
-            _colorAdjustments.colorFilter.Override(MixColor(night.colorFilter, day.colorFilter, Color.white));
-            _whiteBalance.temperature.Override(Mix(night.temperature, day.temperature));
-            _vignette.intensity.Override(Mix(night.vignette, day.vignette));
+            _colorAdjustments.postExposure.Override(Mix(l => l.exposure));
+            _colorAdjustments.contrast.Override(Mix(l => l.contrast));
+            _colorAdjustments.saturation.Override(Mix(l => l.saturation));
+            _colorAdjustments.colorFilter.Override(MixColor(l => l.colorFilter, Color.white));
+            _whiteBalance.temperature.Override(Mix(l => l.temperature));
+            _vignette.intensity.Override(Mix(l => l.vignette));
+            UpdateShafts(Mathf.Clamp01(Mix(l => l.shafts)), MixColor(l => l.shaftColor, Color.white), Mix(l => l.shaftReach), Mix(l => l.shaftSlant));
             UpdateLights();
+        }
+
+        private void CreateShafts()
+        {
+            if (_shaftObject != null)
+            {
+                return;
+            }
+            var material = Resources.Load<Material>(ShaftMaterialName);
+            if (material == null)
+            {
+                return;
+            }
+            _shaftObject = new GameObject("Shafts", typeof(MeshFilter), typeof(MeshRenderer)) { hideFlags = HideFlags.DontSave };
+            _shaftObject.transform.SetParent(transform, false);
+            _shaftMesh = new Mesh { name = "LightShafts", hideFlags = HideFlags.DontSave };
+            _shaftMesh.MarkDynamic();
+            _shaftObject.GetComponent<MeshFilter>().sharedMesh = _shaftMesh;
+            var renderer = _shaftObject.GetComponent<MeshRenderer>();
+            renderer.sharedMaterial = material;
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+        }
+
+        // 창문마다 면 하나: 유리 윗변(벽 위) → 그 윗변을 지난 햇빛이 바닥에 닿는 곳. uv = (가로 0..1, 창문 0 → 바닥 1)
+        private void UpdateShafts(float strength, Color color, float reach, float slant)
+        {
+            if (_shaftObject == null)
+            {
+                return;
+            }
+            FloorMesh floor = transform.parent != null ? transform.parent.GetComponentInChildren<FloorMesh>() : null;
+            var vertices = new List<Vector3>();
+            var uvs = new List<Vector2>();
+            var triangles = new List<int>();
+            if (strength > 0.001f && floor != null && reach > 0f)
+            {
+                Vector3 wallUp = ViewAngle.Billboard * Vector3.up;
+                Vector3 local = _shaftObject.transform.position;
+                foreach (GameMapData.Window window in _windows)
+                {
+                    if (!floor.TryGetWindowWall(new Vector2(window.x, window.z), out Vector3 along, out Vector3 inward))
+                    {
+                        continue;
+                    }
+                    // 벽은 스프라이트처럼 뒤로 누워 있어 유리 윗변이 실제로는 벽 선 뒤에 있다 → 바닥에 닿는 곳은 벽 선(바닥)에서 잰다
+                    var foot = new Vector3(window.x, 0f, window.z);
+                    Vector3 center = foot + wallUp * WindowTop;
+                    Vector3 left = center - along * WindowHalfWidth;
+                    Vector3 right = center + along * WindowHalfWidth;
+                    Vector3 drop = foot + (inward * reach + along * slant) * WindowTop - center;
+                    int v = vertices.Count;
+                    vertices.Add(left - local);
+                    vertices.Add(right - local);
+                    vertices.Add(right + drop - local);
+                    vertices.Add(left + drop - local);
+                    uvs.Add(new Vector2(0f, 0f));
+                    uvs.Add(new Vector2(1f, 0f));
+                    uvs.Add(new Vector2(1f, 1f));
+                    uvs.Add(new Vector2(0f, 1f));
+                    triangles.AddRange(new[] { v, v + 1, v + 2, v, v + 2, v + 3 });
+                }
+            }
+            _shaftMesh.Clear();
+            _shaftMesh.SetVertices(vertices);
+            _shaftMesh.SetUVs(0, uvs);
+            _shaftMesh.SetTriangles(triangles, 0);
+            _shaftMesh.RecalculateBounds();
+            var renderer = _shaftObject.GetComponent<MeshRenderer>();
+            renderer.enabled = vertices.Count > 0;
+            _shaftBlock ??= new MaterialPropertyBlock();
+            _shaftBlock.SetColor(ShaftColorId, color * strength);
+            renderer.SetPropertyBlock(_shaftBlock);
         }
 
         private void CreateGlows(bool on)

@@ -23,6 +23,8 @@ namespace DgVillage
         [SerializeField] private GameMapData.Lighting _lighting = new();
         [Tooltip("밤 분위기 (실제 한국 시각으로 낮과 섞인다). 전부 기본값 = 낮 · 밤 구분 없음")]
         [SerializeField] private GameMapData.Lighting _night = new();
+        [Tooltip("저녁노을 (해 질 무렵 낮 · 밤 위에 섞인다). 전부 기본값 = 노을 없음")]
+        [SerializeField] private GameMapData.Lighting _dusk = new();
         [Tooltip("미리보기 한국 시각 (0..24). -1 = 지금 시각. 저장되지 않는다")]
         [SerializeField, Range(-1f, 24f)] private float _previewHour = -1f;
         [SerializeField] private GameMapData.Light[] _lights = Array.Empty<GameMapData.Light>();
@@ -43,6 +45,7 @@ namespace DgVillage
             _noWalls = map.noWalls;
             _lighting = map.lighting ?? new GameMapData.Lighting();
             _night = map.night ?? new GameMapData.Lighting();
+            _dusk = map.dusk ?? new GameMapData.Lighting();
             _lights = map.lights ?? Array.Empty<GameMapData.Light>();
             _windows = map.windows ?? Array.Empty<GameMapData.Window>();
         }
@@ -65,7 +68,7 @@ namespace DgVillage
             var lighting = GetComponentInChildren<MapLighting>();
             if (lighting != null)
             {
-                lighting.Init(_lighting, _night, _lights);
+                lighting.Init(_lighting, _night, _dusk, _lights, _windows);
             }
         }
 
@@ -78,6 +81,7 @@ namespace DgVillage
             noWalls = _noWalls,
             lighting = _lighting,
             night = _night,
+            dusk = _dusk,
             lights = _lights,
             windows = _windows,
         };

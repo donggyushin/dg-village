@@ -25,21 +25,39 @@ namespace DgVillage
         private static void ResetOnPlay() => OverrideHour = HourFromCommandLine();
 
         /// <summary>0 = 밤, 1 = 낮, 사이 = 해 뜨고 질 무렵</summary>
-        public static float Daylight
+        public static float Daylight => Smooth(Mathf.InverseLerp(-TwilightDegrees, TwilightDegrees, (float)SunElevation(Now())));
+
+        /// <summary>
+        /// 저녁노을 세기 0..1: 해가 지는 쪽(오후)일 때만, 고도 12° 부터 차올라 3° ~ -1° 에서 가장 진하고 -6° 면 없다.
+        /// MapLighting 이 낮 · 밤을 섞은 값 위에 맵의 dusk 를 이만큼 섞는다
+        /// </summary>
+        public static float Dusk
         {
             get
             {
-                DateTime utc = DateTime.UtcNow;
-                if (!float.IsNaN(OverrideHour))
+                DateTime utc = Now();
+                double elevation = SunElevation(utc);
+                if (SunElevation(utc.AddMinutes(10)) >= elevation)
                 {
-                    // 오늘 날짜(한국)의 그 시각
-                    DateTime korea = utc.AddHours(KoreaUtcOffset).Date.AddHours(OverrideHour);
-                    utc = korea.AddHours(-KoreaUtcOffset);
+                    return 0f; // 해가 뜨는 중 (오전)
                 }
-                float elevation = (float)SunElevation(utc);
-                float t = Mathf.InverseLerp(-TwilightDegrees, TwilightDegrees, elevation);
-                return t * t * (3f - 2f * t);
+                float e = (float)elevation;
+                return Smooth(Mathf.InverseLerp(-TwilightDegrees, -1f, e)) * Smooth(Mathf.InverseLerp(12f, 3f, e));
             }
+        }
+
+        private static float Smooth(float t) => t * t * (3f - 2f * t);
+
+        // 지금 (UTC). OverrideHour 가 있으면 오늘 날짜(한국)의 그 시각
+        private static DateTime Now()
+        {
+            DateTime utc = DateTime.UtcNow;
+            if (float.IsNaN(OverrideHour))
+            {
+                return utc;
+            }
+            DateTime korea = utc.AddHours(KoreaUtcOffset).Date.AddHours(OverrideHour);
+            return korea.AddHours(-KoreaUtcOffset);
         }
 
         /// <summary>서울에서 본 해의 고도 (도). 간단한 천문 근사식 — 몇 분 오차는 상관없다</summary>

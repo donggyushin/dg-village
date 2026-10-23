@@ -20,6 +20,7 @@ namespace DgVillage
         public Window[] windows;
         public Lighting lighting; // 낮 (night 가 없으면 하루 종일)
         public Lighting night; // 밤 (DayCycle — 실제 한국 시각). 값이 전부 기본값 = 낮 · 밤 구분 없음
+        public Lighting dusk; // 저녁노을 (DayCycle.Dusk 만큼 낮 · 밤 위에 섞는다). 값이 전부 기본값 = 노을 없음
         public Light[] lights;
 
         [Serializable]
@@ -81,6 +82,10 @@ namespace DgVillage
             public float vignette; // 0..1, 화면 가장자리 어둡게
             public string ambient; // 빛이 안 닿는 곳에 곱할 색 (#rrggbb). "" = 점광원 조명 끔 (밝은 그대로)
             public string sky; // 창문 유리(바깥 하늘)에 곱할 색 (#rrggbb). "" = 그대로 (밤엔 어두운 남색)
+            public float shafts; // 창문으로 비스듬히 들어오는 빛줄기 세기 0..1, 0 = 없음
+            public string shaftColor; // 빛줄기 색 (#rrggbb)
+            public float shaftReach; // 빛줄기가 1 unit 내려올 때 방 안쪽으로 나아가는 거리 (해가 낮을수록 길게)
+            public float shaftSlant; // 같은 때 벽을 따라 옆으로 (+ = 창문 쪽에서 볼 때 오른쪽)
         }
 
         /// <summary>점광원 (촛불 · 벽난로). lighting.ambient 가 있을 때만 켜진다</summary>

@@ -3,6 +3,7 @@
   "view": "quarter",
   "lighting": {"shadowX": 0.5, "shadowZ": -0.75, "shadowStrength": 0.5, "shadowColor": "#4a5a8c", "clouds": 0.55, "exposure": 0.05, "contrast": 12.0, "saturation": 8.0, "temperature": 4.0, "colorFilter": "#fffaf0", "vignette": 0.18},
   "night": {"shadowColor": "#4a5a8c", "clouds": 0.15, "exposure": -0.1, "contrast": 10.0, "saturation": -18.0, "temperature": -14.0, "colorFilter": "#dce4ff", "vignette": 0.4, "ambient": "#3e4a80"},
+  "dusk": {"shadowX": 1.3, "shadowZ": -0.5, "shadowStrength": 0.45, "shadowColor": "#5a3f78", "clouds": 0.35, "exposure": 0.08, "contrast": 12.0, "saturation": 18.0, "temperature": 26.0, "colorFilter": "#ffd8c4", "vignette": 0.3, "ambient": "#ffe4dc"},
   "lights": [
     {"x": 0.0, "z": 9.4, "radius": 4.0, "intensity": 1.1, "color": "#ff9a45", "flicker": 0.1, "when": "night"}
   ],
