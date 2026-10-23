@@ -18,7 +18,8 @@ namespace DgVillage
         public Portal[] portals;
         public Prop[] props;
         public Window[] windows;
-        public Lighting lighting;
+        public Lighting lighting; // 낮 (night 가 없으면 하루 종일)
+        public Lighting night; // 밤 (DayCycle — 실제 한국 시각). 값이 전부 기본값 = 낮 · 밤 구분 없음
         public Light[] lights;
 
         [Serializable]
@@ -79,6 +80,7 @@ namespace DgVillage
             public string colorFilter; // 화면 전체에 곱할 색 (#rrggbb)
             public float vignette; // 0..1, 화면 가장자리 어둡게
             public string ambient; // 빛이 안 닿는 곳에 곱할 색 (#rrggbb). "" = 점광원 조명 끔 (밝은 그대로)
+            public string sky; // 창문 유리(바깥 하늘)에 곱할 색 (#rrggbb). "" = 그대로 (밤엔 어두운 남색)
         }
 
         /// <summary>점광원 (촛불 · 벽난로). lighting.ambient 가 있을 때만 켜진다</summary>
@@ -93,6 +95,7 @@ namespace DgVillage
             public float flicker; // 0..1, 촛불처럼 흔들리는 정도
             public float glow; // 불꽃 빛무리 지름 (unit), 0 = 없음
             public float glowY; // 빛무리 높이 = 불꽃이 그림에서 바닥 위로 얼마나 (unit)
+            public string when; // "day" = 낮에만 (창문 햇빛), "night" = 밤에만 (달빛 · 창문 불빛), "" = 언제나
         }
     }
 }

@@ -25,6 +25,11 @@ namespace DgVillage.Editor
             {
                 sections.Add($"  \"lighting\": {lighting}");
             }
+            string night = Obj(LightingFields(map.night ?? new GameMapData.Lighting()));
+            if (night != "{}")
+            {
+                sections.Add($"  \"night\": {night}");
+            }
             if (map.lights is { Length: > 0 })
             {
                 sections.Add(List("lights", map.lights.Select(l => Obj(LightFields(l)))));
@@ -73,6 +78,7 @@ namespace DgVillage.Editor
             AddStr("colorFilter", l.colorFilter);
             AddNum("vignette", l.vignette);
             AddStr("ambient", l.ambient);
+            AddStr("sky", l.sky);
             return fields;
         }
 
@@ -90,6 +96,10 @@ namespace DgVillage.Editor
             {
                 fields.Add(("glow", Num(l.glow)));
                 fields.Add(("glowY", Num(l.glowY)));
+            }
+            if (!string.IsNullOrEmpty(l.when))
+            {
+                fields.Add(("when", Str(l.when)));
             }
             return fields;
         }

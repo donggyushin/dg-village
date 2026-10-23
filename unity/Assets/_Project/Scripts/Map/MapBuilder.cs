@@ -53,7 +53,7 @@ namespace DgVillage
                 go.AddComponent<Portal>().Init(portal.to, new Vector2(portal.w, portal.d), new Vector2(portal.spawnX, portal.spawnZ));
             }
 
-            Child(root, "Lighting").gameObject.AddComponent<MapLighting>().Init(map.lighting, map.lights);
+            Child(root, "Lighting").gameObject.AddComponent<MapLighting>().Init(map.lighting, map.night, map.lights);
             return root.gameObject;
         }
 

@@ -19,7 +19,12 @@ namespace DgVillage
         [SerializeField, TextArea(5, 40)] private string _layout;
         [Tooltip("켜면 바닥 끝에 벽을 안 만든다 (야외)")]
         [SerializeField] private bool _noWalls;
+        [Tooltip("낮 분위기 (night 가 비어 있으면 하루 종일)")]
         [SerializeField] private GameMapData.Lighting _lighting = new();
+        [Tooltip("밤 분위기 (실제 한국 시각으로 낮과 섞인다). 전부 기본값 = 낮 · 밤 구분 없음")]
+        [SerializeField] private GameMapData.Lighting _night = new();
+        [Tooltip("미리보기 한국 시각 (0..24). -1 = 지금 시각. 저장되지 않는다")]
+        [SerializeField, Range(-1f, 24f)] private float _previewHour = -1f;
         [SerializeField] private GameMapData.Light[] _lights = Array.Empty<GameMapData.Light>();
         [Tooltip("창문 가운데 (x, z). 북쪽 벽 = 벽 선의 z · 정수 x, 동쪽 벽 = 벽 선의 x · 정수 z. 폭 2 칸")]
         [SerializeField] private GameMapData.Window[] _windows = Array.Empty<GameMapData.Window>();
@@ -37,6 +42,7 @@ namespace DgVillage
             _layout = string.Join("\n", map.layout ?? Array.Empty<string>());
             _noWalls = map.noWalls;
             _lighting = map.lighting ?? new GameMapData.Lighting();
+            _night = map.night ?? new GameMapData.Lighting();
             _lights = map.lights ?? Array.Empty<GameMapData.Light>();
             _windows = map.windows ?? Array.Empty<GameMapData.Window>();
         }
@@ -55,10 +61,11 @@ namespace DgVillage
                 floor.SetNoWalls(_noWalls);
                 floor.SetWindows(Array.ConvertAll(_windows, w => new Vector2(w.x, w.z)));
             }
+            DayCycle.OverrideHour = _previewHour < 0f ? float.NaN : _previewHour;
             var lighting = GetComponentInChildren<MapLighting>();
             if (lighting != null)
             {
-                lighting.Init(_lighting, _lights);
+                lighting.Init(_lighting, _night, _lights);
             }
         }
 
@@ -70,6 +77,7 @@ namespace DgVillage
             layout = _layout.Replace("\r", "").Split('\n', StringSplitOptions.RemoveEmptyEntries),
             noWalls = _noWalls,
             lighting = _lighting,
+            night = _night,
             lights = _lights,
             windows = _windows,
         };

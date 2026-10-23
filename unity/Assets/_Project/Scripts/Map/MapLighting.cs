@@ -13,6 +13,8 @@ namespace DgVillage
     ///   해 그림자  SunShadow(소품 · 캐릭터) 가 스프라이트 실루엣을 바닥에 비스듬히 눕힌다 → SunShadowOffset
     ///   구름 그림자 바닥 셰이더(DgVillage/Ground)가 월드 좌표 노이즈로 흘러가는 그늘을 그린다
     ///   색감      URP 후처리 Volume (밝기 · 대비 · 채도 · 색온도 · 비네트)
+    ///   낮 · 밤    night 가 있으면 실제 한국 시각(DayCycle)에 따라 lighting(낮) 과 night 를 섞는다 (1초마다).
+    ///              점광원 when = "day" / "night" 은 그 때만 켜진다 (창문 햇빛 · 달빛). 창문 유리엔 sky 색을 곱한다
     /// 셰이더 값은 전역(Shader.SetGlobal*)이라 맵이 꺼지면 원래대로(= 효과 없음) 되돌린다.
     /// [ExecuteAlways]: 에디터 미리보기 방에서도 보인다. Volume · 빛무리는 저장하지 않는 자식에 매번 새로 만든다.
     /// </summary>
@@ -31,13 +33,19 @@ namespace DgVillage
         private static readonly int LightsId = Shader.PropertyToID("_DgLights");
         private static readonly int LightColorsId = Shader.PropertyToID("_DgLightColors");
         private static readonly int LightCountId = Shader.PropertyToID("_DgLightCount");
+        private static readonly int SkyId = Shader.PropertyToID("_DgSky");
+        private const float DaylightCheckSeconds = 1f;
         private static readonly Dictionary<int, Sprite> GlowSprites = new Dictionary<int, Sprite>();
 
         [SerializeField] private GameMapData.Lighting _lighting = new GameMapData.Lighting();
+        [SerializeField] private GameMapData.Lighting _night = new GameMapData.Lighting();
         [SerializeField] private GameMapData.Light[] _lights = new GameMapData.Light[0];
 
         private GameObject _volumeObject;
         private VolumeProfile _profile;
+        private ColorAdjustments _colorAdjustments;
+        private WhiteBalance _whiteBalance;
+        private Vignette _vignette;
         private GameObject _glowRoot;
         private readonly List<SpriteRenderer> _glows = new List<SpriteRenderer>();
         // SetGlobalVectorArray 는 처음 넣은 길이로 고정되므로 항상 MaxLights 길이
@@ -46,13 +54,17 @@ namespace DgVillage
         private int _lightCount;
         private bool _flickers;
         private bool _dirty;
+        private bool _hasNight;
+        private float _daylight = 1f; // 0 = 밤, 1 = 낮 (DayCycle). night 가 없으면 항상 1
+        private float _nextDaylightCheck;
 
         /// <summary>해 그림자가 높이 1 unit 당 바닥에서 밀리는 거리 (x, z). zero = 해 그림자 없음</summary>
         public static Vector2 SunShadowOffset { get; private set; }
 
-        public void Init(GameMapData.Lighting lighting, GameMapData.Light[] lights)
+        public void Init(GameMapData.Lighting lighting, GameMapData.Lighting night, GameMapData.Light[] lights)
         {
             _lighting = lighting ?? new GameMapData.Lighting();
+            _night = night ?? new GameMapData.Lighting();
             _lights = lights ?? new GameMapData.Light[0];
             if (isActiveAndEnabled)
             {
@@ -70,6 +82,7 @@ namespace DgVillage
             Shader.SetGlobalFloat(ShadowStrengthId, 0f);
             Shader.SetGlobalFloat(CloudStrengthId, 0f);
             Shader.SetGlobalFloat(LightingOnId, 0f);
+            Shader.SetGlobalColor(SkyId, Color.clear);
         }
 
         private void OnDestroy()
@@ -105,6 +118,18 @@ namespace DgVillage
                 _dirty = false;
                 Apply();
             }
+            float now = (float)Time.realtimeSinceStartupAsDouble;
+            if (_hasNight && now >= _nextDaylightCheck)
+            {
+                _nextDaylightCheck = now + DaylightCheckSeconds;
+                float daylight = DayCycle.Daylight;
+                if (Mathf.Abs(daylight - _daylight) > 0.0005f)
+                {
+                    _daylight = daylight;
+                    ApplyTimeOfDay();
+                    return;
+                }
+            }
             if (_flickers)
             {
                 UpdateLights();
@@ -113,21 +138,50 @@ namespace DgVillage
 
         private void Apply()
         {
-            GameMapData.Lighting l = _lighting;
-            SunShadowOffset = new Vector2(l.shadowX, l.shadowZ);
-            Shader.SetGlobalColor(ShadowColorId, ParseColor(l.shadowColor, Color.black));
-            Shader.SetGlobalFloat(ShadowStrengthId, Mathf.Clamp01(l.shadowStrength));
-            Shader.SetGlobalFloat(CloudStrengthId, Mathf.Clamp01(l.clouds));
-            ApplyLights(l);
-            ApplyVolume(l);
+            _hasNight = !IsEmpty(_night);
+            _daylight = _hasNight ? DayCycle.Daylight : 1f;
+            _nextDaylightCheck = (float)Time.realtimeSinceStartupAsDouble + DaylightCheckSeconds;
+            // 낮이나 밤 한쪽에만 ambient 가 있어도 켠다 (야외: 낮 = 조명 없음, 밤 = 어둡게). 빈 쪽은 흰색 = 그대로
+            bool on = !string.IsNullOrEmpty(_lighting.ambient) || (_hasNight && !string.IsNullOrEmpty(_night.ambient));
+            CreateGlows(on);
+            CreateVolume();
+            ApplyTimeOfDay();
         }
 
-        private void ApplyLights(GameMapData.Lighting l)
+        // 지금 _daylight 로 낮 · 밤 값을 섞어 셰이더 전역 값 · Volume · 점광원에 넣는다
+        private void ApplyTimeOfDay()
         {
-            bool on = !string.IsNullOrEmpty(l.ambient);
-            Shader.SetGlobalFloat(LightingOnId, on ? 1f : 0f);
-            Shader.SetGlobalColor(AmbientId, ParseColor(l.ambient, Color.white));
+            GameMapData.Lighting day = _lighting;
+            GameMapData.Lighting night = _hasNight ? _night : _lighting;
+            float t = _daylight;
+            float Mix(float atNight, float atDay) => Mathf.Lerp(atNight, atDay, t);
+            Color MixColor(string atNight, string atDay, Color empty) =>
+                Color.Lerp(ParseColor(atNight, empty), ParseColor(atDay, empty), t);
 
+            // 그림자 방향은 섞지 않는다 (밤엔 진하기만 0 으로)
+            SunShadowOffset = day.shadowX != 0f || day.shadowZ != 0f
+                ? new Vector2(day.shadowX, day.shadowZ)
+                : new Vector2(night.shadowX, night.shadowZ);
+            Shader.SetGlobalColor(ShadowColorId, MixColor(night.shadowColor, day.shadowColor, Color.black));
+            Shader.SetGlobalFloat(ShadowStrengthId, Mathf.Clamp01(Mix(night.shadowStrength, day.shadowStrength)));
+            Shader.SetGlobalFloat(CloudStrengthId, Mathf.Clamp01(Mix(night.clouds, day.clouds)));
+            Shader.SetGlobalColor(AmbientId, MixColor(night.ambient, day.ambient, Color.white));
+            Color sky = MixColor(night.sky, day.sky, Color.white);
+            sky.a = 1f; // a = 0 (MapLighting 없음) 이면 셰이더가 유리를 그대로 둔다
+            Shader.SetGlobalColor(SkyId, sky);
+
+            _colorAdjustments.postExposure.Override(Mix(night.exposure, day.exposure));
+            _colorAdjustments.contrast.Override(Mix(night.contrast, day.contrast));
+            _colorAdjustments.saturation.Override(Mix(night.saturation, day.saturation));
+            _colorAdjustments.colorFilter.Override(MixColor(night.colorFilter, day.colorFilter, Color.white));
+            _whiteBalance.temperature.Override(Mix(night.temperature, day.temperature));
+            _vignette.intensity.Override(Mix(night.vignette, day.vignette));
+            UpdateLights();
+        }
+
+        private void CreateGlows(bool on)
+        {
+            Shader.SetGlobalFloat(LightingOnId, on ? 1f : 0f);
             DestroyNow(_glowRoot);
             _glows.Clear();
             _lightCount = on ? Mathf.Min(_lights.Length, MaxLights) : 0;
@@ -169,7 +223,7 @@ namespace DgVillage
             return renderer;
         }
 
-        // 깜빡임: 세기와 빛무리 밝기를 같이 흔든다 (불마다 노이즈 위치를 다르게)
+        // 깜빡임: 세기와 빛무리 밝기를 같이 흔든다 (불마다 노이즈 위치를 다르게). when 이 있는 불은 낮 · 밤에 따라 줄인다
         private void UpdateLights()
         {
             float time = Application.isPlaying ? Time.time : (float)Time.realtimeSinceStartupAsDouble;
@@ -177,6 +231,12 @@ namespace DgVillage
             {
                 GameMapData.Light light = _lights[i];
                 float flicker = 1f - Mathf.Clamp01(light.flicker) * Mathf.PerlinNoise(time * 6f, i * 7.31f);
+                flicker *= light.when switch
+                {
+                    "day" => _daylight,
+                    "night" => 1f - _daylight,
+                    _ => 1f,
+                };
                 _lightData[i] = new Vector4(light.x, light.z, Mathf.Max(0.01f, light.radius), light.intensity * flicker);
                 if (_glows[i] != null)
                 {
@@ -225,7 +285,8 @@ namespace DgVillage
             return sprite;
         }
 
-        private void ApplyVolume(GameMapData.Lighting l)
+        // 값은 ApplyTimeOfDay 가 매번 덮어쓴다 (낮 · 밤이 바뀔 때 프로필을 다시 만들지 않게)
+        private void CreateVolume()
         {
             if (_volumeObject == null)
             {
@@ -233,27 +294,26 @@ namespace DgVillage
                 _volumeObject.transform.SetParent(transform, false);
                 _volumeObject.AddComponent<Volume>().isGlobal = true;
             }
-            DestroyNow(_profile);
-            _profile = ScriptableObject.CreateInstance<VolumeProfile>();
-            _profile.hideFlags = HideFlags.DontSave;
-
-            var color = _profile.Add<ColorAdjustments>();
-            color.postExposure.Override(l.exposure);
-            color.contrast.Override(l.contrast);
-            color.saturation.Override(l.saturation);
-            color.colorFilter.Override(ParseColor(l.colorFilter, Color.white));
-            _profile.Add<WhiteBalance>().temperature.Override(l.temperature);
-            if (l.vignette > 0f)
+            // 스크립트 다시 컴파일하면 _profile 만 살아남고 컴포넌트 참조가 풀릴 수 있다 → 같이 확인
+            if (_profile == null || _colorAdjustments == null || _whiteBalance == null || _vignette == null)
             {
-                var vignette = _profile.Add<Vignette>();
-                vignette.intensity.Override(l.vignette);
-                vignette.smoothness.Override(0.5f);
+                DestroyNow(_profile);
+                _profile = ScriptableObject.CreateInstance<VolumeProfile>();
+                _profile.hideFlags = HideFlags.DontSave;
+                _colorAdjustments = _profile.Add<ColorAdjustments>();
+                _whiteBalance = _profile.Add<WhiteBalance>();
+                _vignette = _profile.Add<Vignette>();
+                _vignette.smoothness.Override(0.5f);
             }
 
             var volume = _volumeObject.GetComponent<Volume>();
             volume.priority = 10f;
             volume.sharedProfile = _profile;
         }
+
+        // JsonUtility 는 JSON 에 없는 객체도 기본값으로 채운다 → 전부 기본값이면 "없음"
+        private static bool IsEmpty(GameMapData.Lighting l) =>
+            l == null || JsonUtility.ToJson(l) == JsonUtility.ToJson(new GameMapData.Lighting());
 
         private static Color ParseColor(string hex, Color fallback) =>
             !string.IsNullOrEmpty(hex) && ColorUtility.TryParseHtmlString(hex, out Color color) ? color : fallback;
