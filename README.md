@@ -2,7 +2,16 @@
 
 게더타운처럼 **채널을 만들고, 들어온 사람끼리 캐릭터로 돌아다니며 채팅하는** 소셜 공간 게임.
 
-라그나로크 · 테일즈위버 · 투더문 같은 옛날 한국 RPG 느낌의 **귀여운 2.5D 도트 그래픽**이 특징이다. 처음엔 친구들끼리 쓰고, 잘 되면 일반 사용자로 넓힌다.
+라그나로크 · 테일즈위버 · 투더문 같은 옛날 한국 RPG 느낌의 **귀여운 2.5D 도트 그래픽**이 특징이다. 일하면서 켜 두는 게임 — 각자 할 일을 하면서, 판타지 마법사 길드 사무실과 정원에서 같은 시간을 보내는 사람들과 채팅한다.
+
+## 다운로드
+
+[**최신 릴리스**](https://github.com/donggyushin/dg-village/releases/latest)에서 받는다.
+
+- **Windows** — `dg-village-windows.zip` 압축을 풀고 `dg-village.exe` 실행. "Windows의 PC 보호" 창이 뜨면 **추가 정보 → 실행**.
+- **macOS** (Apple Silicon) — `dg-village-mac.zip` 압축을 풀고 `dg-village.app` 실행 (Apple 공증 완료).
+
+회원가입 없이 바로 들어간다 (익명 계정이 자동으로 만들어짐).
 
 ## 구성
 
@@ -10,7 +19,9 @@
 dg-village/
 ├── unity/         # 게임 클라이언트 (Unity 6 · URP)
 ├── python/        # 게임 서버 (FastAPI) — 계정 HTTP API + WebSocket
-├── deploy/        # 운영 서버 구성 (Caddy + 서버 + Postgres) — deploy/README.md
+├── deploy/        # 운영 서버 구성 (Caddy + 서버 + Postgres) — deploy/README.md, macOS 서명 설정
+├── art/           # Unity 밖 아트 원본 (팔레트 · 타일셋 · 소품 · 건물) + 변환 스크립트
+├── docs/          # 리서치 보고서
 └── compose.yaml   # 로컬 PostgreSQL
 ```
 
@@ -21,9 +32,9 @@ dg-village/
 | DB | PostgreSQL 17 (docker compose) · SQLAlchemy · Alembic |
 | 계정 | 회원가입 없는 익명 계정 (나중에 Steam 등 로그인 연결) |
 | 통신 | 계정은 HTTP, 게임은 WebSocket — 둘 다 JSON |
-| 그래픽 | 3D 맵 위에 2D 도트 캐릭터, 고정 카메라 |
+| 그래픽 | 3D 맵 위에 2D 도트 캐릭터 · 소품, 고정 쿼터뷰 카메라 |
 | 플랫폼 | Mac · Windows 데스크톱 우선, 웹(WebGL)은 나중에 |
-| 음성 | 나중에 LiveKit 또는 Vivox 연동 |
+| 배포 | AWS Lightsail (시드니) · Docker Compose · GitHub Actions 자동 배포, 클라이언트는 GitHub Releases |
 
 ## 시작하기
 
@@ -64,11 +75,12 @@ dg-village/
 - [x] 이름표 + 텍스트 채팅 + 말풍선, 한글 지원 (2026-10-20)
 - [x] 캐릭터 선택 화면 + 캐릭터별 모습 동기화 (2026-10-20)
 - [x] 익명 계정 + DB — 회원가입 없이 자동 로그인 (2026-10-20)
+- [x] 채널 만들기 / 입장 (2026-10-20)
+- [x] 서버 배포 + push 시 자동 배포 (2026-10-21)
+- [x] 테스트용 클라이언트 배포 — GitHub Releases, macOS 공증 (2026-10-23, v0.1.0)
+- [ ] 아트 입히기 — 진행 중: 마법사 길드 사무실, 야외 정원(쿼터뷰), 길드 건물, 조명, 앉기, 포탈, 맵 에디터
 - [ ] Steam · 소셜 로그인 연결
-- [ ] 채널 만들기 / 입장
-- [ ] 서버 배포 (서울 리전) → 친구들과 테스트
-- [ ] 아트 입히기 (맵 · 건물)
-- [ ] 음성 채팅
+- ~~음성 채팅~~ — 컨셉 변경으로 제외 (2026-10-22)
 
 ## 크레딧
 
