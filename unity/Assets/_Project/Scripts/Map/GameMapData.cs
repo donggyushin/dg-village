@@ -13,6 +13,7 @@ namespace DgVillage
         public string id;
         public string view; // 카메라 각도: "quarter" = 쿼터뷰 (X 30° · Y 45°), "" = 정면 (ViewAngle.SetForMap)
         public string[] layout;
+        public bool noWalls; // true = 바닥 끝에 벽 · 벽 윗면을 안 만든다 (야외)
         public Seat[] seats;
         public Portal[] portals;
         public Prop[] props;

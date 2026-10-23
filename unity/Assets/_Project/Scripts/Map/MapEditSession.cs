@@ -17,6 +17,8 @@ namespace DgVillage
         [SerializeField] private string _view;
         [Tooltip("한 글자 = 타일 하나, 첫 줄 = 북쪽. s 돌 · w 나무 · c 카펫 · g 잔디 · p 길, 그 외 = 바닥 없음")]
         [SerializeField, TextArea(5, 40)] private string _layout;
+        [Tooltip("켜면 바닥 끝에 벽을 안 만든다 (야외)")]
+        [SerializeField] private bool _noWalls;
         [SerializeField] private GameMapData.Lighting _lighting = new();
         [SerializeField] private GameMapData.Light[] _lights = Array.Empty<GameMapData.Light>();
         [Tooltip("창문 가운데 (x, z). 북쪽 벽 = 벽 선의 z · 정수 x, 동쪽 벽 = 벽 선의 x · 정수 z. 폭 2 칸")]
@@ -33,6 +35,7 @@ namespace DgVillage
             _id = map.id;
             _view = map.view;
             _layout = string.Join("\n", map.layout ?? Array.Empty<string>());
+            _noWalls = map.noWalls;
             _lighting = map.lighting ?? new GameMapData.Lighting();
             _lights = map.lights ?? Array.Empty<GameMapData.Light>();
             _windows = map.windows ?? Array.Empty<GameMapData.Window>();
@@ -49,6 +52,7 @@ namespace DgVillage
             if (floor != null)
             {
                 floor.SetLayout(_layout);
+                floor.SetNoWalls(_noWalls);
                 floor.SetWindows(Array.ConvertAll(_windows, w => new Vector2(w.x, w.z)));
             }
             var lighting = GetComponentInChildren<MapLighting>();
@@ -64,6 +68,7 @@ namespace DgVillage
             id = _id,
             view = _view,
             layout = _layout.Replace("\r", "").Split('\n', StringSplitOptions.RemoveEmptyEntries),
+            noWalls = _noWalls,
             lighting = _lighting,
             lights = _lights,
             windows = _windows,

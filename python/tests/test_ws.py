@@ -214,7 +214,7 @@ def test_travel_through_a_portal_moves_the_player_to_the_other_map(client: TestC
         welcome = receive_until(a, "welcome")
         assert welcome["map"]["id"] == "outdoor"
         mine = next(p for p in welcome["players"] if p["id"] == me)
-        assert (mine["x"], mine["z"]) == (0.0, 6.0)  # the portal's spawn point
+        assert (mine["x"], mine["z"]) == (0.0, 14.0)  # the portal's spawn point
         assert sorted(p["name"] for p in welcome["players"]) == ["alice", "carol"]
         assert receive_until(inside, "player_left")["id"] == me
         assert receive_until(outside, "player_joined")["player"]["id"] == me
@@ -291,7 +291,7 @@ def test_rejoining_after_a_portal_starts_on_the_other_map(
         assert receive_until(ws, "welcome")["map"]["id"] == "outdoor"
         leave(ws, saves)
     with client.websocket_connect("/ws") as ws:
-        assert position_of(join(ws, token)) == ("outdoor", 0.0, 6.0)
+        assert position_of(join(ws, token)) == ("outdoor", 0.0, 14.0)
 
 
 def test_leaving_while_seated_resumes_standing_next_to_the_seat(

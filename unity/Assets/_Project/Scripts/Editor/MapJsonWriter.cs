@@ -33,6 +33,10 @@ namespace DgVillage.Editor
             {
                 sections.Add(List("windows", map.windows.Select(w => Obj(new() { ("x", Num(w.x)), ("z", Num(w.z)) }))));
             }
+            if (map.noWalls)
+            {
+                sections.Add("  \"noWalls\": true");
+            }
             sections.Add(List("layout", (map.layout ?? Array.Empty<string>()).Select(Str)));
             sections.Add(List("seats", (map.seats ?? Array.Empty<GameMapData.Seat>()).Select(s => Obj(SeatFields(s)))));
             sections.Add(List("portals", (map.portals ?? Array.Empty<GameMapData.Portal>()).Select(p => Obj(PortalFields(p)))));

@@ -45,7 +45,7 @@
     {"id": "armchair-2", "kind": "lounge", "x": 3.9, "z": 4.4, "facing": "downright"}
   ],
   "portals": [
-    {"x": 0.0, "z": -6.5, "w": 2.0, "d": 1.0, "to": "outdoor", "spawnX": 0.0, "spawnZ": 6.0}
+    {"x": 0.0, "z": -6.5, "w": 2.0, "d": 1.0, "to": "outdoor", "spawnX": 0.0, "spawnZ": 14.0}
   ],
   "props": [
     {"sprite": "bookshelf_southeast", "x": -6.6, "z": 6.42, "shadow": 0},

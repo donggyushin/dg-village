@@ -47,6 +47,7 @@ namespace DgVillage
 
         private string[] _rows = Array.Empty<string>();
         private Vector2[] _windows = Array.Empty<Vector2>();
+        private bool _noWalls;
         private float _left;
         private float _top;
         private Mesh _mesh;
@@ -82,6 +83,13 @@ namespace DgVillage
         public void SetWindows(Vector2[] windows)
         {
             _windows = windows ?? Array.Empty<Vector2>();
+            _dirty = true;
+        }
+
+        /// <summary>true = 벽 · 벽 윗면 없이 바닥만 (야외 맵, 맵 JSON noWalls)</summary>
+        public void SetNoWalls(bool noWalls)
+        {
+            _noWalls = noWalls;
             _dirty = true;
         }
 
@@ -239,6 +247,10 @@ namespace DgVillage
                     if (quarterView)
                     {
                         UseScreenUv(material);
+                    }
+                    if (_noWalls)
+                    {
+                        continue;
                     }
 
                     bool openN = !IsFloorTile(tx, ty - 1);
