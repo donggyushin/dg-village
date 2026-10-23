@@ -21,11 +21,10 @@ namespace DgVillage.Editor
         private const string IsoFloorMaterialPath = "Assets/_Project/Materials/Floor_Office_Iso.mat";
         private const string WallTexturePath = "Assets/_Project/Sprites/Environment/Ground/office_wall.png";
         private const string WallMaterialPath = "Assets/_Project/Materials/Wall_Office.mat";
-        private const string BuildingTexturePath = "Assets/_Project/Sprites/Environment/Buildings/building_stone.png";
-        private const string BuildingMaterialPath = "Assets/_Project/Materials/Building.mat";
-        private const string BuildingShadeMaterialPath = "Assets/_Project/Materials/Building_Shade.mat";
-        private const float BuildingShade = 0.82f;
-        private const string PropFolder ="Assets/_Project/Sprites/Environment/Props";
+        private const string PropFolder = "Assets/_Project/Sprites/Environment/Props";
+        // 건물 그림 (art/buildings/export_buildings.py) — 소품처럼 맵 JSON props 로 놓는다
+        private const string BuildingFolder = "Assets/_Project/Sprites/Environment/Buildings";
+        private const string BuildingMaterialPath = "Assets/_Project/Materials/Building_Sprite.mat";
         private const string ShadowPath = PropFolder + "/blob_shadow.png";
         // 소품 · 캐릭터 공용 (DgVillage/Sprite = URP Sprite-Unlit-Default + 맵 조명)
         private const string SpriteMaterialPath = "Assets/_Project/Materials/Sprite_Lit.mat";
@@ -48,6 +47,14 @@ namespace DgVillage.Editor
             // 나무는 줄기만 막는다 (잎 아래로는 지나가도 자연스럽다)
             ["tree_round"] = new(0.6f, 0.3f), ["tree_blossom"] = new(0.5f, 0.3f), ["tree_round_b"] = new(0.6f, 0.3f),
             ["tree_twin"] = new(1.0f, 0.3f),
+        };
+
+        // 건물 그림: 벽이 차지하는 크기 (X 가로 = 오른쪽 아래 면, Z 깊이 = 왼쪽 아래 면) unit + 벽 남서 모서리(맨 아래 꼭짓점)가
+        // 그림 pivot(아래 가운데)에서 오른쪽 · 위로 몇 px 인지. 그림의 마당(벽 앞 바닥)은 걸어 다닐 수 있다.
+        // 이 영역 = 못 지나가는 곳 + 앞쪽 끝이 그리는 깊이 (BuildingSprite 셰이더)
+        private static readonly Dictionary<string, (Vector2 Size, Vector2 CornerPx)> BuildingFootprints = new()
+        {
+            ["guild_hall"] = (new(3.6f, 4.4f), new(7f, 18f)),
         };
 
         // 돌린 가구({id}_east 등, export_props.py)는 정면 크기에서 계산한다.
@@ -116,7 +123,8 @@ namespace DgVillage.Editor
         internal static PropCatalog UpdateCatalog()
         {
             var entries = new List<PropCatalog.Entry>();
-            foreach (string guid in AssetDatabase.FindAssets("t:Sprite", new[] { PropFolder }))
+            string[] folders = AssetDatabase.IsValidFolder(BuildingFolder) ? new[] { PropFolder, BuildingFolder } : new[] { PropFolder };
+            foreach (string guid in AssetDatabase.FindAssets("t:Sprite", folders))
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
                 if (path == ShadowPath)
@@ -129,7 +137,13 @@ namespace DgVillage.Editor
                     Id = id,
                     Sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path),
                     Footprint = FootprintOf(id),
+                    Building = path.StartsWith(BuildingFolder),
                 });
+                if (entries[^1].Building && BuildingFootprints.TryGetValue(id, out var building))
+                {
+                    entries[^1].Footprint = building.Size;
+                    entries[^1].FootprintCornerPx = building.CornerPx;
+                }
             }
             entries.Sort((a, b) => string.CompareOrdinal(a.Id, b.Id));
 
@@ -147,7 +161,7 @@ namespace DgVillage.Editor
                 SpriteMaterial,
                 AssetDatabase.LoadAssetAtPath<Sprite>(ShadowPath),
                 entries);
-            catalog.SetBuildingMaterials(BuildingMaterial(BuildingMaterialPath, 1f), BuildingMaterial(BuildingShadeMaterialPath, BuildingShade));
+            catalog.SetBuildingMaterial(LoadOrCreateMaterial(BuildingMaterialPath, null, "DgVillage/BuildingSprite"));
             EditorUtility.SetDirty(catalog);
             AssetDatabase.SaveAssetIfDirty(catalog);
             return catalog;
@@ -176,20 +190,6 @@ namespace DgVillage.Editor
             if (material.GetFloat("_Clouds") != 0f)
             {
                 material.SetFloat("_Clouds", 0f);
-                EditorUtility.SetDirty(material);
-            }
-            return material;
-        }
-
-        // 건물: 벽처럼 구름 끔. 그늘 쪽(남 · 동) 머티리얼은 색을 곱해 어둡게 (해가 북서쪽 — 야외 shadowX/Z 와 맞춤)
-        private static Material BuildingMaterial(string path, float brightness)
-        {
-            Material material = LoadOrCreateMaterial(path, BuildingTexturePath, "DgVillage/Ground");
-            var color = new Color(brightness, brightness, brightness, 1f);
-            if (material.GetFloat("_Clouds") != 0f || material.GetColor("_BaseColor") != color)
-            {
-                material.SetFloat("_Clouds", 0f);
-                material.SetColor("_BaseColor", color);
                 EditorUtility.SetDirty(material);
             }
             return material;

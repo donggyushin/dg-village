@@ -195,9 +195,7 @@ namespace DgVillage.Editor
 
             // 에셋은 NewScene 다음에 불러온다 (그 전에 불러오면 "가짜 null" 이 된다)
             GameObject root = OfficeRoomBuilder.CreateRoom(map);
-            var session = root.AddComponent<MapEditSession>();
-            session.Init(map);
-            session.SetCatalog(Catalog);
+            root.AddComponent<MapEditSession>().Init(map);
 
             // Game 뷰도 게임과 같은 각도로 (Play 는 네트워크 없이 그냥 보기만)
             Quaternion rotation = ViewAngle.Billboard;

@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 9be60710ece3b4ab791c4f3c24e6313e
+guid: 331cae77ef07b4cffbfe5282753df136
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -5109125779346255568
-    second: building_stone_0
+      213: 189270856871670673
+    second: guild_hall_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -115,13 +115,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: building_stone_0
+      name: guild_hall_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
         width: 256
-        height: 128
+        height: 244
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -130,8 +130,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 03196494c2db819b0800000000000000
-      internalID: -5109125779346255568
+      spriteID: 1937b2e67dc60a200800000000000000
+      internalID: 189270856871670673
       vertices: []
       indices: 
       edges: []

@@ -18,7 +18,6 @@ namespace DgVillage
         public Portal[] portals;
         public Prop[] props;
         public Window[] windows;
-        public Building[] buildings;
         public Lighting lighting;
         public Light[] lights;
 
@@ -60,18 +59,6 @@ namespace DgVillage
         {
             public float x;
             public float z;
-        }
-
-        /// <summary>야외 건물 (BuildingMesh). 들어가는 길은 문 앞에 portal 을 따로 둔다</summary>
-        [Serializable]
-        public class Building
-        {
-            public float x; // 앞(남쪽) 벽 가운데
-            public float z;
-            public float w; // 가로 (정수)
-            public float d; // 깊이
-            public float roof; // 지붕 높이 (벽 위로), 0 = 깊이의 반
-            public float door; // 문 가운데 X (건물 가운데 기준), 문 폭 2 칸
         }
 
         /// <summary>

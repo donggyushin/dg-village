@@ -35,8 +35,6 @@ namespace DgVillage
                 BuildProp(prop, catalog, props);
             }
 
-            BuildBuildings(map.buildings, catalog, Child(root, "Buildings"));
-
             var seats = Child(root, "Seats");
             foreach (GameMapData.Seat seat in map.seats ?? new GameMapData.Seat[0])
             {
@@ -57,21 +55,6 @@ namespace DgVillage
 
             Child(root, "Lighting").gameObject.AddComponent<MapLighting>().Init(map.lighting, map.lights);
             return root.gameObject;
-        }
-
-        /// <summary>건물들을 parent 아래에 만든다 (맵 에디터는 건물 값을 고치면 parent 를 비우고 다시 부른다)</summary>
-        public static void BuildBuildings(GameMapData.Building[] buildings, PropCatalog catalog, Transform parent)
-        {
-            foreach (GameMapData.Building building in buildings ?? new GameMapData.Building[0])
-            {
-                var go = new GameObject("Building", typeof(MeshFilter), typeof(MeshRenderer), typeof(BuildingMesh));
-                go.transform.SetParent(parent, false);
-                go.transform.position = new Vector3(building.x, 0f, building.z);
-                go.GetComponent<MeshRenderer>().sharedMaterials = new[] { catalog.BuildingMaterial, catalog.BuildingShadeMaterial };
-                go.GetComponent<BuildingMesh>().Init(building);
-                // 루트 = 앞벽 가운데, 뒤(+Z)로 깊이만큼 = Obstacle 기본 모양
-                go.AddComponent<Obstacle>().Init(new Vector2(building.w, building.d));
-            }
         }
 
         /// <summary>소품 하나를 parent 아래에 만든다 (맵 에디터도 소품을 추가 · 다시 만들 때 쓴다). 카탈로그에 없으면 null</summary>
@@ -102,13 +85,25 @@ namespace DgVillage
             {
                 return;
             }
-            GameObject sprite = CreateSprite("Sprite", item, entry.Sprite, catalog.SpriteMaterial);
+            GameObject sprite = CreateSprite("Sprite", item, entry.Sprite, entry.Building ? catalog.BuildingMaterial : catalog.SpriteMaterial);
             sprite.GetComponent<SpriteRenderer>().flipX = prop.flip;
-            sprite.AddComponent<SunShadow>();
+            if (entry.Building)
+            {
+                // 깊이 = footprint 앞쪽 끝 (BuildingSprite). 해 그림자는 그림 실루엣을 눕히는 방식이라 건물엔 안 맞아서 뺀다
+                sprite.AddComponent<BuildingSprite>();
+            }
+            else
+            {
+                sprite.AddComponent<SunShadow>();
+            }
             if (entry.Footprint != Vector2.zero)
             {
                 var obstacle = item.gameObject.AddComponent<Obstacle>();
-                if (ViewAngle.IsQuarterView)
+                if (entry.Building)
+                {
+                    obstacle.InitCorner(entry.Footprint, BuildingCorner(entry.FootprintCornerPx));
+                }
+                else if (ViewAngle.IsQuarterView)
                 {
                     obstacle.InitQuarterView(QuarterViewFootprint(prop, entry, catalog));
                 }
@@ -155,6 +150,16 @@ namespace DgVillage
                 return swap != prop.flip ? new Vector2(size.y, size.x) : size;
             }
             return entry.Footprint;
+        }
+
+        // 건물 그림의 픽셀 (pivot 기준 오른쪽 x, 위 y) → 바닥 위 점 (pivot 기준 월드 X · Z).
+        // 화면 오른쪽 = 카메라 오른쪽 수평, 화면 위로 1 px = 바닥에서 카메라 앞 방향으로 1 / (32 · sin pitch) unit
+        private static Vector2 BuildingCorner(Vector2 px)
+        {
+            Quaternion yaw = Quaternion.Euler(0f, ViewAngle.Yaw, 0f);
+            Vector3 offset = yaw * Vector3.right * (px.x / 32f)
+                + yaw * Vector3.forward * (px.y / (32f * Mathf.Sin(ViewAngle.Pitch * Mathf.Deg2Rad)));
+            return new Vector2(offset.x, offset.z);
         }
 
         private static Transform Child(Transform parent, string name)

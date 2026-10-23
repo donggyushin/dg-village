@@ -2,9 +2,6 @@
   "id": "outdoor",
   "view": "quarter",
   "lighting": {"shadowX": 0.5, "shadowZ": -0.75, "shadowStrength": 0.5, "shadowColor": "#4a5a8c", "clouds": 0.55, "exposure": 0.05, "contrast": 12.0, "saturation": 8.0, "temperature": 4.0, "colorFilter": "#fffaf0", "vignette": 0.18},
-  "buildings": [
-    {"x": 0.0, "z": 10.0, "w": 12.0, "d": 5.0, "roof": 2.5}
-  ],
   "noWalls": true,
   "layout": [
     "gggggggggggggggggggggggggggggggggggggggg",
@@ -57,6 +54,14 @@
     {"x": 0.0, "z": 9.5, "w": 2.0, "d": 1.0, "to": "office", "spawnX": 0.0, "spawnZ": -5.3}
   ],
   "props": [
+    {"sprite": "guild_hall", "x": -2.72, "z": 9.36, "shadow": 0},
+    {"sprite": "tree_round", "x": -4.6, "z": 13.6, "shadow": 2},
+    {"sprite": "tree_blossom", "x": -3.6, "z": 15.4, "shadow": 2},
+    {"sprite": "tree_twin", "x": 3.8, "z": 13.2, "shadow": 2},
+    {"sprite": "tree_round_b", "x": 3.0, "z": 15.4, "shadow": 2},
+    {"sprite": "tree_round", "x": 5.6, "z": 15.2, "shadow": 2},
+    {"sprite": "tree_blossom", "x": -6.2, "z": 15.0, "shadow": 2},
+    {"sprite": "tree_round_b", "x": 0.4, "z": 15.5, "shadow": 2},
     {"sprite": "bench_iron", "x": 0.99, "z": 5.1, "shadow": 0, "flip": true},
     {"sprite": "bench_double", "x": 2.55, "z": 3.55, "shadow": 0},
     {"sprite": "bench_arch", "x": 4.1, "z": 1.99, "shadow": 0},
@@ -68,8 +73,6 @@
     {"sprite": "bench_iron", "x": -9.6, "z": -7.29, "shadow": 0},
     {"sprite": "bench_double", "x": 12.71, "z": -5.6, "shadow": 0, "flip": true},
     {"sprite": "bench_arch", "x": 14.4, "z": -7.29, "shadow": 0},
-    {"sprite": "plant_pot", "x": -1.7, "z": 9.6, "shadow": 1},
-    {"sprite": "plant_pot", "x": 1.7, "z": 9.6, "shadow": 1},
     {"sprite": "plant_pot", "x": -4.4, "z": 6.6, "shadow": 1},
     {"sprite": "plant_pot", "x": 4.4, "z": 6.6, "shadow": 1},
     {"sprite": "tree_round", "x": 18.94, "z": 14.95, "shadow": 2},

@@ -19,6 +19,10 @@ namespace DgVillage
             public Sprite Sprite;
             [Tooltip("바닥에서 막는 크기 (x = 가로, y = 깊이) unit. 0 = 안 막음")]
             public Vector2 Footprint;
+            [Tooltip("건물 그림 (Sprites/Environment/Buildings) — BuildingSprite 머티리얼로 footprint 앞쪽 끝 깊이를 쓴다")]
+            public bool Building;
+            [Tooltip("건물: 벽 남서 모서리가 그림에서 pivot(아래 가운데)으로부터 몇 px (x = 오른쪽, y = 위)")]
+            public Vector2 FootprintCornerPx;
         }
 
         [SerializeField] private Material _floorMaterial;
@@ -26,9 +30,8 @@ namespace DgVillage
         [SerializeField] private Material _quarterViewFloorMaterial;
         [SerializeField] private Material _wallMaterial;
         [SerializeField] private Material _spriteMaterial;
-        [Tooltip("건물 (BuildingMesh) 햇빛 쪽 · 그늘 쪽. make_building_atlas.py 텍스처")]
+        [Tooltip("건물 그림용 (DgVillage/BuildingSprite)")]
         [SerializeField] private Material _buildingMaterial;
-        [SerializeField] private Material _buildingShadeMaterial;
         [SerializeField] private Sprite _shadow;
         [SerializeField] private List<Entry> _entries = new();
 
@@ -38,9 +41,8 @@ namespace DgVillage
         public Material QuarterViewFloorMaterial => _quarterViewFloorMaterial != null ? _quarterViewFloorMaterial : _floorMaterial;
         public Material WallMaterial => _wallMaterial;
         public Material SpriteMaterial => _spriteMaterial;
-        public Sprite Shadow => _shadow;
         public Material BuildingMaterial => _buildingMaterial;
-        public Material BuildingShadeMaterial => _buildingShadeMaterial;
+        public Sprite Shadow => _shadow;
 
         public Entry Find(string id) => _entries.Find(e => e.Id == id);
 
@@ -56,11 +58,7 @@ namespace DgVillage
             _entries = entries;
         }
 
-        public void SetBuildingMaterials(Material lit, Material shade)
-        {
-            _buildingMaterial = lit;
-            _buildingShadeMaterial = shade;
-        }
+        public void SetBuildingMaterial(Material building) => _buildingMaterial = building;
 #endif
     }
 }

@@ -33,10 +33,6 @@ namespace DgVillage.Editor
             {
                 sections.Add(List("windows", map.windows.Select(w => Obj(new() { ("x", Num(w.x)), ("z", Num(w.z)) }))));
             }
-            if (map.buildings is { Length: > 0 })
-            {
-                sections.Add(List("buildings", map.buildings.Select(b => Obj(BuildingFields(b)))));
-            }
             if (map.noWalls)
             {
                 sections.Add("  \"noWalls\": true");
@@ -94,20 +90,6 @@ namespace DgVillage.Editor
             {
                 fields.Add(("glow", Num(l.glow)));
                 fields.Add(("glowY", Num(l.glowY)));
-            }
-            return fields;
-        }
-
-        private static List<(string, string)> BuildingFields(GameMapData.Building b)
-        {
-            var fields = new List<(string, string)> { ("x", Num(b.x)), ("z", Num(b.z)), ("w", Num(b.w)), ("d", Num(b.d)) };
-            if (b.roof != 0f)
-            {
-                fields.Add(("roof", Num(b.roof)));
-            }
-            if (b.door != 0f)
-            {
-                fields.Add(("door", Num(b.door)));
             }
             return fields;
         }

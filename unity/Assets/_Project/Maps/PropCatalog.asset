@@ -16,211 +16,351 @@ MonoBehaviour:
   _quarterViewFloorMaterial: {fileID: 2100000, guid: 47bb90b0f82334731b8c76d425e25b71, type: 2}
   _wallMaterial: {fileID: 2100000, guid: 07219ef9ffbca4808bbc09b13568ec4b, type: 2}
   _spriteMaterial: {fileID: 2100000, guid: 74286f43626ae47cfaadb303d5c581f0, type: 2}
-  _buildingMaterial: {fileID: 2100000, guid: 7f423c35bddf8497ba89178713e41e18, type: 2}
-  _buildingShadeMaterial: {fileID: 2100000, guid: 8ffe4746e94804c8cb930c86fe667077, type: 2}
+  _buildingMaterial: {fileID: 2100000, guid: 8e5e9f3b7e95d42d59c980eba5f0eee3, type: 2}
   _shadow: {fileID: 21300000, guid: 08f55c411b12644fb964f3eeabc7740b, type: 3}
   _entries:
   - Id: armchair
     Sprite: {fileID: 21300000, guid: 45064c460dfe847cdbdd9504f22e9343, type: 3}
     Footprint: {x: 1.2, y: 0.6}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: armchair_east
     Sprite: {fileID: 21300000, guid: c2897cb4bf7ce4397bd78f3ea5f9d13b, type: 3}
     Footprint: {x: 0.6, y: 1.2}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: armchair_north
     Sprite: {fileID: 21300000, guid: ac3e72f9612ec457bbf12cc029f94f02, type: 3}
     Footprint: {x: 1.2, y: 0.6}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: armchair_northeast
     Sprite: {fileID: 21300000, guid: 0438547c3c37d417abfdb4542d4743bc, type: 3}
     Footprint: {x: 1.26, y: 0.90000004}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: armchair_southeast
     Sprite: {fileID: 21300000, guid: a8705aa8a72bb49f4a2ea7054480631e, type: 3}
     Footprint: {x: 1.26, y: 0.90000004}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: bench_arch
     Sprite: {fileID: 21300000, guid: a150f83fde08249e5b3524ebe2844be2, type: 3}
     Footprint: {x: 0, y: 0}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: bench_double
     Sprite: {fileID: 21300000, guid: 0eb83b3be6f1a4415bbff62242023691, type: 3}
     Footprint: {x: 0, y: 0}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: bench_iron
     Sprite: {fileID: 21300000, guid: 2b1bddc0be6764a26a2ce9e1a5b9c68e, type: 3}
     Footprint: {x: 0, y: 0}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: bench_plain
     Sprite: {fileID: 21300000, guid: 342f5e63c732b48b1bf47890f238fe4e, type: 3}
     Footprint: {x: 0, y: 0}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: bookshelf
     Sprite: {fileID: 21300000, guid: 9b92a1f73a6744fce8c02edcdf41b85c, type: 3}
     Footprint: {x: 1.1, y: 0.4}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: bookshelf_east
     Sprite: {fileID: 21300000, guid: 9d993ec071f5841aa85d889e6bef62e9, type: 3}
     Footprint: {x: 0.4, y: 1.1}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: bookshelf_north
     Sprite: {fileID: 21300000, guid: 31a3b2951729c4737b2a2885bd5f2b72, type: 3}
     Footprint: {x: 1.1, y: 0.4}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: bookshelf_northeast
     Sprite: {fileID: 21300000, guid: 9bcf4693fb087424a92c1cdb1a670e85, type: 3}
     Footprint: {x: 1.05, y: 0.75}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: bookshelf_potion
     Sprite: {fileID: 21300000, guid: 65c02ef693cb140a3a0d0245765e66f1, type: 3}
     Footprint: {x: 1.1, y: 0.4}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: bookshelf_potion_east
     Sprite: {fileID: 21300000, guid: 5c85ddfcf2ac74be5ad082917dcb9274, type: 3}
     Footprint: {x: 0.4, y: 1.1}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: bookshelf_potion_north
     Sprite: {fileID: 21300000, guid: 61944d2ee490e43869aa13eda90a3ad5, type: 3}
     Footprint: {x: 1.1, y: 0.4}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: bookshelf_potion_northeast
     Sprite: {fileID: 21300000, guid: e49b2a30e5e9c42749f2474d4830721e, type: 3}
     Footprint: {x: 1.05, y: 0.75}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: bookshelf_potion_southeast
     Sprite: {fileID: 21300000, guid: bc669dd7cd8564005aaa6b732f071e61, type: 3}
     Footprint: {x: 1.05, y: 0.75}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: bookshelf_southeast
     Sprite: {fileID: 21300000, guid: e6c3d691d1fb04dfb82c3b225065b9fc, type: 3}
     Footprint: {x: 1.05, y: 0.75}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: candelabra
     Sprite: {fileID: 21300000, guid: 371de8b18ca6e4b259a563e81b6fa610, type: 3}
     Footprint: {x: 0.4, y: 0.3}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: chair_cushion
     Sprite: {fileID: 21300000, guid: ccc43231638e24a1db5e07955df9444d, type: 3}
     Footprint: {x: 0.7, y: 0.4}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: chair_cushion_east
     Sprite: {fileID: 21300000, guid: 53145c2df40884c5a87761e71c8b1bcf, type: 3}
     Footprint: {x: 0.4, y: 0.7}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: chair_cushion_north
     Sprite: {fileID: 21300000, guid: d1969d1b5e1bd445fa5d7f07fcf73bf3, type: 3}
     Footprint: {x: 0.7, y: 0.4}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: chair_cushion_northeast
     Sprite: {fileID: 21300000, guid: 8e525496af3da4741ace76538067062a, type: 3}
     Footprint: {x: 0.77, y: 0.55}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: chair_cushion_southeast
     Sprite: {fileID: 21300000, guid: b4db71203dec64a7dbfd4ed942de4434, type: 3}
     Footprint: {x: 0.77, y: 0.55}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: chair_high
     Sprite: {fileID: 21300000, guid: 72ea0a2aed5274700bc7eb5234119fd7, type: 3}
     Footprint: {x: 1, y: 0.4}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: chair_high_east
     Sprite: {fileID: 21300000, guid: 2e2b33b4731994f35828ce10abebe999, type: 3}
     Footprint: {x: 0.4, y: 1}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: chair_high_north
     Sprite: {fileID: 21300000, guid: 0cec3e3561fed450b92b3f40b13788a3, type: 3}
     Footprint: {x: 1, y: 0.4}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: chair_high_northeast
     Sprite: {fileID: 21300000, guid: ea580acc4123d430f93a55715c804b1c, type: 3}
     Footprint: {x: 0.97999996, y: 0.7}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: chair_high_southeast
     Sprite: {fileID: 21300000, guid: 9e539fc647e754df1a3bcb85c7937c8e, type: 3}
     Footprint: {x: 0.97999996, y: 0.7}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: desk_crystal
     Sprite: {fileID: 21300000, guid: 9b93594ab47b248c38f22b5820b94e66, type: 3}
     Footprint: {x: 1.5, y: 0.6}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: desk_crystal_east
     Sprite: {fileID: 21300000, guid: 496da257c67cd47fdaf64ace200be98d, type: 3}
     Footprint: {x: 0.6, y: 1.5}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: desk_crystal_north
     Sprite: {fileID: 21300000, guid: 425f3fea989444f6d8e03700cc7f0ac3, type: 3}
     Footprint: {x: 1.5, y: 0.6}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: desk_crystal_northeast
     Sprite: {fileID: 21300000, guid: 4cef455c25f8146aea602a97beea0998, type: 3}
     Footprint: {x: 1.47, y: 1.05}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: desk_crystal_southeast
     Sprite: {fileID: 21300000, guid: 434512052b58f489fad4437413d2a407, type: 3}
     Footprint: {x: 1.47, y: 1.05}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: desk_quill
     Sprite: {fileID: 21300000, guid: 7ee6102df6a224f15afe2574c6311c95, type: 3}
     Footprint: {x: 1.3, y: 0.6}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: desk_quill_east
     Sprite: {fileID: 21300000, guid: a8429d98912604ae69982bfc43572843, type: 3}
     Footprint: {x: 0.6, y: 1.3}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: desk_quill_north
     Sprite: {fileID: 21300000, guid: 614663b6e1ae549baa1efe2a0be05970, type: 3}
     Footprint: {x: 1.3, y: 0.6}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: desk_quill_northeast
     Sprite: {fileID: 21300000, guid: 9dc5d0141202946629fdfdd46d0b1f51, type: 3}
     Footprint: {x: 1.3299999, y: 0.95}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: desk_quill_southeast
     Sprite: {fileID: 21300000, guid: 9b13b6770033f408e9f7281814951a61, type: 3}
     Footprint: {x: 1.3299999, y: 0.95}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: desk_spellbook
     Sprite: {fileID: 21300000, guid: 59a2997693b6543509ec6e7f26149e8a, type: 3}
     Footprint: {x: 1.5, y: 0.6}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: desk_spellbook_east
     Sprite: {fileID: 21300000, guid: 6240b0484b4db4408be1d90521db90b0, type: 3}
     Footprint: {x: 0.6, y: 1.5}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: desk_spellbook_north
     Sprite: {fileID: 21300000, guid: 8bac46eb0ae1f421c9bbcda264d9bd2b, type: 3}
     Footprint: {x: 1.5, y: 0.6}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: desk_spellbook_northeast
     Sprite: {fileID: 21300000, guid: 2241648945b61470faa168f694bbf96c, type: 3}
     Footprint: {x: 1.47, y: 1.05}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: desk_spellbook_southeast
     Sprite: {fileID: 21300000, guid: 75666b0ba487e4a60af229e7c74c3edc, type: 3}
     Footprint: {x: 1.47, y: 1.05}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: fireplace
     Sprite: {fileID: 21300000, guid: f944af65cdfaf49aaacc7c10a05e586c, type: 3}
     Footprint: {x: 1.4, y: 0.4}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: fireplace_east
     Sprite: {fileID: 21300000, guid: d8f83a7c12716485e85dd59db775f6ac, type: 3}
     Footprint: {x: 0.4, y: 1.4}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: fireplace_north
     Sprite: {fileID: 21300000, guid: fe70e0737c8b44d6ca748764a2666907, type: 3}
     Footprint: {x: 1.4, y: 0.4}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: fireplace_northeast
     Sprite: {fileID: 21300000, guid: 19736cd1de06847bfba0ddd90f947016, type: 3}
     Footprint: {x: 1.26, y: 0.9}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: fireplace_southeast
     Sprite: {fileID: 21300000, guid: a98211c1e98ab4c0481731fd5ba05cbc, type: 3}
     Footprint: {x: 1.26, y: 0.9}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: globe
     Sprite: {fileID: 21300000, guid: 997c96db5211d453d90b5fc1ae111fae, type: 3}
     Footprint: {x: 0.8, y: 0.5}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
+  - Id: guild_hall
+    Sprite: {fileID: 21300000, guid: 331cae77ef07b4cffbfe5282753df136, type: 3}
+    Footprint: {x: 3.6, y: 4.4}
+    Building: 1
+    FootprintCornerPx: {x: 7, y: 18}
   - Id: notice_board
     Sprite: {fileID: 21300000, guid: 54a0d36e0569a40aa93b1410ec81aaf9, type: 3}
     Footprint: {x: 1.1, y: 0.3}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: notice_board_east
     Sprite: {fileID: 21300000, guid: 9fdbd012fb69544f890785e04248f1e1, type: 3}
     Footprint: {x: 0.3, y: 1.1}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: notice_board_north
     Sprite: {fileID: 21300000, guid: 273ce8f245d2b4d3d9f7570864fd3c81, type: 3}
     Footprint: {x: 1.1, y: 0.3}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: notice_board_northeast
     Sprite: {fileID: 21300000, guid: e4ce34fd06def4e72a43cba64fe691e3, type: 3}
     Footprint: {x: 0.98, y: 0.70000005}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: notice_board_southeast
     Sprite: {fileID: 21300000, guid: 30a345f9f2cb44abe80829a3b546125c, type: 3}
     Footprint: {x: 0.98, y: 0.70000005}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: owl_perch
     Sprite: {fileID: 21300000, guid: 7ab7953ad5cb6425ea0ee3b76e127170, type: 3}
     Footprint: {x: 0.4, y: 0.3}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: plant_pot
     Sprite: {fileID: 21300000, guid: 439f0d61f05f141b18d0b4d196698674, type: 3}
     Footprint: {x: 0.7, y: 0.4}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: sofa
     Sprite: {fileID: 21300000, guid: cd4d8170e651b4d00b44e1bb3a0cec5e, type: 3}
     Footprint: {x: 1.7, y: 0.6}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: sofa_east
     Sprite: {fileID: 21300000, guid: f4a496f62cc0e42f68c7104b2fd2f6f4, type: 3}
     Footprint: {x: 0.6, y: 1.7}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: sofa_north
     Sprite: {fileID: 21300000, guid: f496879e8764c44c0a437eaa0cc5980d, type: 3}
     Footprint: {x: 1.7, y: 0.6}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: sofa_northeast
     Sprite: {fileID: 21300000, guid: f21bc3b04cdc04dcaab19a1b11e6785f, type: 3}
     Footprint: {x: 1.61, y: 1.1500001}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: sofa_southeast
     Sprite: {fileID: 21300000, guid: e3139421fa7e042e48adbeb214beb4c7, type: 3}
     Footprint: {x: 1.61, y: 1.1500001}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: tea_table
     Sprite: {fileID: 21300000, guid: e0082c84c5539484da71a4f78c5b80ab, type: 3}
     Footprint: {x: 1, y: 0.6}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: tree_blossom
     Sprite: {fileID: 21300000, guid: 7f59d83f659494abab790b0123141c6a, type: 3}
     Footprint: {x: 0.5, y: 0.3}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: tree_round
     Sprite: {fileID: 21300000, guid: 82b9a4d39f3fb4e0e976e55b4783b7f6, type: 3}
     Footprint: {x: 0.6, y: 0.3}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: tree_round_b
     Sprite: {fileID: 21300000, guid: eb4a7b0c8dce9490980410734734cf67, type: 3}
     Footprint: {x: 0.6, y: 0.3}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}
   - Id: tree_twin
     Sprite: {fileID: 21300000, guid: e56e78368dfe5472f99d5450d3b52d8b, type: 3}
     Footprint: {x: 1, y: 0.3}
+    Building: 0
+    FootprintCornerPx: {x: 0, y: 0}

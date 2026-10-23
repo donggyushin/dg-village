@@ -37,6 +37,14 @@ namespace DgVillage
             _hasCornerOffset = true;
         }
 
+        /// <summary>남서 모서리를 직접 (pivot 기준 월드 X · Z). 건물 그림처럼 pivot 이 영역 가운데가 아닐 때</summary>
+        public void InitCorner(Vector2 size, Vector2 cornerOffset)
+        {
+            _size = size;
+            _cornerOffset = cornerOffset;
+            _hasCornerOffset = true;
+        }
+
         private void OnEnable() => Active.Add(this);
 
         private void OnDisable() => Active.Remove(this);
@@ -56,8 +64,8 @@ namespace DgVillage
             return false;
         }
 
-        // x = 월드 X, y = 월드 Z
-        private Rect Footprint
+        /// <summary>바닥에서 막는 직사각형. x = 월드 X, y = 월드 Z</summary>
+        public Rect Footprint
         {
             get
             {
