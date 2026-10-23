@@ -45,7 +45,7 @@ dg-village/
    cd python
    uv sync
    uv run alembic upgrade head   # DB 테이블 만들기 · 갱신
-   uv run uvicorn dg_village_server.main:app --reload   # http://localhost:8000, ws://localhost:8000/ws
+   uv run uvicorn dg_village_server.main:app --reload --reload-include '*.json'   # http://localhost:8000, ws://localhost:8000/ws
    ```
 4. 테스트: `uv run pytest` (Docker 없이 돌아간다)
 

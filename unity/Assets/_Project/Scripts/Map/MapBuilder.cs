@@ -31,35 +31,7 @@ namespace DgVillage
             var props = Child(root, "Props");
             foreach (GameMapData.Prop prop in map.props ?? new GameMapData.Prop[0])
             {
-                PropCatalog.Entry entry = catalog.Find(prop.sprite);
-                if (entry == null)
-                {
-                    // 서버 맵이 이 빌드에 없는 그림을 쓴다 (새 소품은 클라이언트 업데이트가 필요)
-                    Debug.LogWarning($"MapBuilder: 소품 '{prop.sprite}' 가 PropCatalog 에 없다 — 건너뜀");
-                    continue;
-                }
-                var item = new GameObject(prop.sprite).transform;
-                item.SetParent(props, false);
-                item.position = new Vector3(prop.x, 0f, prop.z);
-                GameObject sprite = CreateSprite("Sprite", item, entry.Sprite, catalog.SpriteMaterial);
-                sprite.GetComponent<SpriteRenderer>().flipX = prop.flip;
-                sprite.AddComponent<SunShadow>();
-                if (entry.Footprint != Vector2.zero)
-                {
-                    var obstacle = item.gameObject.AddComponent<Obstacle>();
-                    if (ViewAngle.IsQuarterView)
-                    {
-                        obstacle.InitQuarterView(QuarterViewFootprint(prop, entry, catalog));
-                    }
-                    else
-                    {
-                        obstacle.Init(entry.Footprint);
-                    }
-                }
-                if (prop.shadow > 0)
-                {
-                    CreateShadow(item, prop.shadow, catalog);
-                }
+                BuildProp(prop, catalog, props);
             }
 
             var seats = Child(root, "Seats");
@@ -68,7 +40,7 @@ namespace DgVillage
                 var go = new GameObject(seat.id);
                 go.transform.SetParent(seats, false);
                 go.transform.position = new Vector3(seat.x, 0f, seat.z);
-                go.AddComponent<Seat>().Init(seat.id, seat.kind);
+                go.AddComponent<Seat>().Init(seat.id, seat.kind, seat.facing);
             }
 
             var portals = Child(root, "Portals");
@@ -82,6 +54,55 @@ namespace DgVillage
 
             Child(root, "Lighting").gameObject.AddComponent<MapLighting>().Init(map.lighting, map.lights);
             return root.gameObject;
+        }
+
+        /// <summary>소품 하나를 parent 아래에 만든다 (맵 에디터도 소품을 추가 · 다시 만들 때 쓴다). 카탈로그에 없으면 null</summary>
+        public static GameObject BuildProp(GameMapData.Prop prop, PropCatalog catalog, Transform parent)
+        {
+            if (catalog.Find(prop.sprite) == null)
+            {
+                // 서버 맵이 이 빌드에 없는 그림을 쓴다 (새 소품은 클라이언트 업데이트가 필요)
+                Debug.LogWarning($"MapBuilder: 소품 '{prop.sprite}' 가 PropCatalog 에 없다 — 건너뜀");
+                return null;
+            }
+            var item = new GameObject(prop.sprite).transform;
+            item.SetParent(parent, false);
+            item.position = new Vector3(prop.x, 0f, prop.z);
+            item.gameObject.AddComponent<MapProp>().Init(prop);
+            DressProp(item, prop, catalog);
+            return item.gameObject;
+        }
+
+        /// <summary>
+        /// 소품 루트에 그림 · 바닥 그림자 · Obstacle 을 단다. 맵 에디터는 소품 값(그림 · 반전 · 그림자)이 바뀌면
+        /// 자식과 Obstacle 을 지우고 이걸 다시 부른다. 카탈로그에 없으면 아무것도 안 단다
+        /// </summary>
+        public static void DressProp(Transform item, GameMapData.Prop prop, PropCatalog catalog)
+        {
+            PropCatalog.Entry entry = catalog.Find(prop.sprite);
+            if (entry == null)
+            {
+                return;
+            }
+            GameObject sprite = CreateSprite("Sprite", item, entry.Sprite, catalog.SpriteMaterial);
+            sprite.GetComponent<SpriteRenderer>().flipX = prop.flip;
+            sprite.AddComponent<SunShadow>();
+            if (entry.Footprint != Vector2.zero)
+            {
+                var obstacle = item.gameObject.AddComponent<Obstacle>();
+                if (ViewAngle.IsQuarterView)
+                {
+                    obstacle.InitQuarterView(QuarterViewFootprint(prop, entry, catalog));
+                }
+                else
+                {
+                    obstacle.Init(entry.Footprint);
+                }
+            }
+            if (prop.shadow > 0)
+            {
+                CreateShadow(item, prop.shadow, catalog);
+            }
         }
 
         public static GameObject CreateSprite(string name, Transform parent, Sprite sprite, Material material)

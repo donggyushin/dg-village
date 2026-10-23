@@ -29,6 +29,8 @@ namespace DgVillage
         [SerializeField] private Sprite _shadow;
         [SerializeField] private List<Entry> _entries = new();
 
+        public IReadOnlyList<Entry> Entries => _entries;
+
         public Material FloorMaterial => _floorMaterial;
         public Material QuarterViewFloorMaterial => _quarterViewFloorMaterial != null ? _quarterViewFloorMaterial : _floorMaterial;
         public Material WallMaterial => _wallMaterial;

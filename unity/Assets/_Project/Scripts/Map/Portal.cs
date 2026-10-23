@@ -23,6 +23,7 @@ namespace DgVillage
 
         public string To => _to;
         public Vector3 Spawn => new(_spawn.x, 0f, _spawn.y);
+        public Vector2 Size => _size;
 
         /// <summary>런타임에 만들 때 (MapBuilder)</summary>
         public void Init(string to, Vector2 size, Vector2 spawn)

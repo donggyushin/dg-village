@@ -13,15 +13,20 @@ namespace DgVillage
 
         [SerializeField] private string _id;
         [SerializeField] private string _kind = "desk";
+        [Tooltip("앉으면 보는 방향 (FacingWire 값: down · downright · upleft …). 서버가 쓴다, 맵 에디터가 JSON 으로 다시 쓴다")]
+        [SerializeField] private string _facing;
 
         public string Id => _id;
+        public string Kind => _kind;
+        public string Facing => _facing;
         public bool IsDesk => _kind == "desk";
 
         /// <summary>런타임에 만들 때 (MapBuilder)</summary>
-        public void Init(string id, string kind)
+        public void Init(string id, string kind, string facing)
         {
             _id = id;
             _kind = kind;
+            _facing = facing;
         }
 
         private void OnEnable() => Active.Add(this);
