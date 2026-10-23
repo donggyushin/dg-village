@@ -241,15 +241,15 @@ def test_join_unknown_map_is_rejected(client: TestClient) -> None:
 
 @pytest.fixture
 def saves(monkeypatch: pytest.MonkeyPatch) -> threading.Semaphore:
-    """Released once per finished positions.save (the server saves after the socket closes)."""
+    """Released once per finished positions.write (the server saves after the socket closes)."""
     done = threading.Semaphore(0)
-    original = positions.save
+    original = positions.write
 
     async def save_and_signal(*args, **kwargs) -> None:
         await original(*args, **kwargs)
         done.release()
 
-    monkeypatch.setattr(positions, "save", save_and_signal)
+    monkeypatch.setattr(positions, "write", save_and_signal)
     return done
 
 

@@ -52,6 +52,7 @@ def create_app(settings: Settings | None = None, *, create_tables: bool = False)
                 await conn.run_sync(Base.metadata.create_all)
         app.state.settings = settings
         app.state.sessionmaker = create_sessionmaker(engine)
+        app.state.positions = positions.PositionSaver(app.state.sessionmaker)
         await ensure_default_channel(app.state.sessionmaker)
         # Every channel has the same maps (office + outdoor); chat goes to everyone on the map
         rooms = RoomManager(load_maps())
@@ -60,7 +61,7 @@ def create_app(settings: Settings | None = None, *, create_tables: bool = False)
         yield
         tick_task.cancel()
         # Deploys restart the server: keep the spot of anyone still connected
-        await positions.save(app.state.sessionmaker, rooms.everyone())
+        await app.state.positions.close(rooms.everyone())
         await engine.dispose()
 
     app = FastAPI(title="dg-village server", lifespan=lifespan)
@@ -160,7 +161,7 @@ def create_app(settings: Settings | None = None, *, create_tables: bool = False)
         finally:
             left = await rooms.leave(room, me.id, ws)
             if left is not None:
-                await positions.save(sessionmaker, [(room, left)])
+                await ws.app.state.positions.save([(room, left)])
 
     return app
 
