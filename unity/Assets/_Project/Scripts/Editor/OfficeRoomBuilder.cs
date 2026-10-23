@@ -21,7 +21,11 @@ namespace DgVillage.Editor
         private const string IsoFloorMaterialPath = "Assets/_Project/Materials/Floor_Office_Iso.mat";
         private const string WallTexturePath = "Assets/_Project/Sprites/Environment/Ground/office_wall.png";
         private const string WallMaterialPath = "Assets/_Project/Materials/Wall_Office.mat";
-        private const string PropFolder = "Assets/_Project/Sprites/Environment/Props";
+        private const string BuildingTexturePath = "Assets/_Project/Sprites/Environment/Buildings/building_stone.png";
+        private const string BuildingMaterialPath = "Assets/_Project/Materials/Building.mat";
+        private const string BuildingShadeMaterialPath = "Assets/_Project/Materials/Building_Shade.mat";
+        private const float BuildingShade = 0.82f;
+        private const string PropFolder ="Assets/_Project/Sprites/Environment/Props";
         private const string ShadowPath = PropFolder + "/blob_shadow.png";
         // 소품 · 캐릭터 공용 (DgVillage/Sprite = URP Sprite-Unlit-Default + 맵 조명)
         private const string SpriteMaterialPath = "Assets/_Project/Materials/Sprite_Lit.mat";
@@ -143,6 +147,7 @@ namespace DgVillage.Editor
                 SpriteMaterial,
                 AssetDatabase.LoadAssetAtPath<Sprite>(ShadowPath),
                 entries);
+            catalog.SetBuildingMaterials(BuildingMaterial(BuildingMaterialPath, 1f), BuildingMaterial(BuildingShadeMaterialPath, BuildingShade));
             EditorUtility.SetDirty(catalog);
             AssetDatabase.SaveAssetIfDirty(catalog);
             return catalog;
@@ -171,6 +176,20 @@ namespace DgVillage.Editor
             if (material.GetFloat("_Clouds") != 0f)
             {
                 material.SetFloat("_Clouds", 0f);
+                EditorUtility.SetDirty(material);
+            }
+            return material;
+        }
+
+        // 건물: 벽처럼 구름 끔. 그늘 쪽(남 · 동) 머티리얼은 색을 곱해 어둡게 (해가 북서쪽 — 야외 shadowX/Z 와 맞춤)
+        private static Material BuildingMaterial(string path, float brightness)
+        {
+            Material material = LoadOrCreateMaterial(path, BuildingTexturePath, "DgVillage/Ground");
+            var color = new Color(brightness, brightness, brightness, 1f);
+            if (material.GetFloat("_Clouds") != 0f || material.GetColor("_BaseColor") != color)
+            {
+                material.SetFloat("_Clouds", 0f);
+                material.SetColor("_BaseColor", color);
                 EditorUtility.SetDirty(material);
             }
             return material;

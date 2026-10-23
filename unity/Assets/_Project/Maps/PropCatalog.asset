@@ -16,6 +16,8 @@ MonoBehaviour:
   _quarterViewFloorMaterial: {fileID: 2100000, guid: 47bb90b0f82334731b8c76d425e25b71, type: 2}
   _wallMaterial: {fileID: 2100000, guid: 07219ef9ffbca4808bbc09b13568ec4b, type: 2}
   _spriteMaterial: {fileID: 2100000, guid: 74286f43626ae47cfaadb303d5c581f0, type: 2}
+  _buildingMaterial: {fileID: 2100000, guid: 7f423c35bddf8497ba89178713e41e18, type: 2}
+  _buildingShadeMaterial: {fileID: 2100000, guid: 8ffe4746e94804c8cb930c86fe667077, type: 2}
   _shadow: {fileID: 21300000, guid: 08f55c411b12644fb964f3eeabc7740b, type: 3}
   _entries:
   - Id: armchair

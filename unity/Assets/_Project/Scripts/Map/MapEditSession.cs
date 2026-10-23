@@ -5,7 +5,7 @@ namespace DgVillage
 {
     /// <summary>
     /// 맵 에디터(DgVillage → Map Editor)로 연 맵의 루트에 붙는다. 오브젝트로 나타나지 않는 맵 데이터를 들고 있다:
-    /// id · view · 바닥 layout · 분위기(lighting) · 점광원(lights) · 창문(windows).
+    /// id · view · 바닥 layout · 분위기(lighting) · 점광원(lights) · 창문(windows) · 건물(buildings).
     /// 인스펙터에서 고치면 바로 바닥 · 조명에 반영한다 (점광원 · 창문 위치는 Scene 뷰 핸들로도 옮긴다).
     /// 소품 · 좌석 · 포탈은 오브젝트(MapProp · Seat · Portal) 쪽이 원본이다.
     /// </summary>
@@ -23,6 +23,9 @@ namespace DgVillage
         [SerializeField] private GameMapData.Light[] _lights = Array.Empty<GameMapData.Light>();
         [Tooltip("창문 가운데 (x, z). 북쪽 벽 = 벽 선의 z · 정수 x, 동쪽 벽 = 벽 선의 x · 정수 z. 폭 2 칸")]
         [SerializeField] private GameMapData.Window[] _windows = Array.Empty<GameMapData.Window>();
+        [Tooltip("야외 건물: x · z = 앞벽 가운데, w × d, roof = 지붕 높이(0 = 깊이의 반), door = 문 가운데 X (건물 기준). 문 앞 포탈은 따로")]
+        [SerializeField] private GameMapData.Building[] _buildings = Array.Empty<GameMapData.Building>();
+        [SerializeField, HideInInspector] private PropCatalog _catalog;
 
         private bool _dirty;
 
@@ -39,13 +42,17 @@ namespace DgVillage
             _lighting = map.lighting ?? new GameMapData.Lighting();
             _lights = map.lights ?? Array.Empty<GameMapData.Light>();
             _windows = map.windows ?? Array.Empty<GameMapData.Window>();
+            _buildings = map.buildings ?? Array.Empty<GameMapData.Building>();
         }
+
+        /// <summary>건물을 다시 만들 때 쓸 머티리얼 (맵 에디터가 연 직후 넣는다)</summary>
+        public void SetCatalog(PropCatalog catalog) => _catalog = catalog;
 
         public void AddLight(GameMapData.Light light) => _lights = Append(_lights, light);
 
         public void AddWindow(GameMapData.Window window) => _windows = Append(_windows, window);
 
-        /// <summary>바닥 · 창문 · 조명을 지금 값으로 다시 깐다</summary>
+        /// <summary>바닥 · 창문 · 건물 · 조명을 지금 값으로 다시 깐다</summary>
         public void Apply()
         {
             var floor = GetComponentInChildren<FloorMesh>();
@@ -54,6 +61,15 @@ namespace DgVillage
                 floor.SetLayout(_layout);
                 floor.SetNoWalls(_noWalls);
                 floor.SetWindows(Array.ConvertAll(_windows, w => new Vector2(w.x, w.z)));
+            }
+            Transform buildings = transform.Find("Buildings");
+            if (buildings != null && _catalog != null)
+            {
+                for (int i = buildings.childCount - 1; i >= 0; i--)
+                {
+                    DestroyImmediate(buildings.GetChild(i).gameObject);
+                }
+                MapBuilder.BuildBuildings(_buildings, _catalog, buildings);
             }
             var lighting = GetComponentInChildren<MapLighting>();
             if (lighting != null)
@@ -72,6 +88,7 @@ namespace DgVillage
             lighting = _lighting,
             lights = _lights,
             windows = _windows,
+            buildings = _buildings,
         };
 
         // OnValidate 안에서는 메시 · 빛무리를 못 바꿔서 다음 Update 에서

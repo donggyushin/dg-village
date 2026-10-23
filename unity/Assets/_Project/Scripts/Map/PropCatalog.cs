@@ -26,6 +26,9 @@ namespace DgVillage
         [SerializeField] private Material _quarterViewFloorMaterial;
         [SerializeField] private Material _wallMaterial;
         [SerializeField] private Material _spriteMaterial;
+        [Tooltip("건물 (BuildingMesh) 햇빛 쪽 · 그늘 쪽. make_building_atlas.py 텍스처")]
+        [SerializeField] private Material _buildingMaterial;
+        [SerializeField] private Material _buildingShadeMaterial;
         [SerializeField] private Sprite _shadow;
         [SerializeField] private List<Entry> _entries = new();
 
@@ -36,6 +39,8 @@ namespace DgVillage
         public Material WallMaterial => _wallMaterial;
         public Material SpriteMaterial => _spriteMaterial;
         public Sprite Shadow => _shadow;
+        public Material BuildingMaterial => _buildingMaterial;
+        public Material BuildingShadeMaterial => _buildingShadeMaterial;
 
         public Entry Find(string id) => _entries.Find(e => e.Id == id);
 
@@ -49,6 +54,12 @@ namespace DgVillage
             _spriteMaterial = sprite;
             _shadow = shadow;
             _entries = entries;
+        }
+
+        public void SetBuildingMaterials(Material lit, Material shade)
+        {
+            _buildingMaterial = lit;
+            _buildingShadeMaterial = shade;
         }
 #endif
     }
