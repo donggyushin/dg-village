@@ -96,7 +96,8 @@ ChatCanvas    Screen Space Overlay, 1280x720 scaler   + ChatBubbleSpawner(prefab
 ├── Bubbles   full-stretch container (first child → drawn under the input)
 ├── ChatInput TMP_InputField, bottom center           + ChatInput
 ├── LeaveButton  top-left "채널 나가기" (hand-placed)
-└── ChannelName  top-left TMP text, right of the button
+├── ChannelName  top-left TMP text, right of the button
+└── ChatLog   bottom-left chat history + toggle (ChatLog builds its UI at runtime)
 EventSystem   + InputSystemUIInputModule
 ```
 
@@ -142,6 +143,7 @@ Scripts (`Assets/_Project/Scripts/`, namespace `DgVillage`):
 | `Seat` | Seat marker from the map JSON (`_id` = server seat id, `_kind` desk/lounge, `_facing` kept for the Map Editor); `Seat.Nearest(pos, range)` |
 | `Chat/ChatInput` | Enter opens/sends, Esc cancels; visible only while typing (CanvasGroup alpha, not SetActive — Update must keep running); sets `PlayerMovement.InputBlocked` while focused |
 | `Chat/ChatBubble` | Screen-space bubble sized via `GetPreferredValues`, follows anchor (name tag) each LateUpdate, self-destroys after 3–8s |
+| `Chat/ChatLog` | Village `ChatCanvas/ChatLog` (added/wired by the village menu, `SetUpChatLog`): semi-transparent chat history bottom-left, UI built in code at Awake (ScrollRect, one TMP line per message, ≤100 lines, name colored, own name cyan; player text wrapped in `<noparse>`). Toggle = button under it or **Tab** (not while typing); open state in PlayerPrefs `dgvillage.chatLogOpen` (default open); hidden → button shows `+N` unread. Client memory only: cleared on leaving the channel, kept across portals. Follows new lines only when already scrolled to the bottom |
 | `Chat/ChatBubbleSpawner` | `NetworkClient.ChatReceived` → bubble over speaker (own bubble comes from the server echo) |
 | `Editor/ChatUIBuilder` | Menu **DgVillage → Create Chat UI**: builds/wires canvas, input, EventSystem, ChatBubble prefab |
 | `Editor/PixelSpriteImporter` | Auto pixel import settings for `Sprites/` (Point, no compression, 32 PPU). `Sprites/Characters/` gets foot pivot (0.5, 10/64). **Only applies on first import** (`importSettingsMissing`) |

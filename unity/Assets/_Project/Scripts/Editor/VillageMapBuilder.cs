@@ -12,7 +12,7 @@ namespace DgVillage.Editor
     ///   - PropCatalog 갱신 + 미리보기용으로 maps/office.json 방(루트 "Map")을 깐다 (에디터에서 보이게; 접속하면 바뀐다)
     ///     지우는 것: 옛 평지 Ground, 이전에 깐 Map (그리고 그 전 방식의 Floor · Props · Seats · Portals)
     ///   - Network 에 MapLoader (맵 깔기) · SeatInteraction (앉기) · PortalTraveler (맵 이동),
-    ///     ChatCanvas 에 안내 문구 SeatHint 를 (없으면) 붙이고 연결한다.
+    ///     ChatCanvas 에 안내 문구 SeatHint · 채팅 기록창 ChatLog 를 (없으면) 붙이고 연결한다.
     ///   - 들어올 때의 로딩 화면 VillageLoadingCanvas (Boot 와 같은 일러스트 + VillageLoadingScreen) 를 새로 만든다.
     /// 소품 그림을 추가했거나 이 씬의 미리보기를 새로 보고 싶을 때 다시 실행한다. 맵 배치만 바꿨으면 서버 배포로 충분.
     /// </summary>
@@ -170,7 +170,24 @@ namespace DgVillage.Editor
             loadingSo.FindProperty("_client").objectReferenceValue = client;
             loadingSo.FindProperty("_statusText").objectReferenceValue = status;
             loadingSo.ApplyModifiedPropertiesWithoutUndo();
+
+            SetUpChatLog(canvas, client);
             return null;
+        }
+
+        /// <summary>ChatCanvas 에 채팅 기록창 ChatLog 를 (없으면) 붙이고 연결한다. UI 자체는 실행 때 ChatLog 가 만든다.</summary>
+        public static void SetUpChatLog(Transform canvas, NetworkClient client)
+        {
+            var log = canvas.GetComponentInChildren<ChatLog>(true);
+            if (log == null)
+            {
+                var go = new GameObject("ChatLog", typeof(RectTransform));
+                go.transform.SetParent(canvas, false);
+                log = go.AddComponent<ChatLog>();
+            }
+            var so = new SerializedObject(log);
+            so.FindProperty("_client").objectReferenceValue = client;
+            so.ApplyModifiedPropertiesWithoutUndo();
         }
     }
 }
