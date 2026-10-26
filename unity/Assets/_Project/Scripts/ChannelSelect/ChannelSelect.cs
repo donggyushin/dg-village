@@ -3,13 +3,13 @@ using TMPro;
 using System.Collections;
 using UnityEngine.Networking;
 using Newtonsoft.Json;
+using UnityEngine.UI;
 
 public class ChannelSelect : MonoBehaviour
 {
     [SerializeField] private Transform _content;
     [SerializeField] private GameObject _channelItem;
 
-    // private const string ServersUrl = "http://127.0.0.1:8000/servers";
     private static string ServersUrl => ServerConfig.BaseUrl + "/servers";
 
     private class ServerInfo
@@ -47,7 +47,15 @@ public class ChannelSelect : MonoBehaviour
             GameObject channel = Instantiate(_channelItem, _content);
             TMP_Text text = channel.GetComponentInChildren<TMP_Text>();
             text.text = server.name;
+
+            Button button = channel.GetComponent<Button>();
+            button.onClick.AddListener(() => OnChannelSelected(server));
         }
+    }
+
+    private void OnChannelSelected(ServerInfo server)
+    {
+        Debug.Log($"{server.id} {server.name} 채널 선택");
     }
 
 }
