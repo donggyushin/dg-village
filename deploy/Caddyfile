@@ -1,8 +1,0 @@
-# DG_DOMAIN comes from deploy/.env.
-#   A real host name (e.g. 13-125-1-2.sslip.io) -> Caddy gets a Let's Encrypt certificate:
-#     clients use https:// and wss://.
-#   http://localhost -> plain HTTP on port 80, for trying this stack on your own machine.
-# reverse_proxy passes WebSocket upgrades through as well, so /ws needs nothing special.
-{$DG_DOMAIN} {
-	reverse_proxy server:8000
-}
