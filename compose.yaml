@@ -3,6 +3,7 @@
 services:
   postgres:
     image: postgres:17
+    restart: unless-stopped
     environment:
       POSTGRES_USER: dg_village
       POSTGRES_PASSWORD: dg_village
