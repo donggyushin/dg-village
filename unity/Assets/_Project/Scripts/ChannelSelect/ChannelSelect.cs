@@ -58,6 +58,8 @@ public class ChannelSelect : MonoBehaviour
     {
         Debug.Log($"{server.id} {server.name} 채널 선택");
 
+        Session.ServerId = server.id;
+
         if (server.id == 1)
         {
             SceneManager.LoadSceneAsync("CharacterLobby");

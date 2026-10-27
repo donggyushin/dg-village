@@ -1,6 +1,8 @@
+using System.Collections;
+using Newtonsoft.Json;
 using TMPro;
 using UnityEngine;
-using UnityEngine.InputSystem.Interactions;
+using UnityEngine.Networking;
 using UnityEngine.UI;
 
 public class CharacterCreatePanel : MonoBehaviour
@@ -70,6 +72,45 @@ public class CharacterCreatePanel : MonoBehaviour
 
         Debug.Log($"캐릭터 생성 요청: {nickname} / {character.Id}");
 
-        _toast.Show($"캐릭터를 생성하였습니다: {nickname}");
+        StartCoroutine(CreateCharacter(nickname, character.Id, Session.AccountId, Session.ServerId));
+    }
+
+    // 서버 CharacterIn과 필드 이름을 똑같이 맞춰야 함 (snake_case)
+    private class CreateCharacterRequest
+    {
+        public string nickname;
+        public string sprite_set_id;
+    }
+
+    private IEnumerator CreateCharacter(string nickname, string spriteSetId, string accountId, int serverId)
+    {
+
+        string url = $"{ServerConfig.BaseUrl}/servers/{serverId}/characters";
+        string json = JsonConvert.SerializeObject(new CreateCharacterRequest
+        {
+            nickname = nickname,
+            sprite_set_id = spriteSetId,
+        });
+
+        using (UnityWebRequest request = UnityWebRequest.Post(url, json, "application/json"))
+        {
+            request.SetRequestHeader("X-Account-Id", accountId);
+            _createButton.interactable = false;
+            yield return request.SendWebRequest();
+            _createButton.interactable = true;
+
+            if (request.responseCode == 409)
+            {
+                _toast.Show("이미 사용중인 닉네임입니다.");
+            }
+
+            if (request.result != UnityWebRequest.Result.Success)
+            {
+                Debug.LogWarning($"캐릭터 생성 실패 {request.responseCode}:{request.downloadHandler.text}");
+                yield break;
+            }
+
+            _toast.Show("캐릭터를 생성하였습니다.");
+        }
     }
 }
