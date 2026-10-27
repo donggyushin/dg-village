@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-public class Session
+public static class Session
 {
     private const string AccountIdKey = "account_id";
 
