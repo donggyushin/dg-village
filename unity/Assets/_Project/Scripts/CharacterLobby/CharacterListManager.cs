@@ -93,8 +93,6 @@ public class CharacterListManager : MonoBehaviour
 
             CharacterInfo[] characters = JsonConvert.DeserializeObject<CharacterInfo[]>(request.downloadHandler.text);
 
-            Debug.Log($"{characters.Length}");
-
             for (int i = 0; i < characters.Length; i++)
             {
                 var character = characters[i];
@@ -106,6 +104,15 @@ public class CharacterListManager : MonoBehaviour
                 {
                     characterLobbySlots[i].SetSprite(sprite);
                     characterLobbySlots[i].SetCharacterSpriteId(spriteId);
+                }
+            }
+
+            foreach (var slot in characterLobbySlots)
+            {
+                if (slot.CharacterSpriteId() != null)
+                {
+                    slot.SetToggle(true);
+                    break;
                 }
             }
 

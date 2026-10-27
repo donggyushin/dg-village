@@ -18,15 +18,13 @@ public class CharacterLobbySlot : MonoBehaviour
         ConfigureGlowRing();
     }
 
+    public void SetToggle(bool value)
+    {
+        _toggle.isOn = value;
+    }
+
     private void OnToggleChanged(bool value)
     {
-        if (value == true)
-        {
-            if (_spriteRenderer.sprite == null || _characterSpriteId == null)
-            {
-                _toggle.isOn = false;
-            }
-        }
         ConfigureGlowRing();
         SelectionChanged?.Invoke();
     }
