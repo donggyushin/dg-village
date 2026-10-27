@@ -13290,6 +13290,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1762081029}
   - component: {fileID: 1762081030}
+  - component: {fileID: 1762081031}
   m_Layer: 0
   m_Name: Sprite
   m_TagString: Untagged
@@ -13372,6 +13373,18 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
+--- !u!114 &1762081031
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1762081028}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b0bc21d9c2724f228b40e20dd0859f6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Billboard
 --- !u!43 &1780235875
 Mesh:
   m_ObjectHideFlags: 0
