@@ -15,12 +15,12 @@ Solo hobby project (weekends + spare time). Owner is strong on Python/server, ne
 
 No concrete genre/story yet. The one hard goal: **a beautiful game**.
 
-- World = **3D**. Ground = Unity **Terrain**, visually covered with **pixel-art (dot) textures**.
-- Characters and objects = mostly **2D sprites** in the 3D world (HD-2D-like: 2D characters exploring a 3D world).
-- Player = **8-direction** 2D sprite asset.
+- World = **3D**, built from modular blocks (see **Map building**), rendered at native resolution — no whole-screen pixelation.
+- Characters and objects = mostly **2D sprites** in the 3D world, **Ragnarok Online style** (decided 2026-10-27): crisp, high-resolution anime sprites (~4.5 heads tall, big eyes, soft cel shading) on a 3D map. The owner prefers this over small dot sprites ("less pixel-y but pretty").
+- Player = **8-direction** 2D sprite asset. First character: `Sprites/Characters/LavenderGirl` (PixelLab v3, 128×128 canvas, low top-down, selective outline; prompt in `pixellab-metadata.json`).
 - Physics = Unity `Collider` + `Rigidbody` (collision, gravity).
-- Camera = **fixed angle, no rotation**. **Orthographic isometric** (decided 2026-10-27): rotation (30, 45, 0) → a 1×1 floor square shows as a 2:1 diamond. Size 6 for now (to be tuned in the pixelation step).
-- Map = **3D modular blocks**, not Terrain (decided 2026-10-27). Visual reference: **Witchbrook** (stepped heights: curbs, stairs, planter walls; crisp borders; floor decals). Terrain heightmaps only make smooth slopes and blended borders, so Terrain is kept for natural areas only, if ever.
+- Camera = **fixed angle, no rotation**. **Orthographic isometric** (decided 2026-10-27): rotation (30, 45, 0) → a 1×1 floor square shows as a 2:1 diamond. Size **7** so character sprites are ~1:1 at 1080p (see the sprite notes).
+- Map = **3D modular blocks**, not Terrain (decided 2026-10-27). Map layout reference: **Witchbrook** (stepped heights: curbs, stairs, planter walls; crisp borders; floor decals). Terrain heightmaps only make smooth slopes and blended borders, so Terrain is kept for natural areas only, if ever.
 - **Multiplayer from the start**: e.g. a `Player` prefab spawned at runtime by `PlayerSpawner` / `GameManager`, player id from the server, sprite set applied from the server's data.
 
 ## Layout (planned)
@@ -39,7 +39,7 @@ Still in the repo: `.github/workflows/deploy.yml` (old auto-deploy; see **Deploy
 |---|---|
 | Client | Unity `6000.6.6f1` (Apple Silicon, installed via Hub), URP |
 | Server | Python, hosted on the same Lightsail instance as before |
-| Graphics | 3D Terrain + 2D pixel sprites, fixed camera (Orthographic likely) |
+| Graphics | 3D modular-block map + high-res 2D anime sprites (Ragnarok-like), fixed orthographic isometric camera, MSAA 4x |
 | Platforms | Desktop first (Mac + Windows) |
 
 Carry-over considerations from the old project (apply if still relevant):
@@ -48,22 +48,23 @@ Carry-over considerations from the old project (apply if still relevant):
 
 ## Map building (greybox)
 
-Roadmap: isometric camera ✅ → **greybox** (grey blocks for shape only, in progress) → pixelation render (low-res render target) → textures and decals.
+Roadmap: isometric camera ✅ → greybox ✅ → character in the scene ✅ → **character shadow + lighting** (in progress) → 8 directions + movement → textures and decals.
+
+A low-res pixelation render (640×360 render target) was tried on 2026-10-27 and dropped: it doesn't fit the 128 px characters. `PC_RPAsset` is back to Render Scale 1, Upscaling Automatic, MSAA 4x.
 
 - Pieces are **ProBuilder** shapes (`com.unity.probuilder` 6.1.4). ProBuilder 6 has no ProBuilder Window: create shapes via **GameObject → ProBuilder → Cube / Stair**, switch edit mode via the Tool Context dropdown at the top of the Scene tools overlay, and use the Scene view right-click menu for actions.
 - Resize with the **ProBuilder Shape `Size`**, never Transform `Scale` (scale stretches textures). The default `ProBuilderDefault` material shows a 1 m grid, which works as a ruler.
 - Units: floor cell 1×1 m, level height **1 m**, curb 0.25 m, ground slab 0.5 m thick with its top at y=0. Scene grid snapping on with grid size 0.25 (handles must be Global for snapping).
 - +Z = north. The camera looks from the south-west, so south (-Z) is screen bottom-right and the -X/-Z faces are the ones facing the camera.
-- SquareScene greybox v1 (done 2026-10-27): lower square `Ground` 20×20, north `Terrace` 20×1×6 (z 4..10), `Stairs` 6×1×2 (4 steps, z 2..4) on the terrace's south face, a big tree (`Planter` 4×0.5×4 + `Tree_Trunk` + `Tree_Canopy`) at (0, -5), `Road_South` 6×10 entering from the south. Layout axis: south road → tree → stairs → terrace (like Witchbrook's academy square). `ScaleRef_Human` capsules (1.6 m) are scale dummies; disable them for play tests (they have colliders). Camera Size **8** (a person ≈ 1/10 of the screen height, like the reference). Directional Light rotation (50, -30, 0).
-- Next: pixelation render step.
+- SquareScene greybox v1 (done 2026-10-27): lower square `Ground` 20×20, north `Terrace` 20×1×6 (z 4..10), `Stairs` 6×1×2 (4 steps, z 2..4) on the terrace's south face, a big tree (`Planter` 4×0.5×4 + `Tree_Trunk` + `Tree_Canopy`) at (0, -5), `Road_South` 6×10 entering from the south. Layout axis: south road → tree → stairs → terrace (like Witchbrook's academy square). `ScaleRef_Human` capsules (1.6 m) are scale dummies; disable them for play tests (they have colliders). Directional Light rotation (50, -30, 0). A `south` sprite (LavenderGirl) stands in the lower square as a test, rotated (30, 45, 0) by hand as a billboard.
 
 ## 2D sprites in a 3D world — notes
 
-- Pixel textures (sprites and Terrain layers): Filter Mode **Point**, Compression **None**, one consistent Pixels Per Unit; integer scales only (mixed pixel sizes look amateur).
+- Character sprites: Pixels Per Unit = body height in pixels ÷ 1.6 m (LavenderGirl: 122 px → **PPU 76**), Pivot **Bottom**, Compression **None**, Filter Mode **Bilinear**. Point filtering looked broken whenever the sprite was scaled down (it skips pixels), and screen pixels per meter depend on the resolution: `screen height ÷ (2 × camera Size)`, so 1080p with Size 7 ≈ 77 px/m ≈ 1:1. Keep one PPU scale for all characters.
+- Billboard with an orthographic camera = copy the camera rotation (30, 45, 0); with a Bottom pivot the feet stay on the ground.
 - Directional sprites: switch frames by movement direction instead of rotating the sprite. Fixed camera → the facing can be computed from the input/velocity direction alone. West side can reuse the east side with `flipX`.
 - Typical character setup: root with `Rigidbody` (rotation frozen) + `CapsuleCollider`; sprite on a child object turned to face the camera (billboard).
 - Use Alpha Clip (cutout) materials for sprites in the 3D scene to avoid transparency sorting issues.
-- Terrain layers blend smoothly at their borders, which can break the pixel look — a custom Terrain shader (stepped/dithered blending) may be needed later.
 
 ## Deploy (server, still running the OLD code)
 

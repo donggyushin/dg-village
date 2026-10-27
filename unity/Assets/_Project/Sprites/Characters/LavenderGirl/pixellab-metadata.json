@@ -1,0 +1,36 @@
+{
+  "group_id": "49d394b4-630d-47e4-b03e-1887365e1489",
+  "states": [
+    {
+      "character": {
+        "id": "55fbc98c-ce01-422b-9622-5d84d32147d2",
+        "name": "Idle",
+        "prompt": "cute anime girl, classic 2000s Korean MMORPG sprite style, about 4.5 heads tall, slender limbs, large expressive anime eyes, soft cel shading, long straight blonde hair, lavender frilly long dress with puffed sleeves and ribbon, white socks, black mary jane shoes, gentle smile, soft warm palette",
+        "size": {
+          "width": 128,
+          "height": 128
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-10-27T09:06:07.489953+00:00"
+      },
+      "folder": "Idle",
+      "frames": {
+        "rotations": {
+          "south": "Idle/rotations/south.png",
+          "south-east": "Idle/rotations/south-east.png",
+          "east": "Idle/rotations/east.png",
+          "north-east": "Idle/rotations/north-east.png",
+          "north": "Idle/rotations/north.png",
+          "north-west": "Idle/rotations/north-west.png",
+          "west": "Idle/rotations/west.png",
+          "south-west": "Idle/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    }
+  ],
+  "export_version": "3.1",
+  "export_date": "2026-10-27T09:12:49.654999"
+}
