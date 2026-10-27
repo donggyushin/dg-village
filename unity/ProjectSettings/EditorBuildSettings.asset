@@ -11,5 +11,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/ChannelSelect.unity
     guid: 6d7a4babadd4c47c789f5777a6efd000
+  - enabled: 1
+    path: Assets/Scenes/SquareScene.unity
+    guid: 84019e585790b4d2ba9aa51c08374e70
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

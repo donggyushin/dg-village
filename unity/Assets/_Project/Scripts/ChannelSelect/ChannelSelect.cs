@@ -4,6 +4,7 @@ using System.Collections;
 using UnityEngine.Networking;
 using Newtonsoft.Json;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class ChannelSelect : MonoBehaviour
 {
@@ -56,6 +57,11 @@ public class ChannelSelect : MonoBehaviour
     private void OnChannelSelected(ServerInfo server)
     {
         Debug.Log($"{server.id} {server.name} 채널 선택");
+
+        if (server.id == 1)
+        {
+            SceneManager.LoadSceneAsync("SquareScene");
+        }
     }
 
 }
