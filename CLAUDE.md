@@ -53,8 +53,9 @@ Roadmap: isometric camera ✅ → **greybox** (grey blocks for shape only, in pr
 - Pieces are **ProBuilder** shapes (`com.unity.probuilder` 6.1.4). ProBuilder 6 has no ProBuilder Window: create shapes via **GameObject → ProBuilder → Cube / Stair**, switch edit mode via the Tool Context dropdown at the top of the Scene tools overlay, and use the Scene view right-click menu for actions.
 - Resize with the **ProBuilder Shape `Size`**, never Transform `Scale` (scale stretches textures). The default `ProBuilderDefault` material shows a 1 m grid, which works as a ruler.
 - Units: floor cell 1×1 m, level height **1 m**, curb 0.25 m, ground slab 0.5 m thick with its top at y=0. Scene grid snapping on with grid size 0.25 (handles must be Global for snapping).
-- SquareScene greybox so far: `Ground` 10×0.5×10, `Platform_L1` 4×1×4 at the center, `Stairs` 2×1×2 (4 steps) on its -Z side (the side facing the camera). Directional Light rotation (50, -30, 0) so the two visible side faces get different shading.
-- Next: decide the square layout (centerpiece, lower square + terrace or flat, entrances), then grow `Ground` to ~30×30.
+- +Z = north. The camera looks from the south-west, so south (-Z) is screen bottom-right and the -X/-Z faces are the ones facing the camera.
+- SquareScene greybox v1 (done 2026-10-27): lower square `Ground` 20×20, north `Terrace` 20×1×6 (z 4..10), `Stairs` 6×1×2 (4 steps, z 2..4) on the terrace's south face, a big tree (`Planter` 4×0.5×4 + `Tree_Trunk` + `Tree_Canopy`) at (0, -5), `Road_South` 6×10 entering from the south. Layout axis: south road → tree → stairs → terrace (like Witchbrook's academy square). `ScaleRef_Human` capsules (1.6 m) are scale dummies; disable them for play tests (they have colliders). Camera Size **8** (a person ≈ 1/10 of the screen height, like the reference). Directional Light rotation (50, -30, 0).
+- Next: pixelation render step.
 
 ## 2D sprites in a 3D world — notes
 
