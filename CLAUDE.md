@@ -48,7 +48,7 @@ Carry-over considerations from the old project (apply if still relevant):
 
 ## Map building (greybox)
 
-Roadmap: isometric camera ✅ → greybox ✅ → character in the scene ✅ → **character shadow + lighting** (in progress) → 8 directions + movement → textures and decals.
+Roadmap: isometric camera ✅ → greybox ✅ → character in the scene ✅ → blob shadow ✅ → **8 directions + movement** (next) → textures and decals.
 
 A low-res pixelation render (640×360 render target) was tried on 2026-10-27 and dropped: it doesn't fit the 128 px characters. `PC_RPAsset` is back to Render Scale 1, Upscaling Automatic, MSAA 4x.
 
@@ -64,6 +64,7 @@ A low-res pixelation render (640×360 render target) was tried on 2026-10-27 and
 - Billboard with an orthographic camera = copy the camera rotation (30, 45, 0); with a Bottom pivot the feet stay on the ground.
 - Directional sprites: switch frames by movement direction instead of rotating the sprite. Fixed camera → the facing can be computed from the input/velocity direction alone. West side can reuse the east side with `flipX`.
 - Typical character setup: root with `Rigidbody` (rotation frozen) + `CapsuleCollider`; sprite on a child object turned to face the camera (billboard).
+- Character shadow = **blob shadow** (Ragnarok-style), not a real cast shadow: a flat sprite lit from the side casts a thin stick-like shadow (with the current light it is ~1/4 of the sprite width). `Player` root → `Sprite` (billboard) + `Shadow` (Quad at y 0.02, rotation (90, 0, 0), scale 0.9, no collider, Cast Shadows Off, material `Materials/BlobShadow` = URP Unlit, Transparent, built-in Default-Particle texture, black at alpha 0.45).
 - Use Alpha Clip (cutout) materials for sprites in the 3D scene to avoid transparency sorting issues.
 
 ## Deploy (server, still running the OLD code)
