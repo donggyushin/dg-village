@@ -19,7 +19,8 @@ No concrete genre/story yet. The one hard goal: **a beautiful game**.
 - Characters and objects = mostly **2D sprites** in the 3D world (HD-2D-like: 2D characters exploring a 3D world).
 - Player = **8-direction** 2D sprite asset.
 - Physics = Unity `Collider` + `Rigidbody` (collision, gravity).
-- Camera = **fixed angle, no rotation**. Leaning **Orthographic** (owner: perspective could make the flat sprite characters look like paper).
+- Camera = **fixed angle, no rotation**. **Orthographic isometric** (decided 2026-10-27): rotation (30, 45, 0) → a 1×1 floor square shows as a 2:1 diamond. Size 6 for now (to be tuned in the pixelation step).
+- Map = **3D modular blocks**, not Terrain (decided 2026-10-27). Visual reference: **Witchbrook** (stepped heights: curbs, stairs, planter walls; crisp borders; floor decals). Terrain heightmaps only make smooth slopes and blended borders, so Terrain is kept for natural areas only, if ever.
 - **Multiplayer from the start**: e.g. a `Player` prefab spawned at runtime by `PlayerSpawner` / `GameManager`, player id from the server, sprite set applied from the server's data.
 
 ## Layout (planned)
@@ -44,6 +45,16 @@ Still in the repo: `.github/workflows/deploy.yml` (old auto-deploy; see **Deploy
 Carry-over considerations from the old project (apply if still relevant):
 - If WebGL is ever a target, pick WebGL-safe client libraries (e.g. NativeWebSocket, not `System.Net.WebSockets`; no threads in networking).
 - Old protocol idea that worked: JSON over WebSocket, server assigns the player id in `welcome`, ~10Hz state broadcast, each client resolves `characterId` to a sprite set locally.
+
+## Map building (greybox)
+
+Roadmap: isometric camera ✅ → **greybox** (grey blocks for shape only, in progress) → pixelation render (low-res render target) → textures and decals.
+
+- Pieces are **ProBuilder** shapes (`com.unity.probuilder` 6.1.4). ProBuilder 6 has no ProBuilder Window: create shapes via **GameObject → ProBuilder → Cube / Stair**, switch edit mode via the Tool Context dropdown at the top of the Scene tools overlay, and use the Scene view right-click menu for actions.
+- Resize with the **ProBuilder Shape `Size`**, never Transform `Scale` (scale stretches textures). The default `ProBuilderDefault` material shows a 1 m grid, which works as a ruler.
+- Units: floor cell 1×1 m, level height **1 m**, curb 0.25 m, ground slab 0.5 m thick with its top at y=0. Scene grid snapping on with grid size 0.25 (handles must be Global for snapping).
+- SquareScene greybox so far: `Ground` 10×0.5×10, `Platform_L1` 4×1×4 at the center, `Stairs` 2×1×2 (4 steps) on its -Z side (the side facing the camera). Directional Light rotation (50, -30, 0) so the two visible side faces get different shading.
+- Next: decide the square layout (centerpiece, lower square + terrace or flat, entrances), then grow `Ground` to ~30×30.
 
 ## 2D sprites in a 3D world — notes
 
