@@ -4,6 +4,10 @@ using UnityEngine;
 public class CharacterCatalog : ScriptableObject
 {
     [SerializeField] private CharacterSpriteSet[] _characters;
+    public CharacterSpriteSet[] Characters()
+    {
+        return _characters;
+    }
 
     public CharacterSpriteSet Find(string id)
     {
