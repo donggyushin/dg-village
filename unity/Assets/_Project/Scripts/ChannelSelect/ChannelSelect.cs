@@ -60,7 +60,7 @@ public class ChannelSelect : MonoBehaviour
 
         if (server.id == 1)
         {
-            SceneManager.LoadSceneAsync("SquareScene");
+            SceneManager.LoadSceneAsync("CharacterLobby");
         }
     }
 
