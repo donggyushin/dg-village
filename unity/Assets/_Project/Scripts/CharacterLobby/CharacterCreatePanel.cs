@@ -9,6 +9,7 @@ public class CharacterCreatePanel : MonoBehaviour
     [SerializeField] private CharacterSelectSlot[] _slots;
     [SerializeField] private TMP_InputField _nicknameInput;
     [SerializeField] private Button _createButton;
+    [SerializeField] private Toast _toast;
 
     void Start()
     {
@@ -68,5 +69,7 @@ public class CharacterCreatePanel : MonoBehaviour
         }
 
         Debug.Log($"캐릭터 생성 요청: {nickname} / {character.Id}");
+
+        _toast.Show($"캐릭터를 생성하였습니다: {nickname}");
     }
 }
