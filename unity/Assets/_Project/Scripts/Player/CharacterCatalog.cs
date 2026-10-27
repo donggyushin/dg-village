@@ -5,7 +5,7 @@ public class CharacterCatalog : ScriptableObject
 {
     [SerializeField] private CharacterSpriteSet[] _characters;
 
-    public CharacterSpriteSet TryGet(string id)
+    public CharacterSpriteSet Find(string id)
     {
         foreach (var character in _characters)
         {

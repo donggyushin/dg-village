@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 45a5966a43b9248b29ab58276e356a0a, type: 3}
   m_Name: LavenderGirlSpriteSet
   m_EditorClassIdentifier: Assembly-CSharp::CharacterSpriteSet
-  _id: LavenderGirl
+  _id: lavender_girl
   _idle:
     _south: {fileID: 21300000, guid: 62a5ed550010346ec95cc1aba325817a, type: 3}
     _southEast: {fileID: 21300000, guid: 95b0a64cecc7c4586ad2a1d501793f47, type: 3}
