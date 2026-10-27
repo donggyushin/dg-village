@@ -73,6 +73,8 @@ public class CharacterListManager : MonoBehaviour
                 {
                     characterLobbySlots[i].SetSprite(sprite);
                     characterLobbySlots[i].SetCharacterSpriteId(spriteId);
+
+                    Debug.Log($"toggle: {characterLobbySlots[i].IsSelected()}");
                 }
             }
         }
