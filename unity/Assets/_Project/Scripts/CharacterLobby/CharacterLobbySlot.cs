@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -7,6 +8,8 @@ public class CharacterLobbySlot : MonoBehaviour
     [SerializeField] private SpriteRenderer _spriteRenderer;
     [SerializeField] private Toggle _toggle;
     [SerializeField] private MeshRenderer _meshRenderer;
+
+    public event Action SelectionChanged;
 
     void Awake()
     {
@@ -25,6 +28,7 @@ public class CharacterLobbySlot : MonoBehaviour
             }
         }
         ConfigureGlowRing();
+        SelectionChanged?.Invoke();
     }
 
     private void ConfigureGlowRing()

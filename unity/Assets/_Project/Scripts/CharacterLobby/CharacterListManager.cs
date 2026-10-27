@@ -27,6 +27,11 @@ public class CharacterListManager : MonoBehaviour
         ConfigureEnterButton();
         StartCoroutine(FetchCharacters());
         _enterButton.onClick.AddListener(EnterButtonClicked);
+
+        foreach (var slot in characterLobbySlots)
+        {
+            slot.SelectionChanged += ConfigureEnterButton;
+        }
     }
 
     public void Refresh()
@@ -42,11 +47,6 @@ public class CharacterListManager : MonoBehaviour
         {
             slot.Clean();
         }
-    }
-
-    void FixedUpdate()
-    {
-        ConfigureEnterButton();
     }
 
     private void EnterButtonClicked()
