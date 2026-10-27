@@ -10,6 +10,20 @@ public class CharacterLobbySlot : MonoBehaviour
 
     void Awake()
     {
+        _toggle.isOn = false;
+        _toggle.onValueChanged.AddListener(OnToggleChanged);
+        ConfigureGlowRing();
+    }
+
+    private void OnToggleChanged(bool value)
+    {
+        if (value == true)
+        {
+            if (_spriteRenderer.sprite == null || _characterSpriteId == null)
+            {
+                _toggle.isOn = false;
+            }
+        }
         ConfigureGlowRing();
     }
 
@@ -21,14 +35,13 @@ public class CharacterLobbySlot : MonoBehaviour
     public void SetSprite(Sprite sprite)
     {
         _spriteRenderer.sprite = sprite;
-        ConfigureGlowRing();
     }
 
     public void Clean()
     {
         _characterSpriteId = null;
         _spriteRenderer.sprite = null;
-        ConfigureGlowRing();
+        _toggle.isOn = false;
     }
 
     public bool IsSelected()

@@ -3,12 +3,14 @@ using System.Collections;
 using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.UI;
 
 public class CharacterListManager : MonoBehaviour
 {
 
     [SerializeField] private CharacterLobbySlot[] characterLobbySlots;
     [SerializeField] private CharacterCatalog _catalog;
+    [SerializeField] private Button _enterButton;
 
     // 서버 CharacterOut과 필드 이름 맞춤 (snake_case)
     private class CharacterInfo
@@ -22,13 +24,16 @@ public class CharacterListManager : MonoBehaviour
 
     void Start()
     {
+        ConfigureEnterButton();
         StartCoroutine(FetchCharacters());
+        _enterButton.onClick.AddListener(EnterButtonClicked);
     }
 
     public void Refresh()
     {
         CleanCharacterLobbySlots();
         StartCoroutine(FetchCharacters());
+        ConfigureEnterButton();
     }
 
     private void CleanCharacterLobbySlots()
@@ -39,8 +44,36 @@ public class CharacterListManager : MonoBehaviour
         }
     }
 
+    void FixedUpdate()
+    {
+        ConfigureEnterButton();
+    }
+
+    private void EnterButtonClicked()
+    {
+        Debug.Log("Enter!");
+    }
+
+    private void ConfigureEnterButton()
+    {
+        var hasSelected = false;
+
+        foreach (var slot in characterLobbySlots)
+        {
+            if (slot.IsSelected())
+            {
+                hasSelected = true;
+                break;
+            }
+        }
+
+        _enterButton.enabled = hasSelected;
+        _enterButton.GetComponent<CanvasGroup>().alpha = hasSelected ? 1 : 0;
+    }
+
     private IEnumerator FetchCharacters()
     {
+        ConfigureEnterButton();
         var serverId = Session.ServerId;
         var accountId = Session.AccountId;
 
@@ -73,10 +106,10 @@ public class CharacterListManager : MonoBehaviour
                 {
                     characterLobbySlots[i].SetSprite(sprite);
                     characterLobbySlots[i].SetCharacterSpriteId(spriteId);
-
-                    Debug.Log($"toggle: {characterLobbySlots[i].IsSelected()}");
                 }
             }
+
+            ConfigureEnterButton();
         }
     }
 
