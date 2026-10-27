@@ -12,6 +12,7 @@ public class CharacterCreatePanel : MonoBehaviour
     [SerializeField] private TMP_InputField _nicknameInput;
     [SerializeField] private Button _createButton;
     [SerializeField] private Toast _toast;
+    [SerializeField] private CharacterListManager characterListManager;
 
     void Start()
     {
@@ -111,6 +112,8 @@ public class CharacterCreatePanel : MonoBehaviour
             }
 
             _toast.Show("캐릭터를 생성하였습니다.");
+
+            characterListManager.Refresh();
         }
     }
 }
