@@ -17,6 +17,7 @@ public class GameSocket : MonoBehaviour
         public string nickname;
         public string sprite_set_id;
         public DateTime created_at;
+        public string last_visited_scene;
     }
 
     public CharacterInfo MyCharacter { get; private set; }
