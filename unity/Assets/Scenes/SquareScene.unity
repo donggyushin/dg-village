@@ -12918,6 +12918,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7fb8683e08b9048a5a24703d2297b88a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameSocket
+  _playerSpawner: {fileID: 1827787667}
 --- !u!4 &1712781257
 Transform:
   m_ObjectHideFlags: 0

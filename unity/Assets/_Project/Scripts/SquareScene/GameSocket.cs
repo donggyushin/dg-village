@@ -35,6 +35,8 @@ public class GameSocket : MonoBehaviour
 
     private WebSocket _webSocket;
 
+    [SerializeField] private PlayerSpawner _playerSpawner;
+
     async void Start()
     {
         _webSocket = new WebSocket(ServerConfig.WebSocketUrl);
