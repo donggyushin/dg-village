@@ -44,6 +44,28 @@ public class GameSocket : MonoBehaviour
 
         _webSocket.OnOpen += SendJoin;
         _webSocket.OnMessage += BridgeBytesToHandleMessage;
+        _webSocket.OnError += HandleErrorMessage;
+        _webSocket.OnClose += HandleSocketClose;
+
+        await _webSocket.Connect();
+    }
+
+    void Update()
+    {
+#if !UNITY_WEBGL || UNITY_EDITOR
+        // 메시지는 백그라운드 스레드에서 받기 때문에 메인 스레드로 옮겨줘야함.
+        _webSocket?.DispatchMessageQueue();
+#endif
+    }
+
+    private void HandleSocketClose(WebSocketCloseCode code)
+    {
+        Debug.Log($"Close: {code}");
+    }
+
+    private void HandleErrorMessage(string message)
+    {
+        Debug.LogWarning($"error: {message}");
     }
 
     private async void SendJoin()
