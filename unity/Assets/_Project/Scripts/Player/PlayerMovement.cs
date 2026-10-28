@@ -27,6 +27,11 @@ public class PlayerMovement : MonoBehaviour
 
         // 대각선이 √2배 빨라지지 않게 길이를 1 이하로 자른다
         _moveDirection = Vector3.ClampMagnitude(screenRight * input.x + screenUp * input.y, 1f);
+
+        if (transform.position.y < -20)
+        {
+            transform.position = new Vector3(0f, 0f, 0f);
+        }
     }
 
     void FixedUpdate()
