@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using Newtonsoft.Json;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.UI;
@@ -11,6 +12,8 @@ public class CharacterListManager : MonoBehaviour
     [SerializeField] private CharacterLobbySlot[] characterLobbySlots;
     [SerializeField] private CharacterCatalog _catalog;
     [SerializeField] private Button _enterButton;
+    [SerializeField] private TMP_Text _preventToCreateLabel;
+    private int charactersCount = 0;
 
     // 서버 CharacterOut과 필드 이름 맞춤 (snake_case)
     private class CharacterInfo
@@ -24,6 +27,7 @@ public class CharacterListManager : MonoBehaviour
 
     void Start()
     {
+        ConfigurePreventToCreateLabel();
         ConfigureEnterButton();
         StartCoroutine(FetchCharacters());
         _enterButton.onClick.AddListener(EnterButtonClicked);
@@ -71,6 +75,20 @@ public class CharacterListManager : MonoBehaviour
         _enterButton.GetComponent<CanvasGroup>().alpha = hasSelected ? 1 : 0;
     }
 
+    private void ConfigurePreventToCreateLabel()
+    {
+        if (charactersCount >= characterLobbySlots.Length)
+        {
+            _preventToCreateLabel.text = $"최대 생성 가능한 플레이어 수는 {characterLobbySlots.Length} 입니다.";
+            _enterButton.enabled = true;
+        }
+        else
+        {
+            _preventToCreateLabel.text = "";
+            _enterButton.enabled = false;
+        }
+    }
+
     private IEnumerator FetchCharacters()
     {
         ConfigureEnterButton();
@@ -88,12 +106,13 @@ public class CharacterListManager : MonoBehaviour
             if (request.result != UnityWebRequest.Result.Success)
             {
                 Debug.LogWarning($"캐릭터 목록 요청 실패 {request.responseCode}: {request.downloadHandler.text}");
+                characterLobbySlots[0].SetToggle(true);
                 yield break;
             }
 
             CharacterInfo[] characters = JsonConvert.DeserializeObject<CharacterInfo[]>(request.downloadHandler.text);
-
-            for (int i = 0; i < characters.Length; i++)
+            charactersCount = characters.Length;
+            for (int i = 0; i < charactersCount; i++)
             {
                 var character = characters[i];
                 var spriteId = character.sprite_set_id;
@@ -107,16 +126,10 @@ public class CharacterListManager : MonoBehaviour
                 }
             }
 
-            foreach (var slot in characterLobbySlots)
-            {
-                if (slot.CharacterSpriteId() != null)
-                {
-                    slot.SetToggle(true);
-                    break;
-                }
-            }
+            characterLobbySlots[0].SetToggle(true);
 
             ConfigureEnterButton();
+            ConfigurePreventToCreateLabel();
         }
     }
 
