@@ -11,11 +11,16 @@ public class PlayerSpawner : MonoBehaviour
 
     void Start()
     {
-        _socket.Welcomed += Spawn;
+        var me = _socket.MyCharacter;
+        if (me != null)
+        {
+            Spawn();
+        }
     }
 
     private void Spawn()
     {
+        Debug.Log("여기안오나?");
         Vector3 spawnPosition = new Vector3(0f, 0f, 0f);
         GameObject player = Instantiate(_playerPrefab, spawnPosition, Quaternion.identity);
         CharacterSpriteSet spriteSet = _catalog.Find(_socket.MyCharacter.sprite_set_id);
