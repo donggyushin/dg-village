@@ -2,6 +2,7 @@
   "dependencies": {
     "com.coplaydev.unity-mcp": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#v10.3.0",
     "com.endel.nativewebsocket": "https://github.com/endel/NativeWebSocket.git#upm",
+    "com.unity.2d.sprite": "1.0.0",
     "com.unity.cinemachine": "6.6.0",
     "com.unity.collab-proxy": "2.13.6",
     "com.unity.ide.rider": "3.0.40",
