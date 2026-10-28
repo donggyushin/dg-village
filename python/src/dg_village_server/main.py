@@ -1,22 +1,27 @@
+import asyncio
 import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from datetime import datetime
-from typing import Annotated, Literal
+from typing import Annotated
 
-from fastapi import FastAPI, Header, HTTPException, Request, status
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from fastapi import (
+    FastAPI,
+    Header,
+    HTTPException,
+    Request,
+    WebSocket,
+    WebSocketDisconnect,
+    status,
+)
+from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from .config import Settings
 from .db import Character, Server, create_engine, create_sessionmaker
+from .protocol import ClientMessage, ErrorCode, ErrorOut, JoinIn, WelcomeOut
+from .schemas import CharacterIn, CharacterOut, HealthOut, ServerOut
 
-# Hangul syllables, ASCII letters and digits. No spaces, so names can't look alike by spacing.
-Nickname = Annotated[
-    str, StringConstraints(strip_whitespace=True, pattern=r"^[0-9A-Za-z가-힣]{2,12}$")
-]
-SpriteSetId = Annotated[str, StringConstraints(pattern=r"^[a-z0-9_]{1,64}$")]
 AccountId = Annotated[
     uuid.UUID,
     Header(
@@ -25,44 +30,12 @@ AccountId = Annotated[
     ),
 ]
 
+JOIN_TIMEOUT_SECONDS = 10
 
-class HealthOut(BaseModel):
-    status: Literal["ok"] = Field(description='Always "ok" while the server is up')
-
-
-class ServerOut(BaseModel):
-    """A server as clients see it."""
-
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int = Field(description="Server id", examples=[1])
-    name: str = Field(description="Server name shown to players", examples=["square"])
-
-
-class CharacterIn(BaseModel):
-    """A character to create."""
-
-    nickname: Nickname = Field(
-        description="2-12 Hangul syllables, ASCII letters or digits; unique per server",
-        examples=["라벤더"],
-    )
-    sprite_set_id: SpriteSetId = Field(
-        description="Client CharacterSpriteSet id", examples=["lavender_girl"]
-    )
-
-
-class CharacterOut(BaseModel):
-    """A character as its owner sees it."""
-
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int = Field(description="Character id", examples=[1])
-    server_id: int = Field(description="Server the character lives on", examples=[1])
-    nickname: str = Field(description="Nickname, unique per server", examples=["라벤더"])
-    sprite_set_id: str = Field(
-        description="Client CharacterSpriteSet id", examples=["lavender_girl"]
-    )
-    created_at: datetime = Field(description="When the character was created")
+DESCRIPTION = """\
+REST endpoints for the lobby. The in-game connection is a WebSocket at `/ws`, which this
+page can't show: see `docs/protocol.md` in the repo.
+"""
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -75,7 +48,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         yield
         await engine.dispose()
 
-    app = FastAPI(lifespan=lifespan)
+    app = FastAPI(lifespan=lifespan, description=DESCRIPTION)
+    # Characters in the game, by character id. Only touched from the event loop, so a
+    # check followed by an insert with no await in between can't race.
+    players: dict[int, WebSocket] = {}
 
     @app.get("/health", summary="Health check")
     async def health() -> HealthOut:
@@ -132,6 +108,66 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 raise HTTPException(status.HTTP_409_CONFLICT, "Nickname already taken") from None
             await session.refresh(character)
             return CharacterOut.model_validate(character)
+
+    async def send_error(websocket: WebSocket, code: ErrorCode, message: str) -> None:
+        await websocket.send_text(ErrorOut(code=code, message=message).model_dump_json())
+
+    async def reject(websocket: WebSocket, code: ErrorCode, message: str) -> None:
+        await send_error(websocket, code, message)
+        await websocket.close(status.WS_1008_POLICY_VIOLATION)
+
+    async def receive_join(websocket: WebSocket) -> Character | None:
+        """Waits for the join message and checks it. None means the connection is over."""
+        try:
+            async with asyncio.timeout(JOIN_TIMEOUT_SECONDS):
+                text = await websocket.receive_text()
+        except TimeoutError:
+            await reject(websocket, "join_timeout", "No join message in time")
+            return None
+        except WebSocketDisconnect:
+            return None
+
+        try:
+            join: JoinIn = ClientMessage.validate_json(text)
+        except ValidationError as e:
+            await reject(websocket, "invalid_message", str(e))
+            return None
+
+        async with app.state.sessionmaker() as session:
+            character = await session.get(Character, join.character_id)
+        if character is None or character.account_id != join.account_id:
+            await reject(websocket, "character_not_found", "No such character on this account")
+            return None
+        if character.id in players:
+            await reject(websocket, "already_connected", "Character is already in the game")
+            return None
+        return character
+
+    @app.websocket("/ws")
+    async def game_socket(websocket: WebSocket) -> None:
+        """In-game connection. Protocol: docs/protocol.md."""
+        await websocket.accept()
+        character = await receive_join(websocket)
+        if character is None:
+            return
+
+        players[character.id] = websocket
+        try:
+            welcome = WelcomeOut(character=CharacterOut.model_validate(character))
+            await websocket.send_text(welcome.model_dump_json())
+            while True:
+                text = await websocket.receive_text()
+                try:
+                    ClientMessage.validate_json(text)
+                except ValidationError as e:
+                    await send_error(websocket, "invalid_message", str(e))
+                    continue
+                # join is the only message so far, and it's only valid as the first one.
+                await send_error(websocket, "already_joined", "Already in the game")
+        except WebSocketDisconnect:
+            pass
+        finally:
+            del players[character.id]
 
     return app
 
