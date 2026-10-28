@@ -82,7 +82,13 @@ public class CharacterListManager : MonoBehaviour
     private void HandleWelcome()
     {
         UnsubscribeSocket();
-        SceneManager.LoadSceneAsync("SquareScene");
+        string scene = GameSocket.Instance.MyCharacter.last_visited_scene;
+        if (Application.CanStreamedLevelBeLoaded(scene) == false)
+        {
+            Debug.Log($"{scene} 입장 불가. SquareScene 으로 대체");
+            scene = "SquareScene";
+        }
+        SceneManager.LoadSceneAsync(scene);
     }
 
     private void HandleSocketFail(string errorCode)
