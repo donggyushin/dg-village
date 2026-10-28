@@ -41,6 +41,8 @@ class Character(Base):
     # CharacterSpriteSet id on the client, e.g. "lavender_girl". The server doesn't know
     # the client's catalog, so it only checks the format.
     sprite_set_id: Mapped[str] = mapped_column(String(64))
+    # Unity scene name the character was last in; the client loads it after welcome.
+    last_visited_scene: Mapped[str] = mapped_column(String(64), server_default="SquareScene")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

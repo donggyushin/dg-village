@@ -48,4 +48,8 @@ class CharacterOut(BaseModel):
     sprite_set_id: str = Field(
         description="Client CharacterSpriteSet id", examples=["lavender_girl"]
     )
+    last_visited_scene: str = Field(
+        description="Unity scene the character was last in; load it after welcome",
+        examples=["SquareScene"],
+    )
     created_at: datetime = Field(description="When the character was created")

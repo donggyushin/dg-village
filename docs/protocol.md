@@ -51,12 +51,13 @@
     "server_id": 1,
     "nickname": "Developer",
     "sprite_set_id": "lavender_girl",
+    "last_visited_scene": "SquareScene",
     "created_at": "2026-10-27T16:46:11.840108Z"
   }
 }
 ```
 
-`character`는 REST의 `CharacterOut`과 같은 모양이다.
+`character`는 REST의 `CharacterOut`과 같은 모양이다. 클라이언트는 welcome을 받으면 `last_visited_scene` 씬을 로드한다 (새 캐릭터는 `SquareScene`).
 
 ### `error`
 
