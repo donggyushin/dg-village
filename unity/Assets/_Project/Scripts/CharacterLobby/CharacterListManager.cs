@@ -56,6 +56,21 @@ public class CharacterListManager : MonoBehaviour
     private void EnterButtonClicked()
     {
         Debug.Log("Enter!");
+
+        int characterId = 0;
+        foreach (var slot in characterLobbySlots)
+        {
+            if (slot.IsSelected())
+            {
+                characterId = slot.CharacterId();
+                break;
+            }
+        }
+
+        if (characterId != 0)
+        {
+            Session.CharacterId = characterId;
+        }
     }
 
     private void ConfigureEnterButton()
@@ -116,13 +131,14 @@ public class CharacterListManager : MonoBehaviour
             {
                 var character = characters[i];
                 var spriteId = character.sprite_set_id;
+                var characterId = character.id;
                 CharacterSpriteSet spriteSet = _catalog.Find(spriteId);
                 Sprite sprite = spriteSet.Idle.Get(Direction.SouthWest);
 
                 if (characterLobbySlots.Length > i)
                 {
                     characterLobbySlots[i].SetSprite(sprite);
-                    characterLobbySlots[i].SetCharacterSpriteId(spriteId);
+                    characterLobbySlots[i].SetCharacterId(characterId);
                 }
             }
 

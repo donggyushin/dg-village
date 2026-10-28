@@ -28,6 +28,8 @@ public static class Session
         }
     }
 
+    public static int CharacterId;
+
     // Reload Domain is off, so statics survive between Phere.
     // [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     // private static void Reset()

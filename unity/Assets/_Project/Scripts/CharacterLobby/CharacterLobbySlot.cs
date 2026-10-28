@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 public class CharacterLobbySlot : MonoBehaviour
 {
-    private string _characterSpriteId;
+    private int _characterId;
     [SerializeField] private SpriteRenderer _spriteRenderer;
     [SerializeField] private Toggle _toggle;
     [SerializeField] private MeshRenderer _meshRenderer;
@@ -41,7 +41,7 @@ public class CharacterLobbySlot : MonoBehaviour
 
     public void Clean()
     {
-        _characterSpriteId = null;
+        _characterId = 0;
         _spriteRenderer.sprite = null;
         _toggle.isOn = false;
     }
@@ -51,13 +51,13 @@ public class CharacterLobbySlot : MonoBehaviour
         return _toggle.isOn;
     }
 
-    public void SetCharacterSpriteId(string id)
+    public void SetCharacterId(int id)
     {
-        _characterSpriteId = id;
+        _characterId = id;
     }
 
-    public string CharacterSpriteId()
+    public int CharacterId()
     {
-        return _characterSpriteId;
+        return _characterId;
     }
 }
