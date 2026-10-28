@@ -3,6 +3,7 @@ using NativeWebSocket;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameSocket : MonoBehaviour
 {
@@ -26,6 +27,12 @@ public class GameSocket : MonoBehaviour
         public string type = "join";
         public string account_id;
         public int character_id;
+    }
+
+    private class ChangeSceneMessage
+    {
+        public string type = "change_scene";
+        public string scene;
     }
 
     private class WelcomeMessage
@@ -112,6 +119,18 @@ public class GameSocket : MonoBehaviour
         await _webSocket.SendText(JsonConvert.SerializeObject(join));
     }
 
+    public async void ChangeScene(string scene)
+    {
+        var changeScene = new ChangeSceneMessage
+        {
+            scene = scene
+        };
+
+        var message = JsonConvert.SerializeObject(changeScene);
+
+        await _webSocket.SendText(message);
+    }
+
     private void BridgeBytesToHandleMessage(Byte[] bytes)
     {
         var message = System.Text.Encoding.UTF8.GetString(bytes);
@@ -132,6 +151,11 @@ public class GameSocket : MonoBehaviour
                 Debug.Log($"nickname is {welcomeMessage.character.nickname}");
                 MyCharacter = welcomeMessage.character;
                 Welcomed?.Invoke();
+                break;
+            case "scene_changed":
+                var scene = (string)message["scene"];
+                MyCharacter.last_visited_scene = scene;
+                SceneManager.LoadSceneAsync(scene);
                 break;
             case "error":
                 ErrorMessage errorMessage = message.ToObject<ErrorMessage>();
