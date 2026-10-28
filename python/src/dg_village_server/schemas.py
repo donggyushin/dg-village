@@ -10,6 +10,8 @@ Nickname = Annotated[
     str, StringConstraints(strip_whitespace=True, pattern=r"^[0-9A-Za-z가-힣]{2,12}$")
 ]
 SpriteSetId = Annotated[str, StringConstraints(pattern=r"^[a-z0-9_]{1,64}$")]
+# Unity map scenes a character can be in. Add a scene here when the client gets a new map.
+SceneName = Literal["SquareScene"]
 
 
 class HealthOut(BaseModel):

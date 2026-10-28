@@ -14,12 +14,20 @@ from fastapi import (
     status,
 )
 from pydantic import ValidationError
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 
 from .config import Settings
 from .db import Character, Server, create_engine, create_sessionmaker
-from .protocol import ClientMessage, ErrorCode, ErrorOut, JoinIn, WelcomeOut
+from .protocol import (
+    ChangeSceneIn,
+    ClientMessage,
+    ErrorCode,
+    ErrorOut,
+    JoinIn,
+    SceneChangedOut,
+    WelcomeOut,
+)
 from .schemas import CharacterIn, CharacterOut, HealthOut, ServerOut
 
 AccountId = Annotated[
@@ -128,9 +136,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             return None
 
         try:
-            join: JoinIn = ClientMessage.validate_json(text)
+            join = ClientMessage.validate_json(text)
         except ValidationError as e:
             await reject(websocket, "invalid_message", str(e))
+            return None
+        if not isinstance(join, JoinIn):
+            await reject(websocket, "not_joined", "The first message must be join")
             return None
 
         async with app.state.sessionmaker() as session:
@@ -158,12 +169,24 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             while True:
                 text = await websocket.receive_text()
                 try:
-                    ClientMessage.validate_json(text)
+                    message = ClientMessage.validate_json(text)
                 except ValidationError as e:
                     await send_error(websocket, "invalid_message", str(e))
                     continue
-                # join is the only message so far, and it's only valid as the first one.
-                await send_error(websocket, "already_joined", "Already in the game")
+                match message:
+                    case JoinIn():
+                        await send_error(websocket, "already_joined", "Already in the game")
+                    case ChangeSceneIn(scene=scene):
+                        # Saved right away rather than on disconnect: scene changes are
+                        # rare, and a server crash would skip the disconnect save.
+                        async with app.state.sessionmaker() as session:
+                            await session.execute(
+                                update(Character)
+                                .where(Character.id == character.id)
+                                .values(last_visited_scene=scene)
+                            )
+                            await session.commit()
+                        await websocket.send_text(SceneChangedOut(scene=scene).model_dump_json())
         except WebSocketDisconnect:
             pass
         finally:

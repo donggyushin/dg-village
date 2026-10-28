@@ -12,12 +12,15 @@
 클라이언트                                서버
    │── WebSocket 연결 (/ws) ──────────────▶│
    │── join ──────────────────────────────▶│  10초 안에 보내야 함
-   │◀──────────────────────────── welcome ─│  성공 → SquareScene으로 이동
+   │◀──────────────────────────── welcome ─│  성공 → last_visited_scene 로드
    │                 또는                    │
    │◀──────────── error + 연결 종료(1008) ─│  실패
+   │                                       │
+   │── change_scene ──────────────────────▶│  맵 이동 (DB에 바로 저장)
+   │◀────────────────────── scene_changed ─│  이걸 받고 씬 로드
 ```
 
-- 연결하자마자 첫 메시지로 `join`을 보낸다. 10초 안에 오지 않으면 `join_timeout` 에러를 보내고 연결을 끊는다.
+- 연결하자마자 첫 메시지로 `join`을 보낸다. 다른 메시지가 먼저 오면 `not_joined` 에러 후 연결을 끊는다. 10초 안에 오지 않으면 `join_timeout` 에러를 보내고 연결을 끊는다.
 - `welcome` 전에 난 에러는 항상 연결 종료(close code **1008** Policy Violation)로 이어진다.
 - `welcome` 뒤에 잘못된 메시지를 보내면 `error`만 오고 연결은 유지된다.
 - 연결이 끊기면 서버는 그 캐릭터를 게임에서 뺀다. 같은 캐릭터로 다시 `join`하면 된다.
@@ -36,6 +39,18 @@
 |---|---|---|
 | `account_id` | UUID 문자열 | REST의 `X-Account-Id` 헤더와 같은 값 (`Session.AccountId`) |
 | `character_id` | int | 내 캐릭터 id (`GET /servers/{id}/characters` 결과의 `id`) |
+
+### `change_scene`
+
+다른 맵 씬으로 이동한다. 서버는 바로 `last_visited_scene`에 저장하고 `scene_changed`로 답한다. 클라이언트는 `scene_changed`를 받은 뒤 씬을 로드한다. 게임에 처음 들어올 때는 보내지 않는다 (서버가 `join`에서 이미 `last_visited_scene`을 안다).
+
+```json
+{"type": "change_scene", "scene": "SquareScene"}
+```
+
+| 필드 | 타입 | 설명 |
+|---|---|---|
+| `scene` | string | Unity 씬 이름. 서버의 `SceneName`(`schemas.py`)에 있는 씬만 허용, 아니면 `invalid_message` |
 
 ## 서버 → 클라이언트
 
@@ -59,6 +74,14 @@
 
 `character`는 REST의 `CharacterOut`과 같은 모양이다. 클라이언트는 welcome을 받으면 `last_visited_scene` 씬을 로드한다 (새 캐릭터는 `SquareScene`).
 
+### `scene_changed`
+
+`change_scene` 성공. 서버 기준으로 플레이어는 이제 이 씬에 있다.
+
+```json
+{"type": "scene_changed", "scene": "SquareScene"}
+```
+
 ### `error`
 
 ```json
@@ -70,6 +93,7 @@
 | `code` | 언제 | 연결 |
 |---|---|---|
 | `invalid_message` | JSON이 아니거나, 모르는 `type`이거나, 필드가 빠짐 | `welcome` 전이면 종료 |
+| `not_joined` | 첫 메시지가 `join`이 아님 | 종료 |
 | `join_timeout` | 연결 후 10초 안에 `join`이 없음 | 종료 |
 | `character_not_found` | 없는 캐릭터이거나 다른 계정의 캐릭터 | 종료 |
 | `already_connected` | 그 캐릭터가 이미 다른 연결로 게임 안에 있음 | 종료 |

@@ -5,11 +5,11 @@ may send; the server's messages are the *Out models.
 """
 
 import uuid
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, TypeAdapter
 
-from .schemas import CharacterOut
+from .schemas import CharacterOut, SceneName
 
 
 class JoinIn(BaseModel):
@@ -20,9 +20,14 @@ class JoinIn(BaseModel):
     character_id: int = Field(description="One of the caller's characters", examples=[1])
 
 
-# Only "join" for now. Later messages (move, chat, ...) turn this into a union:
-# TypeAdapter(Annotated[JoinIn | MoveIn, Field(discriminator="type")])
-ClientMessage = TypeAdapter(JoinIn)
+class ChangeSceneIn(BaseModel):
+    """The player moves to another map scene. Saved right away as last_visited_scene."""
+
+    type: Literal["change_scene"]
+    scene: SceneName = Field(description="Unity scene to move to", examples=["SquareScene"])
+
+
+ClientMessage = TypeAdapter(Annotated[JoinIn | ChangeSceneIn, Field(discriminator="type")])
 
 
 class WelcomeOut(BaseModel):
@@ -32,9 +37,17 @@ class WelcomeOut(BaseModel):
     character: CharacterOut
 
 
+class SceneChangedOut(BaseModel):
+    """Reply to change_scene: the server now has the player in this scene. Load it."""
+
+    type: Literal["scene_changed"] = "scene_changed"
+    scene: SceneName
+
+
 ErrorCode = Literal[
     "invalid_message",  # Not JSON, unknown type or missing fields
     "join_timeout",  # No join within JOIN_TIMEOUT_SECONDS of connecting
+    "not_joined",  # The first message wasn't join
     "already_joined",  # A second join on the same connection
     "character_not_found",  # No such character, or it belongs to another account
     "already_connected",  # The character is already in the game on another connection
