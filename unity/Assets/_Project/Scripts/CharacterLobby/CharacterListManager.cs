@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class CharacterListManager : MonoBehaviour
@@ -55,7 +56,7 @@ public class CharacterListManager : MonoBehaviour
 
     private void EnterButtonClicked()
     {
-        Debug.Log("Enter!");
+        _enterButton.enabled = false;
 
         int characterId = 0;
         foreach (var slot in characterLobbySlots)
@@ -71,6 +72,30 @@ public class CharacterListManager : MonoBehaviour
         {
             Session.CharacterId = characterId;
         }
+
+        var socket = new GameObject("GameSocket").AddComponent<GameSocket>();
+        socket.Welcomed += HandleWelcome;
+        socket.JoinFailed += HandleSocketFail;
+        socket.Connect();
+    }
+
+    private void HandleWelcome()
+    {
+        UnsubscribeSocket();
+        SceneManager.LoadSceneAsync("SquareScene");
+    }
+
+    private void HandleSocketFail(string errorCode)
+    {
+        UnsubscribeSocket();
+        Destroy(GameSocket.Instance.gameObject);
+        _enterButton.enabled = true;
+    }
+
+    private void UnsubscribeSocket()
+    {
+        GameSocket.Instance.Welcomed -= HandleWelcome;
+        GameSocket.Instance.JoinFailed -= HandleSocketFail;
     }
 
     private void ConfigureEnterButton()

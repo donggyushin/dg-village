@@ -12889,51 +12889,6 @@ Mesh:
       - serializedVersion: 1
         m_IndexStart: 0
         m_IndexCount: 0
---- !u!1 &1712781255
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1712781257}
-  - component: {fileID: 1712781256}
-  m_Layer: 0
-  m_Name: GameSocket
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1712781256
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1712781255}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7fb8683e08b9048a5a24703d2297b88a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GameSocket
-  _playerSpawner: {fileID: 1827787667}
---- !u!4 &1712781257
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1712781255}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 640, y: 360, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!43 &1780235875
 Mesh:
   m_ObjectHideFlags: 0
@@ -13159,7 +13114,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerSpawner
   _playerPrefab: {fileID: 5487802403737884262, guid: 6c9356674205b49c7a51cc4f4841baef, type: 3}
   _catalog: {fileID: 11400000, guid: ccbb33f792d7a4959a5dd9d247d5525c, type: 2}
-  _characterId: lavender_girl
   _camera: {fileID: 477201307}
 --- !u!1 &2019073847
 GameObject:
@@ -14500,4 +14454,3 @@ SceneRoots:
   - {fileID: 689598605}
   - {fileID: 477201308}
   - {fileID: 1827787666}
-  - {fileID: 1712781257}

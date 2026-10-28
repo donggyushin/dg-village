@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using NativeWebSocket;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -6,6 +7,8 @@ using UnityEngine;
 
 public class GameSocket : MonoBehaviour
 {
+    public static GameSocket Instance { get; private set; }
+
     // 서버 CharacterOut과 필드 이름 맞춤 (snake_case)
     public class CharacterInfo
     {
@@ -15,6 +18,8 @@ public class GameSocket : MonoBehaviour
         public string sprite_set_id;
         public DateTime created_at;
     }
+
+    public CharacterInfo MyCharacter { get; private set; }
 
     private class JoinMessage
     {
@@ -36,7 +41,37 @@ public class GameSocket : MonoBehaviour
 
     private WebSocket _webSocket;
 
-    async void Start()
+    public event Action Welcomed;
+    public event Action<string> JoinFailed; // error code
+
+    private void Awake()
+    {
+
+        if (GameSocket.Instance != null)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+
+        GameSocket.Instance = this;
+        DontDestroyOnLoad(gameObject);
+    }
+
+    private void OnDestroy()
+    {
+        if (GameSocket.Instance == this)
+        {
+            GameSocket.Instance = null;
+        }
+
+        if (_webSocket != null)
+        {
+            _ = _webSocket.Close();
+        }
+    }
+
+    public async void Connect()
     {
         _webSocket = new WebSocket(ServerConfig.WebSocketUrl);
 
@@ -95,10 +130,13 @@ public class GameSocket : MonoBehaviour
                 WelcomeMessage welcomeMessage = message.ToObject<WelcomeMessage>();
                 Debug.Log($"id is {welcomeMessage.character.id}");
                 Debug.Log($"nickname is {welcomeMessage.character.nickname}");
+                MyCharacter = welcomeMessage.character;
+                Welcomed?.Invoke();
                 break;
             case "error":
                 ErrorMessage errorMessage = message.ToObject<ErrorMessage>();
                 Debug.LogWarning($"code is {errorMessage.code}, message is {errorMessage.message}");
+                JoinFailed?.Invoke(errorMessage.code);
                 break;
             default:
                 Debug.LogWarning("모르는 메시지");
