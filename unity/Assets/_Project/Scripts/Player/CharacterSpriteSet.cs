@@ -9,4 +9,5 @@ public class CharacterSpriteSet : ScriptableObject
 
     public string Id => _id;
     public DirectionalSprites Idle => _idle;
+    public DirectionalWalkSprites Walk => _walk;
 }

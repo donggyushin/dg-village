@@ -4,11 +4,14 @@ public class CharacterSpriteView : MonoBehaviour
 {
     [SerializeField] private CharacterSpriteSet _spriteSet;
     [SerializeField] private float _minMoveSpeed = 0.1f;
+    [SerializeField] private float _walkFps = 10f; // 초당 프레임수
 
     private SpriteRenderer _spriteRenderer;
     private Transform _camera;
     private Vector3 _lastPosition;
     private Direction _direction = Direction.South;
+    private bool _isMoving;
+    private float _frameTime; // 걷기 시작 후 누적시간
 
     private void Awake()
     {
@@ -31,9 +34,15 @@ public class CharacterSpriteView : MonoBehaviour
 
         // 기준 속도보다 느리면(멈춤, 미세한 흔들림) 마지막 방향을 유지
         float minDistance = _minMoveSpeed * Time.deltaTime;
-        if (delta.sqrMagnitude > minDistance * minDistance)
+        _isMoving = delta.sqrMagnitude > minDistance * minDistance;
+        if (_isMoving)
         {
             _direction = ToScreenDirection(delta);
+            _frameTime += Time.deltaTime;
+        }
+        else
+        {
+            _frameTime = 0f; // 멈추면 다음 걷기는 첫 프레임부터
         }
         Refresh();
     }
@@ -52,7 +61,19 @@ public class CharacterSpriteView : MonoBehaviour
 
     private void Refresh()
     {
-        if (_spriteSet != null)
+        if (_spriteSet == null)
+        {
+            return;
+        }
+
+        Sprite[] frames = _spriteSet.Walk.Get(_direction);
+
+        if (_isMoving && frames != null && frames.Length > 0)
+        {
+            int index = (int)(_frameTime * _walkFps) % frames.Length;
+            _spriteRenderer.sprite = frames[index];
+        }
+        else
         {
             _spriteRenderer.sprite = _spriteSet.Idle.Get(_direction);
         }
