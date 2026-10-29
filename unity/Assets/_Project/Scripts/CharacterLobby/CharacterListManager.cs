@@ -126,12 +126,10 @@ public class CharacterListManager : MonoBehaviour
         if (charactersCount >= characterLobbySlots.Length)
         {
             _preventToCreateLabel.text = $"최대 생성 가능한 플레이어 수는 {characterLobbySlots.Length} 입니다.";
-            _enterButton.enabled = true;
         }
         else
         {
             _preventToCreateLabel.text = "";
-            _enterButton.enabled = false;
         }
     }
 
