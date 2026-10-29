@@ -35,6 +35,14 @@ public class GameSocket : MonoBehaviour
         public string scene;
     }
 
+    private class MoveMessage
+    {
+        public string type = "move";
+        public float x;
+        public float y;
+        public float z;
+    }
+
     private class WelcomeMessage
     {
         public CharacterInfo character;
@@ -127,6 +135,20 @@ public class GameSocket : MonoBehaviour
         };
 
         var message = JsonConvert.SerializeObject(changeScene);
+
+        await _webSocket.SendText(message);
+    }
+
+    public async void SendMove(Vector3 position)
+    {
+        var move = new MoveMessage
+        {
+            x = position.x,
+            y = position.y,
+            z = position.z
+        };
+
+        var message = JsonConvert.SerializeObject(move);
 
         await _webSocket.SendText(message);
     }

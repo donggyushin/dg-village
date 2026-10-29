@@ -38,5 +38,6 @@ public class PlayerSpawner : MonoBehaviour
         player.GetComponentInChildren<CharacterSpriteView>().SetSpriteSet(spriteSet);
         _camera.Target.TrackingTarget = player.transform;
         _camera.PreviousStateIsValid = false;
+        player.AddComponent<PlayerPositionSender>();
     }
 }

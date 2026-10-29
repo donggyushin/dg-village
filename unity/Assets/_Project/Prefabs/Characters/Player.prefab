@@ -120,6 +120,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CharacterSpriteView
   _spriteSet: {fileID: 11400000, guid: 9561210240d40434f98b19de1812ae5f, type: 2}
   _minMoveSpeed: 0.1
+  _walkFps: 10
 --- !u!1 &5487802403737884262
 GameObject:
   m_ObjectHideFlags: 0
@@ -132,7 +133,7 @@ GameObject:
   - component: {fileID: 1820918452528623879}
   - component: {fileID: 2796475195913328887}
   - component: {fileID: 7165879433434243072}
-  - component: {fileID: 5214712636495688152}
+  - component: {fileID: 6592714954136799866}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -220,7 +221,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
   _moveSpeed: 4
---- !u!114 &5214712636495688152
+--- !u!114 &6592714954136799866
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -229,10 +230,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 5487802403737884262}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9738ec8fbf31c40ceb106813d4a32307, type: 3}
+  m_Script: {fileID: 11500000, guid: 2ec26df67ff7c43d1998bb1004be839e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerAnimation
-  _spriteRenderer: {fileID: 0}
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerPositionSender
 --- !u!1 &8968784458236834575
 GameObject:
   m_ObjectHideFlags: 0
