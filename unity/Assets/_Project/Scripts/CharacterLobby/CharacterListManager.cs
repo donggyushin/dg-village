@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Data.Common;
 using Newtonsoft.Json;
 using TMPro;
 using UnityEngine;
@@ -162,10 +163,18 @@ public class CharacterListManager : MonoBehaviour
                 var spriteId = character.sprite_set_id;
                 var characterId = character.id;
                 CharacterSpriteSet spriteSet = _catalog.Find(spriteId);
-                Sprite sprite = spriteSet.Idle.Get(Direction.SouthWest);
 
                 if (characterLobbySlots.Length > i)
                 {
+                    Sprite sprite = spriteSet.Idle.Get(Direction.South);
+                    if (i == 1)
+                    {
+                        sprite = spriteSet.Idle.Get(Direction.SouthEast);
+                    }
+                    else if (i == 2)
+                    {
+                        sprite = spriteSet.Idle.Get(Direction.SouthWest);
+                    }
                     characterLobbySlots[i].SetSprite(sprite);
                     characterLobbySlots[i].SetCharacterId(characterId);
                 }
