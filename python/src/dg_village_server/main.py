@@ -25,6 +25,7 @@ from .protocol import (
     ErrorCode,
     ErrorOut,
     JoinIn,
+    MoveIn,
     SceneChangedOut,
     WelcomeOut,
 )
@@ -60,6 +61,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Characters in the game, by character id. Only touched from the event loop, so a
     # check followed by an insert with no await in between can't race.
     players: dict[int, WebSocket] = {}
+    # Latest (x, y, z) per character. Memory only: moves are too frequent to save each one.
+    positions: dict[int, tuple[float, float, float]] = {}
 
     @app.get("/health", summary="Health check")
     async def health() -> HealthOut:
@@ -187,10 +190,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                             )
                             await session.commit()
                         await websocket.send_text(SceneChangedOut(scene=scene).model_dump_json())
+                    case MoveIn(x=x, y=y, z=z):
+                        positions[character.id] = (x, y, z)
         except WebSocketDisconnect:
             pass
         finally:
             del players[character.id]
+            positions.pop(character.id, None)
 
     return app
 

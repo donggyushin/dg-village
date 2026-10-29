@@ -27,7 +27,16 @@ class ChangeSceneIn(BaseModel):
     scene: SceneName = Field(description="Unity scene to move to", examples=["SquareScene"])
 
 
-ClientMessage = TypeAdapter(Annotated[JoinIn | ChangeSceneIn, Field(discriminator="type")])
+class MoveIn(BaseModel):
+    """The player's current position in its scene. Sent ~10 times a second while moving."""
+
+    type: Literal["move"]
+    x: float = Field(allow_inf_nan=False, examples=[1.5])
+    y: float = Field(allow_inf_nan=False, examples=[0.0])
+    z: float = Field(allow_inf_nan=False, examples=[-3.25])
+
+
+ClientMessage = TypeAdapter(Annotated[JoinIn | ChangeSceneIn | MoveIn, Field(discriminator="type")])
 
 
 class WelcomeOut(BaseModel):
