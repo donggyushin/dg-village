@@ -633,8 +633,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3064845e8e4774d47bde846d1280d607, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RemotePlayerSpawner
-  _remotePlayerPrefab: {fileID: 0}
-  _catalog: {fileID: 0}
+  _remotePlayerPrefab: {fileID: 348934715558385017, guid: 4e993353d4a11421e860f863cf2b69e1, type: 3}
+  _catalog: {fileID: 11400000, guid: ccbb33f792d7a4959a5dd9d247d5525c, type: 2}
 --- !u!4 &219933630
 Transform:
   m_ObjectHideFlags: 0
