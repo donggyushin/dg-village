@@ -53,6 +53,50 @@ class SceneChangedOut(BaseModel):
     scene: SceneName
 
 
+class PlayerOut(BaseModel):
+    """Another player as the players in the same scene see it."""
+
+    id: int = Field(description="Character id", examples=[3])
+    nickname: str = Field(examples=["라벤더"])
+    sprite_set_id: str = Field(
+        description="Client CharacterSpriteSet id", examples=["lavender_girl"]
+    )
+    x: float = Field(examples=[1.5])
+    y: float = Field(examples=[0.0])
+    z: float = Field(examples=[-3.25])
+
+
+class ScenePlayersOut(BaseModel):
+    """Sent when I enter a scene (after welcome or scene_changed): who is already there."""
+
+    type: Literal["scene_players"] = "scene_players"
+    players: list[PlayerOut] = Field(description="Everyone else in the scene; may be empty")
+
+
+class PlayerJoinedOut(BaseModel):
+    """Someone entered my scene."""
+
+    type: Literal["player_joined"] = "player_joined"
+    player: PlayerOut
+
+
+class PlayerMovedOut(BaseModel):
+    """Someone in my scene sent a move. Relayed as is, ~10 times a second per moving player."""
+
+    type: Literal["player_moved"] = "player_moved"
+    id: int = Field(description="Character id", examples=[3])
+    x: float = Field(examples=[1.5])
+    y: float = Field(examples=[0.0])
+    z: float = Field(examples=[-3.25])
+
+
+class PlayerLeftOut(BaseModel):
+    """Someone left my scene: changed scene or disconnected."""
+
+    type: Literal["player_left"] = "player_left"
+    id: int = Field(description="Character id", examples=[3])
+
+
 ErrorCode = Literal[
     "invalid_message",  # Not JSON, unknown type or missing fields
     "join_timeout",  # No join within JOIN_TIMEOUT_SECONDS of connecting

@@ -2,6 +2,7 @@ import asyncio
 import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from dataclasses import dataclass
 from typing import Annotated
 
 from fastapi import (
@@ -13,7 +14,7 @@ from fastapi import (
     WebSocketDisconnect,
     status,
 )
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 
@@ -26,7 +27,12 @@ from .protocol import (
     ErrorOut,
     JoinIn,
     MoveIn,
+    PlayerJoinedOut,
+    PlayerLeftOut,
+    PlayerMovedOut,
+    PlayerOut,
     SceneChangedOut,
+    ScenePlayersOut,
     WelcomeOut,
 )
 from .schemas import CharacterIn, CharacterOut, HealthOut, ServerOut
@@ -40,6 +46,27 @@ AccountId = Annotated[
 ]
 
 JOIN_TIMEOUT_SECONDS = 10
+
+
+@dataclass
+class Player:
+    """A character in the game. Memory only, gone on disconnect."""
+
+    websocket: WebSocket
+    id: int
+    nickname: str
+    sprite_set_id: str
+    scene: str
+    # Latest move, in the current scene's world coordinates. Moves are too frequent to save.
+    # Starts at the origin, where the client spawns a player entering a scene.
+    position: tuple[float, float, float] = (0.0, 0.0, 0.0)
+
+    def to_out(self) -> PlayerOut:
+        x, y, z = self.position
+        return PlayerOut(
+            id=self.id, nickname=self.nickname, sprite_set_id=self.sprite_set_id, x=x, y=y, z=z
+        )
+
 
 DESCRIPTION = """\
 REST endpoints for the lobby. The in-game connection is a WebSocket at `/ws`, which this
@@ -60,9 +87,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(lifespan=lifespan, description=DESCRIPTION)
     # Characters in the game, by character id. Only touched from the event loop, so a
     # check followed by an insert with no await in between can't race.
-    players: dict[int, WebSocket] = {}
-    # Latest (x, y, z) per character. Memory only: moves are too frequent to save each one.
-    positions: dict[int, tuple[float, float, float]] = {}
+    players: dict[int, Player] = {}
 
     @app.get("/health", summary="Health check")
     async def health() -> HealthOut:
@@ -123,6 +148,24 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def send_error(websocket: WebSocket, code: ErrorCode, message: str) -> None:
         await websocket.send_text(ErrorOut(code=code, message=message).model_dump_json())
 
+    async def broadcast(scene: str, message: BaseModel, exclude: Player) -> None:
+        """Sends to everyone in the scene but `exclude`, all at once so a slow client
+        doesn't hold up the others. A failed send is ignored: that client's own handler
+        sees the disconnect and cleans up."""
+        text = message.model_dump_json()
+        targets = [p for p in players.values() if p.scene == scene and p is not exclude]
+        await asyncio.gather(
+            *(p.websocket.send_text(text) for p in targets), return_exceptions=True
+        )
+
+    async def enter_scene(player: Player) -> None:
+        """Tells the player who is already in its scene, and the others that it arrived."""
+        others = [
+            p.to_out() for p in players.values() if p.scene == player.scene and p is not player
+        ]
+        await player.websocket.send_text(ScenePlayersOut(players=others).model_dump_json())
+        await broadcast(player.scene, PlayerJoinedOut(player=player.to_out()), exclude=player)
+
     async def reject(websocket: WebSocket, code: ErrorCode, message: str) -> None:
         await send_error(websocket, code, message)
         await websocket.close(status.WS_1008_POLICY_VIOLATION)
@@ -165,10 +208,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if character is None:
             return
 
-        players[character.id] = websocket
+        player = Player(
+            websocket=websocket,
+            id=character.id,
+            nickname=character.nickname,
+            sprite_set_id=character.sprite_set_id,
+            scene=character.last_visited_scene,
+        )
+        players[player.id] = player
         try:
             welcome = WelcomeOut(character=CharacterOut.model_validate(character))
             await websocket.send_text(welcome.model_dump_json())
+            await enter_scene(player)
             while True:
                 text = await websocket.receive_text()
                 try:
@@ -185,18 +236,25 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                         async with app.state.sessionmaker() as session:
                             await session.execute(
                                 update(Character)
-                                .where(Character.id == character.id)
+                                .where(Character.id == player.id)
                                 .values(last_visited_scene=scene)
                             )
                             await session.commit()
+                        old_scene = player.scene
+                        player.scene = scene
+                        player.position = (0.0, 0.0, 0.0)
+                        await broadcast(old_scene, PlayerLeftOut(id=player.id), exclude=player)
                         await websocket.send_text(SceneChangedOut(scene=scene).model_dump_json())
+                        await enter_scene(player)
                     case MoveIn(x=x, y=y, z=z):
-                        positions[character.id] = (x, y, z)
+                        player.position = (x, y, z)
+                        moved = PlayerMovedOut(id=player.id, x=x, y=y, z=z)
+                        await broadcast(player.scene, moved, exclude=player)
         except WebSocketDisconnect:
             pass
         finally:
-            del players[character.id]
-            positions.pop(character.id, None)
+            del players[player.id]
+            await broadcast(player.scene, PlayerLeftOut(id=player.id), exclude=player)
 
     return app
 
