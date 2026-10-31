@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NativeWebSocket;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -19,6 +20,51 @@ public class GameSocket : MonoBehaviour
         public DateTime created_at;
         public string last_visited_scene;
     }
+
+    public class RemotePlayerInfo
+    {
+        public int id;
+        public string nickname;
+        public string sprite_set_id;
+        public float x;
+        public float y;
+        public float z;
+
+        public Vector3 Position => new Vector3(x, y, z);
+    }
+
+    private class ScenePlayersMessage
+    {
+        public List<RemotePlayerInfo> players;
+    }
+
+    // NEW
+    private class PlayerJoinedMessage
+    {
+        public RemotePlayerInfo player;
+    }
+
+    // NEW
+    private class PlayerLeftMessage
+    {
+        public int id;
+    }
+
+    // NEW
+    private class PlayerMovedMessage
+    {
+        public int id;
+        public float x;
+        public float y;
+        public float z;
+    }
+
+    private readonly Dictionary<int, RemotePlayerInfo> _remotePlayers = new();
+    public IReadOnlyDictionary<int, RemotePlayerInfo> RemotePlayers => _remotePlayers;
+
+    public event Action<RemotePlayerInfo> PlayerJoined;
+    public event Action<RemotePlayerInfo> PlayerMoved;
+    public event Action<int> PlayerLeft; // id
 
     public CharacterInfo MyCharacter { get; private set; }
 
@@ -183,6 +229,35 @@ public class GameSocket : MonoBehaviour
                 ErrorMessage errorMessage = message.ToObject<ErrorMessage>();
                 Debug.LogWarning($"code is {errorMessage.code}, message is {errorMessage.message}");
                 JoinFailed?.Invoke(errorMessage.code);
+                break;
+            case "scene_players":
+                var scenePlayers = message.ToObject<ScenePlayersMessage>();
+                _remotePlayers.Clear();
+                foreach (var p in scenePlayers.players)
+                {
+                    _remotePlayers[p.id] = p;
+                }
+                break;
+            case "player_joined":
+                var joined = message.ToObject<PlayerJoinedMessage>().player;
+                _remotePlayers[joined.id] = joined;
+                PlayerJoined?.Invoke(joined);
+                break;
+            case "player_moved":
+                var moved = message.ToObject<PlayerMovedMessage>();
+                _remotePlayers.TryGetValue(moved.id, out var movedPlayer);
+                if (movedPlayer == null) break;
+
+                movedPlayer.x = moved.x;
+                movedPlayer.y = moved.y;
+                movedPlayer.z = moved.z;
+
+                PlayerMoved?.Invoke(movedPlayer);
+                break;
+            case "player_left":
+                var leftId = message.ToObject<PlayerLeftMessage>().id;
+                _remotePlayers.Remove(leftId);
+                PlayerLeft?.Invoke(leftId);
                 break;
             default:
                 Debug.LogWarning("모르는 메시지");
