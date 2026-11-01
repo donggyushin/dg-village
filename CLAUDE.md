@@ -15,6 +15,7 @@ Solo hobby project (weekends + spare time). Owner is strong on Python/server, ne
 
 No concrete genre/story yet. The one hard goal: **a beautiful game**.
 
+- Look = **retro 2D game feel + modern graphics** (2026-11-01): hand-drawn 2D characters, few animation frames, fixed quarter view — combined with real-time lighting, sprites receiving shadows, and URP post-processing (Bloom, Color Grading, DoF), HD-2D style. Not "dot/pixel" for its own sake.
 - World = **3D**, built from modular blocks (see **Map building**), rendered at native resolution — no whole-screen pixelation.
 - Characters and objects = mostly **2D sprites** in the 3D world, **Ragnarok Online style** (decided 2026-10-27): crisp, high-resolution anime sprites (~4.5 heads tall, big eyes, soft cel shading) on a 3D map. The owner prefers this over small dot sprites ("less pixel-y but pretty").
 - Player = **8-direction** 2D sprite asset. First character: `Sprites/Characters/LavenderGirl` (PixelLab v3, 128×128 canvas, low top-down, selective outline; prompt in `pixellab-metadata.json`).
