@@ -39,5 +39,9 @@ public class PlayerSpawner : MonoBehaviour
         _camera.Target.TrackingTarget = player.transform;
         _camera.PreviousStateIsValid = false;
         player.AddComponent<PlayerPositionSender>();
+
+        string nickname = _socket.MyCharacter.nickname;
+        player.GetComponentInChildren<NicknameLabel>().SetName(nickname);
+
     }
 }
