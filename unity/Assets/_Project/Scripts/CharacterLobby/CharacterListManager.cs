@@ -16,6 +16,8 @@ public class CharacterListManager : MonoBehaviour
     [SerializeField] private Button _deleteButton;
     [SerializeField] private TMP_Text _preventToCreateLabel;
     private int charactersCount = 0;
+    private CharacterInfo[] _characters;
+    private CharacterInfo _characterToDelete;
 
     // 서버 CharacterOut과 필드 이름 맞춤 (snake_case)
     private class CharacterInfo
@@ -58,7 +60,20 @@ public class CharacterListManager : MonoBehaviour
 
     private void DeleteButtonClicked()
     {
-        Debug.Log("삭제버튼 클릭");
+        int index = 0;
+
+        for (int i = 0; i < characterLobbySlots.Length; i++)
+        {
+            if (characterLobbySlots[i].IsSelected())
+            {
+                index = i;
+                break;
+            }
+        }
+
+        _characterToDelete = _characters[index];
+
+        Debug.Log($"{_characterToDelete.nickname} 을 지우기");
     }
 
     private void EnterButtonClicked()
@@ -163,6 +178,7 @@ public class CharacterListManager : MonoBehaviour
             }
 
             CharacterInfo[] characters = JsonConvert.DeserializeObject<CharacterInfo[]>(request.downloadHandler.text);
+            _characters = characters;
             charactersCount = characters.Length;
             for (int i = 0; i < charactersCount; i++)
             {
