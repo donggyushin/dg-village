@@ -13,6 +13,7 @@ public class CharacterListManager : MonoBehaviour
     [SerializeField] private CharacterLobbySlot[] characterLobbySlots;
     [SerializeField] private CharacterCatalog _catalog;
     [SerializeField] private Button _enterButton;
+    [SerializeField] private Button _deleteButton;
     [SerializeField] private TMP_Text _preventToCreateLabel;
     private int charactersCount = 0;
 
@@ -32,6 +33,7 @@ public class CharacterListManager : MonoBehaviour
         ConfigureEnterButton();
         StartCoroutine(FetchCharacters());
         _enterButton.onClick.AddListener(EnterButtonClicked);
+        _deleteButton.onClick.AddListener(DeleteButtonClicked);
 
         foreach (var slot in characterLobbySlots)
         {
@@ -52,6 +54,11 @@ public class CharacterListManager : MonoBehaviour
         {
             slot.Clean();
         }
+    }
+
+    private void DeleteButtonClicked()
+    {
+        Debug.Log("삭제버튼 클릭");
     }
 
     private void EnterButtonClicked()
@@ -119,6 +126,7 @@ public class CharacterListManager : MonoBehaviour
 
         _enterButton.enabled = hasSelected;
         _enterButton.GetComponent<CanvasGroup>().alpha = hasSelected ? 1 : 0;
+        _deleteButton.GetComponent<CanvasGroup>().alpha = hasSelected ? 1 : 0;
     }
 
     private void ConfigurePreventToCreateLabel()
