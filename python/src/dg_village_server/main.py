@@ -145,6 +145,33 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             await session.refresh(character)
             return CharacterOut.model_validate(character)
 
+    @app.delete(
+        "/servers/{server_id}/characters/{character_id}",
+        summary="Delete a character",
+        status_code=status.HTTP_204_NO_CONTENT,
+        responses={
+            404: {"description": "No such character on this server and account"},
+            409: {"description": "Character is in the game"},
+        },
+    )
+    async def delete_character(
+        request: Request, server_id: int, character_id: int, account_id: AccountId
+    ) -> None:
+        """Permanently deletes one of the caller's characters."""
+        async with request.app.state.sessionmaker() as session:
+            character = await session.get(Character, character_id)
+            # Someone else's character gets the same 404, so ids can't be probed.
+            if (
+                character is None
+                or character.server_id != server_id
+                or character.account_id != account_id
+            ):
+                raise HTTPException(status.HTTP_404_NOT_FOUND, "Character not found")
+            if character_id in players:
+                raise HTTPException(status.HTTP_409_CONFLICT, "Character is in the game")
+            await session.delete(character)
+            await session.commit()
+
     async def send_error(websocket: WebSocket, code: ErrorCode, message: str) -> None:
         await websocket.send_text(ErrorOut(code=code, message=message).model_dump_json())
 
