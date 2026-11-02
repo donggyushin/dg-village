@@ -141,6 +141,7 @@ public class CharacterListManager : MonoBehaviour
 
         _enterButton.enabled = hasSelected;
         _enterButton.GetComponent<CanvasGroup>().alpha = hasSelected ? 1 : 0;
+        _deleteButton.enabled = hasSelected;
         _deleteButton.GetComponent<CanvasGroup>().alpha = hasSelected ? 1 : 0;
     }
 
