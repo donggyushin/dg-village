@@ -51,6 +51,7 @@ public class CharacterLobbySlot : MonoBehaviour
         _characterId = 0;
         _spriteRenderer.sprite = null;
         _toggle.isOn = false;
+        _nickname.text = "";
     }
 
     public bool IsSelected()

@@ -27,3 +27,4 @@ dg-village 에 쓰인 외부 에셋과 라이선스. 새 에셋을 넣을 때마
 
 - 캐릭터 스프라이트 `Sprites/Characters/LavenderGirl` — PixelLab 으로 생성 (프롬프트: `pixellab-metadata.json`).
 - 바닥·벽 텍스처 `Texture/PixelLab/` (Grass, Cobblestone, Dirt, StoneWall, 128×128) — PixelLab Create tiles (Square top-down, 128px, no outline) 로 생성, 2026-11-01. Grass·Dirt 는 이음새 제거 후처리(반 오프셋 + 디더 마스크 합성). StoneWall 은 cobblestone 프롬프트 결과 중 엇갈린 벽돌 타일.
+- 나무 스프라이트 `Sprites/Environment/Tree/FantasyTree_01.png` (256×256) — PixelLab Create Object (Pro, 1 direction, low top-down) 로 생성, 2026-11-03. 프롬프트: "a large beautiful fantasy tree, single tree, full tree from roots to crown, thick twisted brown trunk, lush round layered canopy of soft green leaves with warm sunlit highlights, classic 2000s Korean MMORPG sprite style, soft cel shading, soft warm palette, transparent background, no ground, no shadow".
