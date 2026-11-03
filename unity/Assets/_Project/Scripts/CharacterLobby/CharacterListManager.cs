@@ -15,6 +15,7 @@ public class CharacterListManager : MonoBehaviour
     [SerializeField] private Button _enterButton;
     [SerializeField] private Button _deleteButton;
     [SerializeField] private TMP_Text _preventToCreateLabel;
+    [SerializeField] private DeleteConfirmDialog _deleteConfirmDialog;
     private int charactersCount = 0;
     private CharacterInfo[] _characters;
     private CharacterInfo _characterToDelete;
@@ -73,7 +74,34 @@ public class CharacterListManager : MonoBehaviour
 
         _characterToDelete = _characters[index];
 
-        Debug.Log($"{_characterToDelete.nickname} 을 지우기");
+        _deleteConfirmDialog._confirmAction += DeleteConfirmDialogAction;
+        _deleteConfirmDialog.Show(_characterToDelete.nickname);
+    }
+
+    private void DeleteConfirmDialogAction()
+    {
+        StartCoroutine(DeleteCharacter(_characterToDelete.id));
+    }
+
+    private IEnumerator DeleteCharacter(int characterId)
+    {
+        string url = $"{ServerConfig.BaseUrl}/servers/{Session.ServerId}/characters/{characterId}";
+
+        using (UnityWebRequest request = UnityWebRequest.Delete(url))
+        {
+            request.downloadHandler = new DownloadHandlerBuffer();
+            request.SetRequestHeader("X-Account-Id", Session.AccountId);
+
+            yield return request.SendWebRequest();
+
+            if (request.result != UnityWebRequest.Result.Success)
+            {
+                Debug.LogWarning($"캐릭터 삭제 실패 {request.responseCode}: {request.downloadHandler.text}");
+                yield break;
+            }
+
+            Refresh();
+        }
     }
 
     private void EnterButtonClicked()
