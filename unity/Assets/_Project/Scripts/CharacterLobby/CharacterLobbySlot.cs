@@ -1,4 +1,5 @@
 using System;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,6 +9,7 @@ public class CharacterLobbySlot : MonoBehaviour
     [SerializeField] private SpriteRenderer _spriteRenderer;
     [SerializeField] private Toggle _toggle;
     [SerializeField] private MeshRenderer _meshRenderer;
+    [SerializeField] private TMP_Text _nickname;
 
     public event Action SelectionChanged;
 
@@ -16,6 +18,11 @@ public class CharacterLobbySlot : MonoBehaviour
         _toggle.isOn = false;
         _toggle.onValueChanged.AddListener(OnToggleChanged);
         ConfigureGlowRing();
+    }
+
+    public void SetNickname(string nickname)
+    {
+        _nickname.text = nickname;
     }
 
     public void SetToggle(bool value)

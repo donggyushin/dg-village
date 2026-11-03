@@ -229,6 +229,7 @@ public class CharacterListManager : MonoBehaviour
                     }
                     characterLobbySlots[i].SetSprite(sprite);
                     characterLobbySlots[i].SetCharacterId(characterId);
+                    characterLobbySlots[i].SetNickname(character.nickname);
                 }
             }
 
