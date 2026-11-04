@@ -5,6 +5,7 @@ using UnityEngine;
 public class ChatPanelManager : MonoBehaviour
 {
     [SerializeField] private TMP_InputField _input;
+    [SerializeField] private GameObject _chatLine;
 
     public Action<string> ChatSubmit;
 
