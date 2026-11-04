@@ -20,8 +20,21 @@ public class ChatPanelManager : MonoBehaviour
         _input.onSubmit.RemoveListener(HandleSubmit);
     }
 
+    public void AppendChatLines(string[] chats)
+    {
+        foreach (var chat in chats)
+        {
+            GameObject chatline = Instantiate(_chatLine, _content.transform);
+            chatline.GetComponent<TMP_Text>().text = chat;
+        }
+
+
+    }
+
     private void HandleSubmit(string text)
     {
+        if (string.IsNullOrWhiteSpace(text)) return;
+
         _input.text = string.Empty;
         _input.ActivateInputField();
 
