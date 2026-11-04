@@ -63821,6 +63821,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ChatPanelManager
   _input: {fileID: 1272949512}
   _chatLine: {fileID: 7396216907142848167, guid: 57a2022086e714de5bd449ccc1e7eb1b, type: 3}
+  _content: {fileID: 1363924661}
 --- !u!1 &1848610705
 GameObject:
   m_ObjectHideFlags: 0

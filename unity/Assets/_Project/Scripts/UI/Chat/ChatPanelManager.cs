@@ -6,6 +6,7 @@ public class ChatPanelManager : MonoBehaviour
 {
     [SerializeField] private TMP_InputField _input;
     [SerializeField] private GameObject _chatLine;
+    [SerializeField] private GameObject _content;
 
     public Action<string> ChatSubmit;
 
