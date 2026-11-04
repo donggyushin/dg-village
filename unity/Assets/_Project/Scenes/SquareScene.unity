@@ -63714,6 +63714,7 @@ GameObject:
   - component: {fileID: 1844225430}
   - component: {fileID: 1844225429}
   - component: {fileID: 1844225431}
+  - component: {fileID: 1844225432}
   m_Layer: 5
   m_Name: ChatPanel
   m_TagString: Untagged
@@ -63806,6 +63807,19 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!114 &1844225432
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1844225427}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8e52b6fae9254c2e87ba6725e01fa45, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChatPanelManager
+  _input: {fileID: 1272949512}
 --- !u!1 &1848610705
 GameObject:
   m_ObjectHideFlags: 0
