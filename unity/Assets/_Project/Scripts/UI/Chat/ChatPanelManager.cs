@@ -1,12 +1,14 @@
 using System;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class ChatPanelManager : MonoBehaviour
 {
     [SerializeField] private TMP_InputField _input;
     [SerializeField] private GameObject _chatLine;
     [SerializeField] private GameObject _content;
+    [SerializeField] private ScrollRect _scrollRect;
 
     public Action<string> ChatSubmit;
 
@@ -28,7 +30,8 @@ public class ChatPanelManager : MonoBehaviour
             chatline.GetComponent<TMP_Text>().text = chat;
         }
 
-
+        Canvas.ForceUpdateCanvases();
+        _scrollRect.verticalNormalizedPosition = 0f;
     }
 
     private void HandleSubmit(string text)
