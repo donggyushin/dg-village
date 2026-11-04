@@ -9,8 +9,48 @@ public class ChatPanelManager : MonoBehaviour
     [SerializeField] private GameObject _chatLine;
     [SerializeField] private GameObject _content;
     [SerializeField] private ScrollRect _scrollRect;
+    [SerializeField] private RectTransform _panelTransform;
+    [SerializeField] private Button _foldButton;
+    private float _expandedX;
+
+    private bool _isCollapsed = false;
 
     public Action<string> ChatSubmit;
+
+    void Awake()
+    {
+        _expandedX = _panelTransform.anchoredPosition.x;
+        _foldButton.onClick.AddListener(FoldButtonTapped);
+        Fold();
+    }
+
+    public void FoldButtonTapped()
+    {
+        if (_isCollapsed)
+        {
+            Expand();
+        }
+        else
+        {
+            Fold();
+        }
+    }
+
+    private void Fold()
+    {
+        _isCollapsed = true;
+
+        _panelTransform.anchoredPosition = new Vector2(_panelTransform.rect.width - 100, _panelTransform.anchoredPosition.y);
+        _foldButton.GetComponentInChildren<TMP_Text>().text = "<";
+    }
+
+    private void Expand()
+    {
+        _isCollapsed = false;
+
+        _panelTransform.anchoredPosition = new Vector2(_expandedX, _panelTransform.anchoredPosition.y);
+        _foldButton.GetComponentInChildren<TMP_Text>().text = ">";
+    }
 
     void OnEnable()
     {
