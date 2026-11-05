@@ -54,6 +54,8 @@ class Player:
 
     websocket: WebSocket
     id: int
+    # Players only meet within one server. A server is a channel, not a separate process.
+    server_id: int
     nickname: str
     sprite_set_id: str
     scene: str
@@ -175,23 +177,26 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def send_error(websocket: WebSocket, code: ErrorCode, message: str) -> None:
         await websocket.send_text(ErrorOut(code=code, message=message).model_dump_json())
 
-    async def broadcast(scene: str, message: BaseModel, exclude: Player) -> None:
-        """Sends to everyone in the scene but `exclude`, all at once so a slow client
-        doesn't hold up the others. A failed send is ignored: that client's own handler
-        sees the disconnect and cleans up."""
+    def players_in(server_id: int, scene: str) -> list[Player]:
+        """Everyone in this scene of this server: the players who can see each other."""
+        return [p for p in players.values() if p.server_id == server_id and p.scene == scene]
+
+    async def broadcast(server_id: int, scene: str, message: BaseModel, exclude: Player) -> None:
+        """Sends to everyone in the scene of this server but `exclude`, all at once so a
+        slow client doesn't hold up the others. A failed send is ignored: that client's own
+        handler sees the disconnect and cleans up."""
         text = message.model_dump_json()
-        targets = [p for p in players.values() if p.scene == scene and p is not exclude]
+        targets = [p for p in players_in(server_id, scene) if p is not exclude]
         await asyncio.gather(
             *(p.websocket.send_text(text) for p in targets), return_exceptions=True
         )
 
     async def enter_scene(player: Player) -> None:
         """Tells the player who is already in its scene, and the others that it arrived."""
-        others = [
-            p.to_out() for p in players.values() if p.scene == player.scene and p is not player
-        ]
+        others = [p.to_out() for p in players_in(player.server_id, player.scene) if p is not player]
         await player.websocket.send_text(ScenePlayersOut(players=others).model_dump_json())
-        await broadcast(player.scene, PlayerJoinedOut(player=player.to_out()), exclude=player)
+        joined = PlayerJoinedOut(player=player.to_out())
+        await broadcast(player.server_id, player.scene, joined, exclude=player)
 
     async def reject(websocket: WebSocket, code: ErrorCode, message: str) -> None:
         await send_error(websocket, code, message)
@@ -238,6 +243,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         player = Player(
             websocket=websocket,
             id=character.id,
+            server_id=character.server_id,
             nickname=character.nickname,
             sprite_set_id=character.sprite_set_id,
             scene=character.last_visited_scene,
@@ -270,18 +276,20 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                         old_scene = player.scene
                         player.scene = scene
                         player.position = (0.0, 0.0, 0.0)
-                        await broadcast(old_scene, PlayerLeftOut(id=player.id), exclude=player)
+                        left = PlayerLeftOut(id=player.id)
+                        await broadcast(player.server_id, old_scene, left, exclude=player)
                         await websocket.send_text(SceneChangedOut(scene=scene).model_dump_json())
                         await enter_scene(player)
                     case MoveIn(x=x, y=y, z=z):
                         player.position = (x, y, z)
                         moved = PlayerMovedOut(id=player.id, x=x, y=y, z=z)
-                        await broadcast(player.scene, moved, exclude=player)
+                        await broadcast(player.server_id, player.scene, moved, exclude=player)
         except WebSocketDisconnect:
             pass
         finally:
             del players[player.id]
-            await broadcast(player.scene, PlayerLeftOut(id=player.id), exclude=player)
+            left = PlayerLeftOut(id=player.id)
+            await broadcast(player.server_id, player.scene, left, exclude=player)
 
     return app
 
