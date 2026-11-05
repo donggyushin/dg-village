@@ -32,7 +32,7 @@ dg-village/
 └── python/   # Game server (Python) — to be recreated by the owner
 ```
 
-Still in the repo: `.github/workflows/deploy.yml` (old auto-deploy; see **Deploy**), `.gitignore` (covers Unity + Python).
+Also in the repo: `deploy/` + `.github/workflows/deploy.yml` (production stack and auto-deploy; see **Deploy**), `.gitignore` (covers Unity + Python).
 
 ## Stack
 
@@ -68,12 +68,13 @@ A low-res pixelation render (640×360 render target) was tried on 2026-10-27 and
 - Character shadow = **blob shadow** (Ragnarok-style), not a real cast shadow: a flat sprite lit from the side casts a thin stick-like shadow (with the current light it is ~1/4 of the sprite width). `Player` root → `Sprite` (billboard) + `Shadow` (Quad at y 0.02, rotation (90, 0, 0), scale 0.9, no collider, Cast Shadows Off, material `Materials/BlobShadow` = URP Unlit, Transparent, built-in Default-Particle texture, black at alpha 0.45).
 - Use Alpha Clip (cutout) materials for sprites in the 3D scene to avoid transparency sorting issues.
 
-## Deploy (server, still running the OLD code)
+## Deploy
 
 - AWS Lightsail instance `dg-village-origin` (Ubuntu 24.04, 2 GB, $12/mo) in **Sydney** `ap-southeast-2` — the AWS free plan ($120 credits until **2027-04-20**) is locked to Sydney by an SCP; unlocking other regions requires a paid plan and removes spend limits. Static IP `13.54.176.157`, firewall 22/80/443. URL `https://13-54-176-157.sslip.io` (free HTTPS via sslip.io + Caddy).
 - SSH: `ssh -i ~/.ssh/dg-village ubuntu@13.54.176.157`; repo cloned at `~/dg-village`, `deploy/.env` (secrets) only on the server.
-- Old setup (in git history: `deploy/`, `python/Dockerfile`): Docker Compose (Caddy → server:8000, Postgres), `deploy/deploy.sh` = `git pull --ff-only` + `docker compose up -d --build --wait`, daily pg_dump backups via cron + Lightsail snapshots.
-- **`.github/workflows/deploy.yml` still exists**: a push to `main` touching `python/**`, `deploy/**` or the workflow runs ruff + pytest in `python/` and then SSH-deploys. With `python/` and `deploy/` gone, merging the delete commit into `main` will fail the workflow (and a successful deploy would pull a tree with no server). Update or remove the workflow before merging to `main`.
+- Setup (`deploy/`, `python/Dockerfile`; details in `deploy/README.md`): Docker Compose (Caddy → server:8000, Postgres), `deploy/deploy.sh` = `git pull --ff-only` + `docker compose up -d --build --wait`, daily pg_dump backups via cron + Lightsail snapshots.
+- `.github/workflows/deploy.yml`: a push to `main` touching `python/**`, `deploy/**` or the workflow runs ruff in `python/` and then SSH-deploys. There are no server tests yet.
+- The Postgres volume is `postgres-data-v2` (empty database for the restart). The previous game's data stays unused in `dg-village-prod_postgres-data`.
 
 ## Unity gotchas (from the old project)
 
