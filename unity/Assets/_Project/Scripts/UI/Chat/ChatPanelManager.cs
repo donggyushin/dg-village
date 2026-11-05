@@ -11,6 +11,7 @@ public class ChatPanelManager : MonoBehaviour
     [SerializeField] private ScrollRect _scrollRect;
     [SerializeField] private RectTransform _panelTransform;
     [SerializeField] private Button _foldButton;
+    [SerializeField] private string _scene;
     private float _expandedX;
 
     private bool _isCollapsed = false;

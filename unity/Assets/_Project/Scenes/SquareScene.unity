@@ -63963,6 +63963,7 @@ MonoBehaviour:
   _scrollRect: {fileID: 1388710487}
   _panelTransform: {fileID: 1844225428}
   _foldButton: {fileID: 2045328231}
+  _scene: SquareScene
 --- !u!1 &1848610705
 GameObject:
   m_ObjectHideFlags: 0
