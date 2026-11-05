@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import time
 import uuid
 from collections.abc import AsyncIterator
@@ -48,13 +49,15 @@ AccountId = Annotated[
     ),
 ]
 
+logger = logging.getLogger(__name__)
+
 JOIN_TIMEOUT_SECONDS = 10
 CHAT_MIN_INTERVAL_SECONDS = 0.5
 
 
 @dataclass
 class Player:
-    """A character in the game. Memory only, gone on disconnect."""
+    """A character in the game. Gone on disconnect; only its scene and position are saved."""
 
     websocket: WebSocket
     id: int
@@ -63,9 +66,9 @@ class Player:
     nickname: str
     sprite_set_id: str
     scene: str
-    # Latest move, in the current scene's world coordinates. Moves are too frequent to save.
-    # Starts at the origin, where the client spawns a player entering a scene.
-    position: tuple[float, float, float] = (0.0, 0.0, 0.0)
+    # Latest position in the current scene's world coordinates. Starts at the saved position.
+    # Moves are too frequent to save, so it reaches the database on disconnect.
+    position: tuple[float, float, float]
     # time.monotonic() of the last accepted chat, to refuse flooding.
     last_chat_at: float = float("-inf")
 
@@ -206,6 +209,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         joined = PlayerJoinedOut(player=player.to_out())
         await broadcast(player.server_id, player.scene, joined, exclude=player)
 
+    async def save_position(player: Player) -> None:
+        x, y, z = player.position
+        async with app.state.sessionmaker() as session:
+            await session.execute(
+                update(Character)
+                .where(Character.id == player.id)
+                .values(last_x=x, last_y=y, last_z=z)
+            )
+            await session.commit()
+
     async def reject(websocket: WebSocket, code: ErrorCode, message: str) -> None:
         await send_error(websocket, code, message)
         await websocket.close(status.WS_1008_POLICY_VIOLATION)
@@ -232,10 +245,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
         async with app.state.sessionmaker() as session:
             character = await session.get(Character, join.character_id)
-        if character is None or character.account_id != join.account_id:
+            if character is not None and character.account_id != join.account_id:
+                character = None
+            connected = character is not None and character.id in players
+            if character is not None and not connected:
+                # The first read may have raced the previous connection's position save.
+                # A player leaves `players` only after that save, so this read has it.
+                await session.refresh(character)
+        if character is None:
             await reject(websocket, "character_not_found", "No such character on this account")
             return None
-        if character.id in players:
+        # Checked again: another join may have entered while the database was being read.
+        if connected or character.id in players:
             await reject(websocket, "already_connected", "Character is already in the game")
             return None
         return character
@@ -255,6 +276,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             nickname=character.nickname,
             sprite_set_id=character.sprite_set_id,
             scene=character.last_visited_scene,
+            position=(character.last_x, character.last_y, character.last_z),
         )
         players[player.id] = player
         try:
@@ -271,22 +293,24 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 match message:
                     case JoinIn():
                         await send_error(websocket, "already_joined", "Already in the game")
-                    case ChangeSceneIn(scene=scene):
+                    case ChangeSceneIn(scene=scene, x=x, y=y, z=z):
                         # Saved right away rather than on disconnect: scene changes are
-                        # rare, and a server crash would skip the disconnect save.
+                        # rare, and a server crash would skip the disconnect save. One
+                        # UPDATE, so the scene and its position can't get out of step.
                         async with app.state.sessionmaker() as session:
                             await session.execute(
                                 update(Character)
                                 .where(Character.id == player.id)
-                                .values(last_visited_scene=scene)
+                                .values(last_visited_scene=scene, last_x=x, last_y=y, last_z=z)
                             )
                             await session.commit()
                         old_scene = player.scene
                         player.scene = scene
-                        player.position = (0.0, 0.0, 0.0)
+                        player.position = (x, y, z)
                         left = PlayerLeftOut(id=player.id)
                         await broadcast(player.server_id, old_scene, left, exclude=player)
-                        await websocket.send_text(SceneChangedOut(scene=scene).model_dump_json())
+                        changed = SceneChangedOut(scene=scene, x=x, y=y, z=z)
+                        await websocket.send_text(changed.model_dump_json())
                         await enter_scene(player)
                     case MoveIn(x=x, y=y, z=z):
                         player.position = (x, y, z)
@@ -307,9 +331,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         except WebSocketDisconnect:
             pass
         finally:
-            del players[player.id]
-            left = PlayerLeftOut(id=player.id)
-            await broadcast(player.server_id, player.scene, left, exclude=player)
+            # Saved while still in `players`: receive_join relies on this to read the new position.
+            try:
+                await save_position(player)
+            except Exception:
+                logger.exception("Failed to save position of character %s", player.id)
+            finally:
+                # Even if the save failed: staying in `players` would lock the character out.
+                del players[player.id]
+                left = PlayerLeftOut(id=player.id)
+                await broadcast(player.server_id, player.scene, left, exclude=player)
 
     return app
 

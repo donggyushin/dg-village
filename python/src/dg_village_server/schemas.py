@@ -54,4 +54,7 @@ class CharacterOut(BaseModel):
         description="Unity scene the character was last in; load it after welcome",
         examples=["SquareScene"],
     )
+    last_x: float = Field(description="Position in last_visited_scene", examples=[1.5])
+    last_y: float = Field(description="Position in last_visited_scene", examples=[0.0])
+    last_z: float = Field(description="Position in last_visited_scene", examples=[-3.25])
     created_at: datetime = Field(description="When the character was created")

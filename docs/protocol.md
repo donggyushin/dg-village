@@ -54,19 +54,22 @@
 
 ### `change_scene`
 
-다른 맵 씬으로 이동한다. 서버는 바로 `last_visited_scene`에 저장하고 `scene_changed`로 답한다. 클라이언트는 `scene_changed`를 받은 뒤 씬을 로드한다. 게임에 처음 들어올 때는 보내지 않는다 (서버가 `join`에서 이미 `last_visited_scene`을 안다).
+다른 맵 씬의 지정한 좌표로 이동한다. 서버는 바로 씬과 좌표를 `last_visited_scene`, `last_x`, `last_y`, `last_z`에 저장하고 `scene_changed`로 답한다. 클라이언트는 `scene_changed`를 받은 뒤 씬을 로드하고 그 좌표에 스폰한다. 게임에 처음 들어올 때는 보내지 않는다 (서버가 `join`에서 이미 저장된 씬과 좌표를 안다).
+
+`change_scene`을 보낸 뒤에는 새 씬 로드가 끝날 때까지 `move`를 보내지 않는다. 늦게 도착한 `move`는 이전 씬의 좌표를 새 씬의 좌표로 덮어쓴다.
 
 ```json
-{"type": "change_scene", "scene": "SquareScene"}
+{"type": "change_scene", "scene": "SquareScene", "x": 1.5, "y": 0.0, "z": -3.25}
 ```
 
 | 필드 | 타입 | 설명 |
 |---|---|---|
 | `scene` | string | Unity 씬 이름. 서버의 `SceneName`(`schemas.py`)에 있는 씬만 허용, 아니면 `invalid_message` |
+| `x`, `y`, `z` | float | 새 씬에서 시작할 Unity 월드 좌표 (m). `NaN`/`Infinity`는 `invalid_message` |
 
 ### `move`
 
-내 캐릭터의 현재 좌표(현재 씬 기준 월드 좌표). 서버는 나에게 답하지 않고, 메모리에만 저장하고 (DB 저장 안 함) 같은 씬 사람들에게 `player_moved`로 그대로 전달한다. 씬은 보내지 않는다: 서버가 `join`/`change_scene`으로 이미 안다. 움직이는 동안만 약 10Hz로 보낸다.
+내 캐릭터의 현재 좌표(현재 씬 기준 월드 좌표). 서버는 나에게 답하지 않고, 메모리에 저장하고 같은 씬 사람들에게 `player_moved`로 그대로 전달한다. DB에는 `move`마다 저장하지 않고, 연결이 끊길 때 마지막 좌표를 저장한다. 서버가 비정상 종료되면 마지막 저장 시점의 좌표로 돌아간다. 씬은 보내지 않는다: 서버가 `join`/`change_scene`으로 이미 안다. 움직이는 동안만 약 10Hz로 보낸다.
 
 ```json
 {"type": "move", "x": 1.5, "y": 0.0, "z": -3.25}
@@ -105,19 +108,22 @@
     "nickname": "Developer",
     "sprite_set_id": "lavender_girl",
     "last_visited_scene": "SquareScene",
+    "last_x": 1.5,
+    "last_y": 0.0,
+    "last_z": -3.25,
     "created_at": "2026-10-27T16:46:11.840108Z"
   }
 }
 ```
 
-`character`는 REST의 `CharacterOut`과 같은 모양이다. 클라이언트는 welcome을 받으면 `last_visited_scene` 씬을 로드한다 (새 캐릭터는 `SquareScene`).
+`character`는 REST의 `CharacterOut`과 같은 모양이다. 클라이언트는 welcome을 받으면 `last_visited_scene` 씬을 로드하고 (`last_x`, `last_y`, `last_z`)에 스폰한다 (새 캐릭터는 `SquareScene`의 `(0, 0, 0)`).
 
 ### `scene_changed`
 
-`change_scene` 성공. 서버 기준으로 플레이어는 이제 이 씬에 있다.
+`change_scene` 성공. 서버 기준으로 플레이어는 이제 이 씬의 이 좌표에 있다. 클라이언트는 이 씬을 로드하고 이 좌표에 스폰한다.
 
 ```json
-{"type": "scene_changed", "scene": "SquareScene"}
+{"type": "scene_changed", "scene": "SquareScene", "x": 1.5, "y": 0.0, "z": -3.25}
 ```
 
 ### `scene_players`
@@ -140,7 +146,7 @@
 | `id` | int | 캐릭터 id |
 | `nickname` | string | 닉네임 |
 | `sprite_set_id` | string | 클라이언트 `CharacterSpriteSet` id |
-| `x`, `y`, `z` | float | 마지막 `move` 좌표. 씬에 들어온 뒤 아직 안 움직였으면 `(0, 0, 0)` (클라이언트 spawn 지점) |
+| `x`, `y`, `z` | float | 마지막 `move` 좌표. 씬에 들어온 뒤 아직 안 움직였으면 시작 좌표 (`welcome`의 저장된 좌표 또는 `change_scene`의 좌표) |
 
 ### `player_joined`
 

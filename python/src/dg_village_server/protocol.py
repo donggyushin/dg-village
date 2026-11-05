@@ -21,10 +21,13 @@ class JoinIn(BaseModel):
 
 
 class ChangeSceneIn(BaseModel):
-    """The player moves to another map scene. Saved right away as last_visited_scene."""
+    """The player moves to another map scene, at this position. Saved right away."""
 
     type: Literal["change_scene"]
     scene: SceneName = Field(description="Unity scene to move to", examples=["SquareScene"])
+    x: float = Field(allow_inf_nan=False, examples=[1.5])
+    y: float = Field(allow_inf_nan=False, examples=[0.0])
+    z: float = Field(allow_inf_nan=False, examples=[-3.25])
 
 
 class MoveIn(BaseModel):
@@ -65,10 +68,14 @@ class WelcomeOut(BaseModel):
 
 
 class SceneChangedOut(BaseModel):
-    """Reply to change_scene: the server now has the player in this scene. Load it."""
+    """Reply to change_scene: the server now has the player in this scene. Load it and
+    spawn at this position."""
 
     type: Literal["scene_changed"] = "scene_changed"
     scene: SceneName
+    x: float = Field(examples=[1.5])
+    y: float = Field(examples=[0.0])
+    z: float = Field(examples=[-3.25])
 
 
 class PlayerOut(BaseModel):

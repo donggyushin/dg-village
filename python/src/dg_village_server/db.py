@@ -43,6 +43,10 @@ class Character(Base):
     sprite_set_id: Mapped[str] = mapped_column(String(64))
     # Unity scene name the character was last in; the client loads it after welcome.
     last_visited_scene: Mapped[str] = mapped_column(String(64), server_default="SquareScene")
+    # Position in last_visited_scene. Saved on scene change and disconnect, not on every move.
+    last_x: Mapped[float] = mapped_column(server_default="0")
+    last_y: Mapped[float] = mapped_column(server_default="0")
+    last_z: Mapped[float] = mapped_column(server_default="0")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
