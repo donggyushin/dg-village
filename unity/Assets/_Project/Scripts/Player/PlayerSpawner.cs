@@ -32,7 +32,10 @@ public class PlayerSpawner : MonoBehaviour
 
     private void Spawn()
     {
-        Vector3 spawnPosition = new Vector3(0f, 0f, 0f);
+        var x = _socket.MyCharacter.last_x;
+        var y = _socket.MyCharacter.last_y;
+        var z = _socket.MyCharacter.last_z;
+        Vector3 spawnPosition = new Vector3(x, y, z);
         GameObject player = Instantiate(_playerPrefab, spawnPosition, Quaternion.identity);
         CharacterSpriteSet spriteSet = _catalog.Find(_socket.MyCharacter.sprite_set_id);
         player.GetComponentInChildren<CharacterSpriteView>().SetSpriteSet(spriteSet);

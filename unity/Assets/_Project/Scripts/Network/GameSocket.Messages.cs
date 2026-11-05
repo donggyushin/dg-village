@@ -13,6 +13,9 @@ public partial class GameSocket
         public string sprite_set_id;
         public DateTime created_at;
         public string last_visited_scene;
+        public float last_x;
+        public float last_y;
+        public float last_z;
     }
 
     public class RemotePlayerInfo
@@ -71,6 +74,9 @@ public partial class GameSocket
     {
         public string type = "change_scene";
         public string scene;
+        public float x;
+        public float y;
+        public float z;
     }
 
     private class MoveMessage

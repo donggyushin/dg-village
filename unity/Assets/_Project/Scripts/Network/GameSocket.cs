@@ -25,6 +25,8 @@ public partial class GameSocket : MonoBehaviour
     public event Action<string> JoinFailed; // error code
     public event Action<ChatInfo> ChatReceived;
 
+    private bool _isChangingScene = false;
+
     private void Awake()
     {
 
@@ -93,11 +95,15 @@ public partial class GameSocket : MonoBehaviour
         await _webSocket.SendText(JsonConvert.SerializeObject(join));
     }
 
-    public async void ChangeScene(string scene)
+    public async void ChangeScene(string scene, Vector3 position)
     {
+        _isChangingScene = true;
         var changeScene = new ChangeSceneMessage
         {
-            scene = scene
+            scene = scene,
+            x = position.x,
+            y = position.y,
+            z = position.z
         };
 
         var message = JsonConvert.SerializeObject(changeScene);
@@ -107,6 +113,8 @@ public partial class GameSocket : MonoBehaviour
 
     public async void SendMove(Vector3 position)
     {
+        if (_isChangingScene) return;
+
         var move = new MoveMessage
         {
             x = position.x,
@@ -146,6 +154,7 @@ public partial class GameSocket : MonoBehaviour
         switch (type)
         {
             case "welcome":
+                _isChangingScene = false;
                 WelcomeMessage welcomeMessage = message.ToObject<WelcomeMessage>();
                 Debug.Log($"id is {welcomeMessage.character.id}");
                 Debug.Log($"nickname is {welcomeMessage.character.nickname}");
@@ -154,10 +163,19 @@ public partial class GameSocket : MonoBehaviour
                 break;
             case "scene_changed":
                 var scene = (string)message["scene"];
+                var x = (float)message["x"];
+                var y = (float)message["y"];
+                var z = (float)message["z"];
                 MyCharacter.last_visited_scene = scene;
-                SceneManager.LoadSceneAsync(scene);
+                MyCharacter.last_x = x;
+                MyCharacter.last_y = y;
+                MyCharacter.last_z = z;
+
+                var loading = SceneManager.LoadSceneAsync(scene);
+                loading.completed += _ => _isChangingScene = false;
                 break;
             case "error":
+                _isChangingScene = false;
                 ErrorMessage errorMessage = message.ToObject<ErrorMessage>();
                 Debug.LogWarning($"code is {errorMessage.code}, message is {errorMessage.message}");
                 JoinFailed?.Invoke(errorMessage.code);
