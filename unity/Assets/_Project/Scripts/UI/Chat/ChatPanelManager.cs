@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 public class ChatPanelManager : MonoBehaviour
@@ -10,6 +11,7 @@ public class ChatPanelManager : MonoBehaviour
     [SerializeField] private ScrollRect _scrollRect;
     [SerializeField] private RectTransform _panelTransform;
     [SerializeField] private Button _foldButton;
+    private InputActionMap _playerActions;
     private float _expandedX;
     private GameSocket _socket;
 
@@ -20,7 +22,26 @@ public class ChatPanelManager : MonoBehaviour
         _expandedX = _panelTransform.anchoredPosition.x;
         _foldButton.onClick.AddListener(FoldButtonTapped);
         _socket = GameSocket.Instance;
+        _playerActions = InputSystem.actions.FindActionMap("Player");
         Fold();
+    }
+
+    void Update()
+    {
+        if (_input.isFocused)
+        {
+            if (_playerActions.enabled)
+            {
+                _playerActions.Disable();
+            }
+        }
+        else
+        {
+            if (_playerActions.enabled == false)
+            {
+                _playerActions.Enable();
+            }
+        }
     }
 
     public void FoldButtonTapped()
@@ -69,6 +90,7 @@ public class ChatPanelManager : MonoBehaviour
         {
             _socket.ChatReceived -= HandleChatReceived;
         }
+        _playerActions.Enable();
     }
 
     public void AppendChatLines(string[] chats)
