@@ -7,7 +7,7 @@ may send; the server's messages are the *Out models.
 import uuid
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, TypeAdapter
+from pydantic import BaseModel, Field, StringConstraints, TypeAdapter
 
 from .schemas import CharacterOut, SceneName
 
@@ -36,7 +36,25 @@ class MoveIn(BaseModel):
     z: float = Field(allow_inf_nan=False, examples=[-3.25])
 
 
-ClientMessage = TypeAdapter(Annotated[JoinIn | ChangeSceneIn | MoveIn, Field(discriminator="type")])
+# Control characters are refused: a line break would fake extra chat lines.
+ChatText = Annotated[
+    str,
+    StringConstraints(
+        strip_whitespace=True, min_length=1, max_length=200, pattern=r"^[^\x00-\x1f\x7f]+$"
+    ),
+]
+
+
+class ChatIn(BaseModel):
+    """The player says something to everyone in its scene. Not stored anywhere."""
+
+    type: Literal["chat"]
+    text: ChatText = Field(description="1-200 characters, no control characters")
+
+
+ClientMessage = TypeAdapter(
+    Annotated[JoinIn | ChangeSceneIn | MoveIn | ChatIn, Field(discriminator="type")]
+)
 
 
 class WelcomeOut(BaseModel):
@@ -97,6 +115,16 @@ class PlayerLeftOut(BaseModel):
     id: int = Field(description="Character id", examples=[3])
 
 
+class ChatMessageOut(BaseModel):
+    """Someone in my scene said something. I get my own messages too. The server fills in
+    the speaker, so it can't be faked."""
+
+    type: Literal["chat_message"] = "chat_message"
+    id: int = Field(description="Character id of the speaker", examples=[3])
+    nickname: str = Field(examples=["라벤더"])
+    text: str = Field(examples=["안녕하세요"])
+
+
 ErrorCode = Literal[
     "invalid_message",  # Not JSON, unknown type or missing fields
     "join_timeout",  # No join within JOIN_TIMEOUT_SECONDS of connecting
@@ -104,6 +132,7 @@ ErrorCode = Literal[
     "already_joined",  # A second join on the same connection
     "character_not_found",  # No such character, or it belongs to another account
     "already_connected",  # The character is already in the game on another connection
+    "chat_too_fast",  # Chat sent within CHAT_MIN_INTERVAL_SECONDS of the previous one
 ]
 
 

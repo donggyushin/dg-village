@@ -1,4 +1,5 @@
 import asyncio
+import time
 import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -22,6 +23,8 @@ from .config import Settings
 from .db import Character, Server, create_engine, create_sessionmaker
 from .protocol import (
     ChangeSceneIn,
+    ChatIn,
+    ChatMessageOut,
     ClientMessage,
     ErrorCode,
     ErrorOut,
@@ -46,6 +49,7 @@ AccountId = Annotated[
 ]
 
 JOIN_TIMEOUT_SECONDS = 10
+CHAT_MIN_INTERVAL_SECONDS = 0.5
 
 
 @dataclass
@@ -62,6 +66,8 @@ class Player:
     # Latest move, in the current scene's world coordinates. Moves are too frequent to save.
     # Starts at the origin, where the client spawns a player entering a scene.
     position: tuple[float, float, float] = (0.0, 0.0, 0.0)
+    # time.monotonic() of the last accepted chat, to refuse flooding.
+    last_chat_at: float = float("-inf")
 
     def to_out(self) -> PlayerOut:
         x, y, z = self.position
@@ -181,7 +187,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         """Everyone in this scene of this server: the players who can see each other."""
         return [p for p in players.values() if p.server_id == server_id and p.scene == scene]
 
-    async def broadcast(server_id: int, scene: str, message: BaseModel, exclude: Player) -> None:
+    async def broadcast(
+        server_id: int, scene: str, message: BaseModel, exclude: Player | None = None
+    ) -> None:
         """Sends to everyone in the scene of this server but `exclude`, all at once so a
         slow client doesn't hold up the others. A failed send is ignored: that client's own
         handler sees the disconnect and cleans up."""
@@ -284,6 +292,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                         player.position = (x, y, z)
                         moved = PlayerMovedOut(id=player.id, x=x, y=y, z=z)
                         await broadcast(player.server_id, player.scene, moved, exclude=player)
+                    case ChatIn(text=chat_text):
+                        now = time.monotonic()
+                        if now - player.last_chat_at < CHAT_MIN_INTERVAL_SECONDS:
+                            await send_error(websocket, "chat_too_fast", "Chat sent too fast")
+                            continue
+                        player.last_chat_at = now
+                        chat = ChatMessageOut(
+                            id=player.id, nickname=player.nickname, text=chat_text
+                        )
+                        # The speaker gets it too: everyone sees the same order, and the
+                        # speaker sees only what the server accepted.
+                        await broadcast(player.server_id, player.scene, chat)
         except WebSocketDisconnect:
             pass
         finally:
