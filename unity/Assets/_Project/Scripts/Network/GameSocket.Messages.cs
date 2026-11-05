@@ -27,6 +27,13 @@ public partial class GameSocket
         public Vector3 Position => new Vector3(x, y, z);
     }
 
+    public class ChatInfo
+    {
+        public int id; // 보낸 사람의 id
+        public string nickname;
+        public string text;
+    }
+
     private class ScenePlayersMessage
     {
         public List<RemotePlayerInfo> players;

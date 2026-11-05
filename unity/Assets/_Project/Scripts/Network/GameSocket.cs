@@ -23,6 +23,7 @@ public partial class GameSocket : MonoBehaviour
 
     public event Action Welcomed;
     public event Action<string> JoinFailed; // error code
+    public event Action<ChatInfo> ChatReceived;
 
     private void Awake()
     {
@@ -189,6 +190,10 @@ public partial class GameSocket : MonoBehaviour
                 var leftId = message.ToObject<PlayerLeftMessage>().id;
                 _remotePlayers.Remove(leftId);
                 PlayerLeft?.Invoke(leftId);
+                break;
+            case "chat_message":
+                var chat = message.ToObject<ChatInfo>();
+                ChatReceived?.Invoke(chat);
                 break;
             default:
                 Debug.LogWarning("모르는 메시지");

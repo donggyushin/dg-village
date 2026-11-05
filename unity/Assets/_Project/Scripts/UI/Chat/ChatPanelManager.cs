@@ -54,11 +54,21 @@ public class ChatPanelManager : MonoBehaviour
     void OnEnable()
     {
         _input.onSubmit.AddListener(HandleSubmit);
+
+        if (_socket != null)
+        {
+            _socket.ChatReceived += HandleChatReceived;
+        }
     }
 
     void OnDisable()
     {
         _input.onSubmit.RemoveListener(HandleSubmit);
+
+        if (_socket != null)
+        {
+            _socket.ChatReceived -= HandleChatReceived;
+        }
     }
 
     public void AppendChatLines(string[] chats)
@@ -87,5 +97,12 @@ public class ChatPanelManager : MonoBehaviour
         }
 
         _socket.SendChat(text);
+    }
+
+    private void HandleChatReceived(GameSocket.ChatInfo chat)
+    {
+        AppendChatLines(
+            new[] { $"{chat.nickname}: {chat.text}" }
+        );
     }
 }
