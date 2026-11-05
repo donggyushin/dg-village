@@ -1,4 +1,3 @@
-using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -11,17 +10,16 @@ public class ChatPanelManager : MonoBehaviour
     [SerializeField] private ScrollRect _scrollRect;
     [SerializeField] private RectTransform _panelTransform;
     [SerializeField] private Button _foldButton;
-    [SerializeField] private string _scene;
     private float _expandedX;
+    private GameSocket _socket;
 
     private bool _isCollapsed = false;
-
-    public Action<string> ChatSubmit;
 
     void Awake()
     {
         _expandedX = _panelTransform.anchoredPosition.x;
         _foldButton.onClick.AddListener(FoldButtonTapped);
+        _socket = GameSocket.Instance;
         Fold();
     }
 
@@ -82,7 +80,12 @@ public class ChatPanelManager : MonoBehaviour
         _input.text = string.Empty;
         _input.ActivateInputField();
 
-        ChatSubmit?.Invoke(text);
-        Debug.Log($"채팅 입력: {text}");
+        if (_socket == null)
+        {
+            Debug.LogWarning("서버에 연결되지 않아 채팅을 보낼 수 없습니다.");
+            return;
+        }
+
+        _socket.SendChat(text);
     }
 }
