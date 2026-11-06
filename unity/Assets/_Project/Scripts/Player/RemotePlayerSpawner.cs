@@ -22,6 +22,7 @@ public class RemotePlayerSpawner : MonoBehaviour
         _socket.PlayerJoined += Spawn;
         _socket.PlayerMoved += Move;
         _socket.PlayerLeft += Despawn;
+        _socket.ChatReceived += ShowChat;
     }
 
     void OnDestroy()
@@ -31,6 +32,7 @@ public class RemotePlayerSpawner : MonoBehaviour
         _socket.PlayerJoined -= Spawn;
         _socket.PlayerMoved -= Move;
         _socket.PlayerLeft -= Despawn;
+        _socket.ChatReceived -= ShowChat;
     }
 
     private void Spawn(GameSocket.RemotePlayerInfo info)
@@ -63,5 +65,15 @@ public class RemotePlayerSpawner : MonoBehaviour
 
         Destroy(player.gameObject);
         _spawned.Remove(id);
+    }
+
+    private void ShowChat(GameSocket.ChatInfo chat)
+    {
+        _spawned.TryGetValue(chat.id, out var player);
+
+        if (player == null) return;
+
+        var chatBubble = player.GetComponentInChildren<ChatBubble>();
+        chatBubble.Show(chat.text);
     }
 }
