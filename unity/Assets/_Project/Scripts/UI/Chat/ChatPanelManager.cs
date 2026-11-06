@@ -60,7 +60,7 @@ public class ChatPanelManager : MonoBehaviour
     {
         _isCollapsed = true;
 
-        _panelTransform.anchoredPosition = new Vector2(_panelTransform.rect.width - 100, _panelTransform.anchoredPosition.y);
+        _panelTransform.anchoredPosition = new Vector2(_panelTransform.rect.width, _panelTransform.anchoredPosition.y);
         _foldButton.GetComponentInChildren<TMP_Text>().text = "<";
     }
 

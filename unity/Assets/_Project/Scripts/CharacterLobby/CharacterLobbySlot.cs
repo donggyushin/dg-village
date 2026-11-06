@@ -56,6 +56,10 @@ public class CharacterLobbySlot : MonoBehaviour
 
     public bool IsSelected()
     {
+        if (_characterId == 0 || _spriteRenderer.sprite == null)
+        {
+            return false;
+        }
         return _toggle.isOn;
     }
 
