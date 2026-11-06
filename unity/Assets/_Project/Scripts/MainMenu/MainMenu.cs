@@ -25,7 +25,7 @@ public class MainMenu : MonoBehaviour
 
     private void MakeNewAccount()
     {
-        Debug.Log("회원가입 화면으로 이동");
+        SceneManager.LoadSceneAsync("NewAccountScene");
     }
 
     private void Login()
