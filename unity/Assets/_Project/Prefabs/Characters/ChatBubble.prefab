@@ -68,8 +68,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -77,7 +77,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
+  m_PixelsPerUnitMultiplier: 0.3
 --- !u!114 &8178555203421869140
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -91,10 +91,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.HorizontalLayoutGroup
   m_Padding:
-    m_Left: 16
-    m_Right: 16
-    m_Top: 8
-    m_Bottom: 8
+    m_Left: 20
+    m_Right: 20
+    m_Top: 12
+    m_Bottom: 12
   m_ChildAlignment: 0
   m_Spacing: 0
   m_ChildForceExpandWidth: 0
@@ -261,7 +261,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uC5C4\uCCAD \uAE34 \uCC44\uD305\uC774 \uB4E4\uC5B4\uC628\uB2E4\uBA74?\uC5C4\uCCAD \uAE34 \uCC44\uD305\uC774 \uB4E4\uC5B4\uC628\uB2E4\uBA74?\uC5C4\uCCAD \uAE34 \uCC44\uD305\uC774 \uB4E4\uC5B4\uC628\uB2E4\uBA74?\uC5C4\uCCAD \uAE34 \uCC44\uD305\uC774 \uB4E4\uC5B4\uC628\uB2E4\uBA74?\uC5C4\uCCAD \uAE34 \uCC44\uD305\uC774 \uB4E4\uC5B4\uC628\uB2E4\uBA74?\uC5C4\uCCAD \uAE34 \uCC44\uD305\uC774 \uB4E4\uC5B4\uC628\uB2E4\uBA74?"
+  m_text: HelloWorld
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 94d2045c7b4dc46e08acd63284c2c989, type: 2}
   m_sharedMaterial: {fileID: 2347486710522832212, guid: 94d2045c7b4dc46e08acd63284c2c989, type: 2}
