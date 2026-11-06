@@ -39,6 +39,10 @@ public class RemotePlayerSpawner : MonoBehaviour
 
         RemotePlayer player = Instantiate(_remotePlayerPrefab, info.Position, Quaternion.identity);
         player.name = $"Remote_{info.nickname}";
+
+        var nicknameLabel = player.GetComponentInChildren<NicknameLabel>();
+        nicknameLabel.SetName(info.nickname);
+
         CharacterSpriteSet spriteSet = _catalog.Find(info.sprite_set_id);
         player.GetComponentInChildren<CharacterSpriteView>().SetSpriteSet(spriteSet);
         _spawned[info.id] = player;
