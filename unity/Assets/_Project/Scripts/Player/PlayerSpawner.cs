@@ -9,25 +9,24 @@ public class PlayerSpawner : MonoBehaviour
 
     private GameSocket _socket => GameSocket.Instance;
 
+    private ChatBubble _chatBubble;
+
     void Start()
     {
-        // 개발용 임시코드 START
-        // #if DEBUG
-        //         Vector3 spawnPosition = new Vector3(0f, 0f, 0f);
-        //         GameObject player = Instantiate(_playerPrefab, spawnPosition, Quaternion.identity);
-        //         CharacterSpriteSet spriteSet = _catalog.Find("lavender_girl");
-        //         player.GetComponentInChildren<CharacterSpriteView>().SetSpriteSet(spriteSet);
-        //         _camera.Target.TrackingTarget = player.transform;
-        //         _camera.PreviousStateIsValid = false;
-        // #endif
-        // 개발용 임시코드 END
-
         var me = _socket.MyCharacter;
 
         if (me != null)
         {
             Spawn();
         }
+
+        _socket.ChatReceived += ShowChat;
+    }
+
+    void OnDestroy()
+    {
+        if (_socket == null) return;
+        _socket.ChatReceived -= ShowChat;
     }
 
     private void Spawn()
@@ -46,5 +45,14 @@ public class PlayerSpawner : MonoBehaviour
         string nickname = _socket.MyCharacter.nickname;
         player.GetComponentInChildren<NicknameLabel>().SetName(nickname);
 
+        _chatBubble = player.GetComponentInChildren<ChatBubble>();
+    }
+
+    private void ShowChat(GameSocket.ChatInfo chat)
+    {
+        if (_chatBubble == null) return;
+        if (chat.id != _socket.MyCharacter.id) return;
+
+        _chatBubble.Show(chat.text);
     }
 }
