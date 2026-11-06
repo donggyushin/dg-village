@@ -2182,6 +2182,7 @@ GameObject:
   - component: {fileID: 1051285567}
   - component: {fileID: 1051285566}
   - component: {fileID: 1051285565}
+  - component: {fileID: 1051285569}
   m_Layer: 5
   m_Name: NewAccountCanvas
   m_TagString: Untagged
@@ -2276,6 +2277,24 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &1051285569
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1051285564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9eb0904de0c741d1b2ba4206b93728b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NewAccount
+  _usernameInput: {fileID: 124322219}
+  _password1Input: {fileID: 899072093}
+  _password2Input: {fileID: 1757076451}
+  _signUpButton: {fileID: 718080259}
+  _backButton: {fileID: 1396804648}
+  _toast: {fileID: 638862171}
 --- !u!1 &1261923073
 GameObject:
   m_ObjectHideFlags: 0
