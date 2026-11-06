@@ -30,6 +30,11 @@ public static class Session
 
     public static int CharacterId;
 
+    public static void SetAccountId(string id)
+    {
+        _accountId = id;
+    }
+
     // Reload Domain is off, so statics survive between Phere.
     // [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     // private static void Reset()
