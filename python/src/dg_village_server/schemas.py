@@ -1,5 +1,6 @@
 """Request/response models shared by the REST API and the WebSocket protocol."""
 
+import uuid
 from datetime import datetime
 from typing import Annotated, Literal
 
@@ -12,6 +13,29 @@ Nickname = Annotated[
 SpriteSetId = Annotated[str, StringConstraints(pattern=r"^[a-z0-9_]{1,64}$")]
 # Unity map scenes a character can be in. Add a scene here when the client gets a new map.
 SceneName = Literal["SquareScene"]
+
+
+# Lowercased after the check (pydantic checks the pattern first), so "Dong" signs in as "dong".
+Username = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True, to_lower=True, pattern=r"^[A-Za-z0-9_]{3,20}$"),
+]
+Password = Annotated[str, StringConstraints(min_length=4, max_length=128)]
+
+
+class CredentialsIn(BaseModel):
+    """Username and password, for both signup and login."""
+
+    username: Username = Field(
+        description="3-20 ASCII letters, digits or _; case-insensitive", examples=["dong"]
+    )
+    password: Password = Field(description="4-128 characters", examples=["hunter2"])
+
+
+class AccountOut(BaseModel):
+    account_id: uuid.UUID = Field(
+        description="Send as X-Account-Id in REST and account_id in the WebSocket join"
+    )
 
 
 class HealthOut(BaseModel):

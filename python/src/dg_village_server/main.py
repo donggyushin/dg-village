@@ -21,7 +21,8 @@ from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 
 from .config import Settings
-from .db import Character, Server, create_engine, create_sessionmaker
+from .db import Account, Character, Server, create_engine, create_sessionmaker
+from .passwords import hash_password, verify_password
 from .protocol import (
     ChangeSceneIn,
     ChatIn,
@@ -39,13 +40,13 @@ from .protocol import (
     ScenePlayersOut,
     WelcomeOut,
 )
-from .schemas import CharacterIn, CharacterOut, HealthOut, ServerOut
+from .schemas import AccountOut, CharacterIn, CharacterOut, CredentialsIn, HealthOut, ServerOut
 
 AccountId = Annotated[
     uuid.UUID,
     Header(
         alias="X-Account-Id",
-        description="Random id the client generates once and keeps (no login yet)",
+        description="account_id from POST /signup or /login",
     ),
 ]
 
@@ -104,6 +105,41 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def health() -> HealthOut:
         """Responds as long as the server process is up. Does not check the database."""
         return HealthOut(status="ok")
+
+    @app.post(
+        "/signup",
+        summary="Create an account",
+        status_code=status.HTTP_201_CREATED,
+        responses={409: {"description": "Username already taken"}},
+    )
+    async def signup(request: Request, body: CredentialsIn) -> AccountOut:
+        """Creates an account and returns its id, so the client is signed in right away."""
+        # scrypt takes tens of ms; a thread keeps the game loop moving meanwhile.
+        password_hash = await asyncio.to_thread(hash_password, body.password)
+        async with request.app.state.sessionmaker() as session:
+            account = Account(username=body.username, password_hash=password_hash)
+            session.add(account)
+            try:
+                await session.commit()
+            except IntegrityError:
+                raise HTTPException(status.HTTP_409_CONFLICT, "Username already taken") from None
+            return AccountOut(account_id=account.id)
+
+    @app.post(
+        "/login",
+        summary="Sign in",
+        responses={401: {"description": "Wrong username or password"}},
+    )
+    async def login(request: Request, body: CredentialsIn) -> AccountOut:
+        """Returns the account id for this username and password."""
+        async with request.app.state.sessionmaker() as session:
+            account = await session.scalar(select(Account).where(Account.username == body.username))
+        if account is None or not await asyncio.to_thread(
+            verify_password, body.password, account.password_hash
+        ):
+            # Same answer for both, so it doesn't tell which usernames exist.
+            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Wrong username or password")
+        return AccountOut(account_id=account.id)
 
     @app.get("/servers", summary="List servers")
     async def list_servers(request: Request) -> list[ServerOut]:

@@ -2,6 +2,8 @@
 
 로비(캐릭터 목록·생성)는 REST, 게임 안은 WebSocket을 쓴다. REST 문서는 서버의 `/redoc`, WebSocket은 이 문서가 기준이다.
 
+계정: `POST /signup` 또는 `POST /login` (body `{"username", "password"}`)이 `{"account_id"}`를 돌려준다. 이 값을 REST의 `X-Account-Id` 헤더와 `join`의 `account_id`로 쓴다. 아이디는 대소문자를 구분하지 않는다 (서버가 소문자로 저장). 서버는 아직 `account_id`가 실제 계정인지 확인하지 않는다.
+
 - 메시지 모델 코드: `python/src/dg_village_server/protocol.py` (Pydantic). 메시지를 바꾸면 이 문서도 같이 고친다.
 - 주소: `ws://127.0.0.1:8000/ws` (로컬), `wss://13-54-176-157.sslip.io/ws` (운영)
 - 모든 메시지는 JSON 텍스트 프레임이고 `type` 필드로 종류를 구분한다.

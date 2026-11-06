@@ -24,11 +24,25 @@ class Server(Base):
     name: Mapped[str] = mapped_column(String(64), unique=True)
 
 
+class Account(Base):
+    """A login. Its id is the account_id the client sends after signup or login."""
+
+    __tablename__ = "account"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    # Stored lowercase, so "Dong" and "dong" are the same account.
+    username: Mapped[str] = mapped_column(String(20), unique=True)
+    # scrypt hash from passwords.hash_password; never the password itself.
+    password_hash: Mapped[str] = mapped_column(String(255))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class Character(Base):
     """A player's character on one server.
 
-    There are no accounts yet: account_id is a random id the client generates once and
-    keeps, so anyone holding it owns its characters.
+    account_id is the Account id the client got from signup or login. It is not a foreign
+    key: characters made before accounts existed have random ids, and anyone holding an
+    account_id owns its characters.
     """
 
     __tablename__ = "character"
