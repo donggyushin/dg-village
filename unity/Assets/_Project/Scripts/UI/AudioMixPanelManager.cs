@@ -6,22 +6,33 @@ public class AudioMixPanelManager : MonoBehaviour
 {
 
     [SerializeField] private Button _toggleButton;
-    [SerializeField] private Slider _slider;
+    [SerializeField] private Slider _masterSlider;
+    [SerializeField] private Slider _bgmSlider;
     [SerializeField] private AudioMixer _mixer;
     [SerializeField] private GameObject _panel;
     private bool _active = false;
 
-    private const string MixerParam = "BgmVolume";  // Exposed Parameter 이름과 철자까지 같아야 함
-    private const string PrefsKey = "bgm_volume";
+    private const string BGMMixerParam = "BgmVolume";  // Exposed Parameter 이름과 철자까지 같아야 함
+    private const string MasterMixerParam = "MasterVolume";  // Exposed Parameter 이름과 철자까지 같아야 함
+    private const string BGMPrefsKey = "bgm_volume";
+    private const string MasterPrefsKey = "master_volume";
 
     void Start()
     {
-        float saved = PlayerPrefs.GetFloat(PrefsKey, 0.3f);
-        _slider.value = saved;
-        _toggleButton.onClick.AddListener(ToggleButtonTapped);
-        _slider.onValueChanged.AddListener(SliderValueChanged);
+        float bgmSaved = PlayerPrefs.GetFloat(BGMPrefsKey, 0.3f);
+        _bgmSlider.value = bgmSaved;
+        _bgmSlider.onValueChanged.AddListener(BGMSliderValueChanged);
+
+        float masterSaved = PlayerPrefs.GetFloat(MasterPrefsKey, 1);
+        _masterSlider.value = masterSaved;
+        _masterSlider.onValueChanged.AddListener(MasterSliderValueChanged);
+
         _panel.SetActive(_active);
-        ApplyVolume(saved);
+
+        ApplyBGMVolume(bgmSaved);
+        ApplyMasterVolume(masterSaved);
+
+        _toggleButton.onClick.AddListener(ToggleButtonTapped);
     }
 
     private void ToggleButtonTapped()
@@ -30,14 +41,25 @@ public class AudioMixPanelManager : MonoBehaviour
         _panel.SetActive(_active);
     }
 
-    private void SliderValueChanged(float value)
+    private void BGMSliderValueChanged(float value)
     {
-        PlayerPrefs.SetFloat(PrefsKey, value);
-        ApplyVolume(value);
+        PlayerPrefs.SetFloat(BGMPrefsKey, value);
+        ApplyBGMVolume(value);
     }
 
-    private void ApplyVolume(float volume)
+    private void ApplyBGMVolume(float volume)
     {
-        _mixer.SetFloat(MixerParam, Mathf.Log10(volume) * 20f);
+        _mixer.SetFloat(BGMMixerParam, Mathf.Log10(volume) * 20f);
+    }
+
+    private void MasterSliderValueChanged(float value)
+    {
+        PlayerPrefs.SetFloat(MasterPrefsKey, value);
+        ApplyMasterVolume(value);
+    }
+
+    private void ApplyMasterVolume(float volume)
+    {
+        _mixer.SetFloat(MasterMixerParam, Mathf.Log10(volume) * 20f);
     }
 }
