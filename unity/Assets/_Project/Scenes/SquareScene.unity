@@ -14713,7 +14713,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AudioMixPanelManager
   _toggleButton: {fileID: 1610480915}
   _masterSlider: {fileID: 1430416468}
-  _slider: {fileID: 1780121330}
+  _bgmSlider: {fileID: 1780121330}
   _mixer: {fileID: 24100000, guid: 58b0dd1ed5a9c4c9986d040cbea0a1f8, type: 2}
   _panel: {fileID: 569730235}
 --- !u!1001 &619484898
