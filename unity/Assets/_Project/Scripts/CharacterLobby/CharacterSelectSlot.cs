@@ -11,8 +11,10 @@ public class CharacterSelectSlot : MonoBehaviour
 
     public void Show(CharacterSpriteSet character)
     {
+        gameObject.SetActive(true);
         _character = character;
-        _thumbnail.sprite = character.Idle.Get(Direction.South);
+        _thumbnail.sprite = character.portrait != null ? character.portrait : character.Idle.Get(Direction.South);
+        _thumbnail.preserveAspect = true;
         _thumbnail.enabled = true;
         _toggle.interactable = true;
     }
@@ -23,6 +25,7 @@ public class CharacterSelectSlot : MonoBehaviour
         _thumbnail.sprite = null;
         _thumbnail.enabled = false;
         _toggle.interactable = false;
+        gameObject.SetActive(false);
     }
 
     public void Select()

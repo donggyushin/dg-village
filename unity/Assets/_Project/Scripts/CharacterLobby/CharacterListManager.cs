@@ -228,15 +228,9 @@ public class CharacterListManager : MonoBehaviour
 
                 if (characterLobbySlots.Length > i)
                 {
-                    Sprite sprite = spriteSet.Idle.Get(Direction.South);
-                    if (i == 1)
-                    {
-                        sprite = spriteSet.Idle.Get(Direction.SouthEast);
-                    }
-                    else if (i == 2)
-                    {
-                        sprite = spriteSet.Idle.Get(Direction.SouthWest);
-                    }
+                    Sprite sprite = spriteSet.illustrate != null
+                        ? spriteSet.illustrate
+                        : spriteSet.Idle.Get(Direction.South);
                     characterLobbySlots[i].SetSprite(sprite);
                     characterLobbySlots[i].SetCharacterId(characterId);
                     characterLobbySlots[i].SetNickname(character.nickname);

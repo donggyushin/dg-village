@@ -1,0 +1,27 @@
+{
+  "created_date": "2026-11-08",
+  "generator": "OpenAI built-in image_gen",
+  "reference": "../Idle/south.png",
+  "reference_metadata": "../pixellab-metadata.json",
+  "notes": "기존 PixelLab 스프라이트를 외형 참조로 사용한 AI 생성 초상화 및 전신 일러스트. 생성 PNG의 alpha와 해상도를 그대로 보존. Sprite (Single), Center pivot, PPU 100 (UI artwork), Bilinear, no mipmaps, uncompressed.",
+  "assets": [
+    {
+      "file": "Portrait.png",
+      "size": [
+        1254,
+        1254
+      ],
+      "sha256": "a5f1b3bffee93c367dafd6baf86c2c211feabf9ec208d32d95cce319cfa7c001",
+      "prompt": "Use case: stylized-concept\nAsset type: fantasy game character portrait.\nInput image: existing game sprite, character identity and costume reference only. Draw a NEW high-resolution illustration of this same character, not a pixel upscale.\nSubject: A handsome young adult man in his twenties, short tousled black hair, dark brown half-lidded anime eyes, reserved cool expression, long warm brown leather coat over beige linen shirt, short dark brown cape on shoulders with a simple clasp. Preserve reference outfit and hair design.\nComposition: Square canvas, chest-up portrait, face large and readable, entire head and shoulders within frame, slight three-quarter turn, eye-level.\nStyle: polished hand-drawn early-2000s Korean fantasy MMORPG character art, expressive anime face, elegant clean fine linework, soft cel shading with subtle painted gradients, warm pastel lighting, attractive detailed fabric folds, cohesive restrained finish. Not pixel art, not 3D, not photorealistic.\nBackground: actual transparent alpha, clean isolated silhouette.\nConstraints: one character only, no text, watermark, frame, UI, scenery or extra props. Retain recognizable sprite identity and palette."
+    },
+    {
+      "file": "Illustration.png",
+      "size": [
+        1024,
+        1536
+      ],
+      "sha256": "b8a3b31cc48228b758bf4cc97b3e5d19d479aef1d44b06bcf238a0576775c612",
+      "prompt": "Use case: stylized-concept\nAsset type: fantasy game character illustration.\nInput image: existing game sprite, character identity and costume reference only. Draw a NEW high-resolution illustration of this same character, not a pixel upscale.\nSubject: A handsome slender young adult man in his twenties, short tousled black hair, dark brown half-lidded anime eyes, reserved cool expression, long warm brown leather coat over beige linen shirt, short dark brown cape on shoulders with simple clasp, leather belt and small pouches, dark trousers and brown leather boots. Preserve reference outfit and hair design. No weapons.\nComposition: Vertical canvas, full body from head to boots, relaxed standing pose with subtle weight shift, hands naturally relaxed, about 5.5 heads tall, small breathing room all around, eye-level.\nStyle: polished hand-drawn early-2000s Korean fantasy MMORPG character art, expressive anime face, elegant clean fine linework, soft cel shading with subtle painted gradients, warm pastel lighting, attractive detailed fabric folds, cohesive restrained finish. Not pixel art, not 3D, not photorealistic.\nBackground: actual transparent alpha, clean isolated silhouette.\nConstraints: one character only, no text, watermark, frame, UI, scenery or extra props. Retain recognizable sprite identity and palette."
+    }
+  ]
+}

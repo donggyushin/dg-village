@@ -6,9 +6,10 @@ using UnityEngine.UI;
 public class CharacterLobbySlot : MonoBehaviour
 {
     private int _characterId;
-    [SerializeField] private SpriteRenderer _spriteRenderer;
+    [SerializeField] private Image _illustration;
     [SerializeField] private Toggle _toggle;
-    [SerializeField] private MeshRenderer _meshRenderer;
+    [SerializeField] private GameObject _selectionFrame;
+    [SerializeField] private GameObject _emptyState;
     [SerializeField] private TMP_Text _nickname;
 
     public event Action SelectionChanged;
@@ -17,7 +18,7 @@ public class CharacterLobbySlot : MonoBehaviour
     {
         _toggle.isOn = false;
         _toggle.onValueChanged.AddListener(OnToggleChanged);
-        ConfigureGlowRing();
+        ConfigureVisuals();
     }
 
     public void SetNickname(string nickname)
@@ -32,31 +33,38 @@ public class CharacterLobbySlot : MonoBehaviour
 
     private void OnToggleChanged(bool value)
     {
-        ConfigureGlowRing();
+        ConfigureVisuals();
         SelectionChanged?.Invoke();
     }
 
-    private void ConfigureGlowRing()
+    private void ConfigureVisuals()
     {
-        _meshRenderer.enabled = IsSelected();
+        bool occupied = _characterId != 0 && _illustration.sprite != null;
+        _illustration.enabled = occupied;
+        _emptyState.SetActive(!occupied);
+        _selectionFrame.SetActive(IsSelected());
+        _toggle.interactable = occupied;
     }
 
     public void SetSprite(Sprite sprite)
     {
-        _spriteRenderer.sprite = sprite;
+        _illustration.sprite = sprite;
+        _illustration.preserveAspect = true;
+        ConfigureVisuals();
     }
 
     public void Clean()
     {
         _characterId = 0;
-        _spriteRenderer.sprite = null;
+        _illustration.sprite = null;
         _toggle.isOn = false;
         _nickname.text = "";
+        ConfigureVisuals();
     }
 
     public bool IsSelected()
     {
-        if (_characterId == 0 || _spriteRenderer.sprite == null)
+        if (_characterId == 0 || _illustration.sprite == null)
         {
             return false;
         }
@@ -66,6 +74,7 @@ public class CharacterLobbySlot : MonoBehaviour
     public void SetCharacterId(int id)
     {
         _characterId = id;
+        ConfigureVisuals();
     }
 
     public int CharacterId()
