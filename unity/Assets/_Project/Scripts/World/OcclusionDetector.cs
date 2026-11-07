@@ -29,12 +29,6 @@ public class OcclusionDetector : MonoBehaviour
         RaycastHit[] hits = Physics.RaycastAll(
             origin, direction, _rayLength, _occluderMask, QueryTriggerInteraction.Collide);
 
-        foreach (RaycastHit hit in hits)
-        {
-            Occluder occluder = hit.collider.GetComponentInParent<Occluder>();
-            Debug.Log("가림: " + occluder.transform.parent.name);
-        }
-
         Debug.DrawLine(origin, target, hits.Length > 0 ? Color.red : Color.green);
 
         _current.Clear();

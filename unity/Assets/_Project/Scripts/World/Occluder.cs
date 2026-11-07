@@ -3,7 +3,6 @@ using UnityEngine;
 public class Occluder : MonoBehaviour
 {
     private const string LayerName = "Occluder";
-    [SerializeField] private float _thickness = 0.1f;
     [SerializeField] private float _fadedAlpha = 0.35f;
     [SerializeField] private float _fadeSpeed = 4f;
 
@@ -24,12 +23,9 @@ public class Occluder : MonoBehaviour
         colliderObject.layer = LayerMask.NameToLayer(LayerName);
         colliderObject.transform.SetParent(transform, false);
 
-        var box = colliderObject.AddComponent<BoxCollider>();
-        box.center = mesh.bounds.center;
-
-        var size = mesh.bounds.size;
-        size.z = Mathf.Max(size.z, _thickness);
-        box.size = size;
+        // 그림 메시 모양 그대로 판을 만든다 (상자로 감싸면 V자 건물 앞 빈 공간까지 잡힘).
+        var meshCollider = colliderObject.AddComponent<MeshCollider>();
+        meshCollider.sharedMesh = mesh;
     }
     public void SetOccluding(bool occluding, Material fadeTemplate)
     {
