@@ -158,6 +158,7 @@ GameObject:
   - component: {fileID: 7509324663662891287}
   - component: {fileID: 6922198552637722045}
   - component: {fileID: 6416422890942101696}
+  - component: {fileID: 4966169633494516314}
   m_Layer: 0
   m_Name: Sprite
   m_TagString: Untagged
@@ -237,3 +238,18 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &4966169633494516314
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6115193579957984467}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 84ea7d782e68c488cbf8a28956dc7e47, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Occluder
+  _thickness: 0.1
+  _fadedAlpha: 0.35
+  _fadeSpeed: 4
