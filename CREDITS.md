@@ -27,6 +27,8 @@ dg-village 에 쓰인 외부 에셋과 라이선스. 새 에셋을 넣을 때마
 
 ## 자체 제작
 
+- MainMenu 배경 `Sprites/UI/MainMenu/VillageDusk.png` — OpenAI 내장 이미지 생성 도구로 제작, 2026-11-07. 프롬프트는 같은 폴더의 `generation-notes.txt`. 로그인 화면의 배치·색상·타이포그래피를 함께 정리.
+
 - SquareScene 광장 구성 `Art/Square/`, `Editor/SquareArtDirector.cs` — 기존 자체 제작 건물·정원 에셋을 재배치하고 모듈형 포장·계단·화단, 반복 가능한 잔디 표면, 물방울·꽃가루 효과와 색보정을 제작, 2026-11-07. `MeadowSurface.asset`은 주기적 다중 크기 노이즈와 풀잎 패턴으로 생성한 자체 텍스처. Witchbrook은 색감과 공간 구성 참고이며 해당 게임의 이미지·에셋은 포함하지 않음.
 - 캐릭터 스프라이트 `Sprites/Characters/LavenderGirl` — PixelLab 으로 생성 (프롬프트: `pixellab-metadata.json`).
 - 캐릭터 스프라이트 `Sprites/Characters/QuietTraveler` — OpenAI 내장 이미지 생성 도구로 제작, 2026-11-07. LavenderGirl을 화풍·비율 참고로 사용한 차분한 남자 여행자. 대기 8방향, 방향별 걷기 8프레임(총 72장). 생성 시트를 분할하고 크기·발 기준점을 맞춤. 생성 원본은 `Source/`, 프롬프트와 제작 정보는 `generation-metadata.json`.
