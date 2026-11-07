@@ -7,6 +7,8 @@ dg-village 에 쓰인 외부 에셋과 라이선스. 새 에셋을 넣을 때마
 | 에셋 | 제작자 | 라이선스 | 출처 | 사용 위치 |
 |---|---|---|---|---|
 | Floating Island of the Potion Brewer | [vilmariina](https://sketchfab.com/vilmariina) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | [Sketchfab](https://sketchfab.com/3d-models/floating-island-of-the-potion-brewer-555992efd5c74cf299f5a3ab4acd0a3b) | `unity/Assets/_Project/Models/PotionBrewerIsland/` (CharacterLobby 섬) |
+| Beach kit (파라솔만 사용) | [jungle_jim](https://sketchfab.com/jungle_jim) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | [Sketchfab](https://sketchfab.com/3d-models/beach-kit-6e0e5cc33a1542679f8383e9e260eb90) | `unity/Assets/_Project/Models/City/BeachKit/` (SquareScene 도시) |
+| Market Props | [shonesplash3](https://sketchfab.com/shonesplash3) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | [Sketchfab](https://sketchfab.com/3d-models/market-props-224de833ac6441f095d04df0074c1135) | `unity/Assets/_Project/Models/City/MarketProps/` (SquareScene 도시) |
 
 수정 사항: 풀·잎·빨래·연기 텍스처를 알파 채널 PNG 로 합쳐 Unity 재질을 새로 만듦 (`Models/PotionBrewerIsland/Alpha/`).
 
@@ -31,5 +33,7 @@ dg-village 에 쓰인 외부 에셋과 라이선스. 새 에셋을 넣을 때마
 - 잔디 타일 `Texture/PixelLab/LawnOlive.png` (128×128) — PixelLab Create tiles (Square top-down, 128px, no outline) 로 생성한 6장 중 1장에 이음새 제거 후처리(반 오프셋 + 노이즈 마스크 합성), 2026-11-03. 프롬프트: "seamless flat lawn ground texture, soft mossy olive green, very low contrast, large soft blotches, no individual grass blades, no flowers, no stones, no outline".
 - 잔디 이미지 `Texture/PixelLab/LawnBig_01.png` (512×512) — PixelLab Create image (Pixen, Highly detailed, Lineless) 로 생성, 2026-11-03. 프롬프트: "flat mossy lawn ground texture seen from directly above, filling the entire image edge to edge, muted olive green, very low contrast, soft irregular patches of slightly darker and lighter moss, tiny subtle leaf clumps, no flowers, no stones, no path, no objects, no horizon".
 - SquareScene 정원 소품 `Sprites/Environment/Garden/` (27종) — PixelLab Create Object (Pro, top-down, 128px 2×2 묶음 또는 256px) 로 생성, 2026-11-04. 나무·집·가로등은 Scale2x 로 2배 확대, 전부 여백 제거 후 사용. 집 3종과 가로등 2종, `tree_oak` 은 기존 PixelLab 생성물 재사용. 프롬프트는 PixelLab Objects 갤러리에 남아 있음.
+- SquareScene 도시 건물·분수 그림 `Sprites/Environment/City/*.png` (6장) — ChatGPT 이미지 생성으로 만듦, 2026-11-07. 기존 Garden 소품·LavenderGirl 을 화풍 참고 이미지로 넣음. 가장자리 붉은 테두리는 Python 으로 1px 정리.
+- SquareScene 도시 바닥·벽 `Texture/City/*.png` — Python 스크립트로 직접 그림(외부 에셋 없음), 2026-11-07.
 - SquareScene 바닥 `Texture/Garden/GardenGround.png`, `Texture/Garden/ForestFloor.png` — Python 스크립트로 직접 그림(외부 에셋 없음), 2026-11-04.
 - 바닥 무늬 `Texture/Decals/FloorEmblem_01.png` (256×256) — PixelLab Create Object (Pro, 1 direction, top-down) 로 생성, 2026-11-03. 프롬프트: "ornate symmetrical floor inlay emblem, flat 2D pattern seen from directly above, diamond and quatrefoil shapes, warm brown and cream wood tones, thin clean lines, transparent background, no shadow, no perspective".
