@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Linq;
 using Newtonsoft.Json;
 using TMPro;
 using UnityEngine;
@@ -207,7 +208,16 @@ public class CharacterListManager : MonoBehaviour
             }
 
             CharacterInfo[] characters = JsonConvert.DeserializeObject<CharacterInfo[]>(request.downloadHandler.text);
+            characters = characters
+                .Where(c =>
+                {
+                    bool valid = _catalog.Find(c.sprite_set_id) != null;
+                    if (!valid) Debug.LogWarning($"캐릭터 '{c.nickname}' 숨김: SpriteSet '{c.sprite_set_id}' 없음");
+                    return valid;
+                })
+                .ToArray();
             _characters = characters;
+
             charactersCount = characters.Length;
             for (int i = 0; i < charactersCount; i++)
             {
@@ -232,8 +242,6 @@ public class CharacterListManager : MonoBehaviour
                     characterLobbySlots[i].SetNickname(character.nickname);
                 }
             }
-
-            characterLobbySlots[0].SetToggle(true);
 
             ConfigureEnterButton();
             ConfigurePreventToCreateLabel();
