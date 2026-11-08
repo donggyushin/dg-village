@@ -1,0 +1,52 @@
+{
+  "created": "2026-11-08",
+  "generator": "Built-in image_gen tool",
+  "scene": "Assets/_Project/Scenes/SquareScene_WillowCourt.unity",
+  "reference": {
+    "url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1846700/aca304a866ad9855d6acaafbb32ceb1d502b45de/ss_aca304a866ad9855d6acaafbb32ceb1d502b45de.1920x1080.jpg?t=1787800420",
+    "usage": "Visual composition reference only. No pixels copied or distributed."
+  },
+  "assets": [
+    {
+      "file": "Textures/Willow.png",
+      "transparent_background": true,
+      "prompt": "Use case: stylized-concept. Asset type: ONE isolated game environment sprite, transparent RGBA background, for an orthographic isometric 2D/3D cozy village game. Subject: a magnificent mature weeping willow tree, with elegant gently bent textured brown trunk, several branches visible through dense rounded layered curtains of soft sage, jade and yellow-green leaves. Graceful hanging foliage tips, very lush but clear silhouette. Storybook hand-painted pixel-art-inspired game asset with controlled crisp small clusters and dark olive selective outlines, not blurry, not vector, not photorealistic. The canopy fills upper 75%, exposed trunk and a few surface roots at bottom center. Orthographic camera looking down 30 degrees, light from upper left. Tree is fully visible with generous transparent margin all sides, no ground tile, no landscape, no grass base, no other objects, no cast shadow, no text, no border. Harmonious restrained palette, warm highlights and cool teal shadows. Intended scale 6 metres tall in game, richly detailed and believable botanical forms. Square canvas."
+    },
+    {
+      "file": "Textures/RosePaving.png",
+      "transparent_background": false,
+      "prompt": "Use case: stylized-concept. Asset type: seamless tileable albedo texture for a cozy hand-painted isometric RPG game. A flat orthographic TOP DOWN image filling the entire square canvas with carefully laid warm dusty mauve and pink-beige limestone paving slabs. Large rectangular old stone tiles of slightly varied sizes in an elegant staggered masonry pattern, with subtle borders, tiny chips and sparse hairline cracks. Fine restrained pixel-art-inspired painted texture and sophisticated muted color palette. Light grout, NOT dark black gaps. Low contrast surface, even diffuse lighting, no directional shadow, no perspective, no bevel render, no moss, no objects, no flowers, no border, no text. 6 to 8 tiles across image. All edges must tile seamlessly. This is actual playable floor texture, not a scene."
+    },
+    {
+      "file": "Textures/Hydrangea.png",
+      "transparent_background": true,
+      "prompt": "Use case: stylized-concept. Asset type: one isolated environment sprite with transparent background for a cozy isometric fantasy life simulation game. A lush compact hydrangea shrub with five rounded flower heads in soft lavender, periwinkle blue and dusty rose, surrounded by generous broad sage and jade green serrated leaves. Rounded low mound, no pot, no ground tile, no cast shadow. Crisp hand painted pixel-art-inspired game illustration, restrained fine clusters, selective dark olive outlines, beautiful small details, compatible with high quality storybook RPG environments. Orthographic view down 30 degrees, light upper left. Entire plant fully in frame with transparent margin, wide silhouette about 1.5 times as wide as tall. No landscape, no text, no border, no other objects. Clear individual blossoms, cohesive soft natural color palette, no photorealism, no vector simplification."
+    },
+    {
+      "file": "Textures/Ivy.png",
+      "transparent_background": true,
+      "prompt": "Use case: stylized-concept. Asset type: isolated transparent game sprite for a lush cozy storybook isometric garden. ONE clump of trailing ivy and fern foliage overflowing a stone planter edge, but NO stone, NO planter, NO pot is drawn. Only leaves and stems. Upper portion is a rich soft mound of broad mint and jade green lobed leaves, lower portion has three irregular elegant trailing ivy vines with smaller leaves. Width about same as height. Hand-painted pixel-art-inspired RPG environment illustration, crisp detailed clusters, olive selective outlines, soft morning sunlight upper left, restrained sage mint and jade palette. Orthographic isometric camera down 30 degrees. Entire greenery in frame with generous truly transparent margin, no background, no halo, no glow, no ground, no shadow, no text. Beautiful organic asymmetrical silhouette, readable at 100 pixels tall."
+    },
+    {
+      "file": "Textures/Mosaic.png",
+      "transparent_background": true,
+      "prompt": "Use case: stylized-concept. Asset type: decorative floor decal texture, isolated on a genuinely transparent background. Exact top-down orthographic view of a round antique stone mosaic medallion, a delicate eight-petal botanical rosette made from many small tesserae of dusty mauve, muted sage, pale cream and warm limestone. Fine concentric rings of tiny rectangular stones, elegant organic flower geometry at center, a few subtle worn spots and chips. Overall softly faded low contrast light rose-beige palette so it blends into an old pink limestone pavement. Cozy storybook game hand-painted style with precise shapes, NOT 3D, NO perspective, NO shadow, NO glow, NO surrounding floor, NO text, no background. Circular medallion completely in view with transparent outer margin. Sophisticated historic garden paving ornament, not a compass with sharp bold spokes."
+    }
+  ],
+  "reused": [
+    "Assets/_Project/Prefabs/City/Img_GuildHall.prefab",
+    "Assets/_Project/Prefabs/City/Img_FlowerShop.prefab",
+    "Assets/_Project/Art/Square/Props/",
+    "Assets/_Project/Prefabs/Characters/Player.prefab",
+    "Assets/_Project/Data/Character/LavenderGirlSpriteSet.asset",
+    "Assets/_Project/Data/Character/WandererBoySpriteSet.asset"
+  ],
+  "authored": [
+    "3D terraces, stair treads and walking ramp",
+    "Carved balustrade meshes and parapets",
+    "Raised masonry planting beds",
+    "Canal water URP shader",
+    "Standalone local entry and bounded fixed-angle camera"
+  ],
+  "note": "Original scenes, shared character scripts, prefabs, materials and project settings were preserved. Editor geometry helpers were adapted from the existing SquareArtDirector."
+}
