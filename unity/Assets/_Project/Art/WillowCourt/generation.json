@@ -31,6 +31,44 @@
       "file": "Textures/Mosaic.png",
       "transparent_background": true,
       "prompt": "Use case: stylized-concept. Asset type: decorative floor decal texture, isolated on a genuinely transparent background. Exact top-down orthographic view of a round antique stone mosaic medallion, a delicate eight-petal botanical rosette made from many small tesserae of dusty mauve, muted sage, pale cream and warm limestone. Fine concentric rings of tiny rectangular stones, elegant organic flower geometry at center, a few subtle worn spots and chips. Overall softly faded low contrast light rose-beige palette so it blends into an old pink limestone pavement. Cozy storybook game hand-painted style with precise shapes, NOT 3D, NO perspective, NO shadow, NO glow, NO surrounding floor, NO text, no background. Circular medallion completely in view with transparent outer margin. Sophisticated historic garden paving ornament, not a compass with sharp bold spokes."
+    },
+    {
+      "file": "Textures/Gazebo.png",
+      "transparent_background": true,
+      "created": "2026-11-10",
+      "generator": "ChatGPT image generation (chatgpt.com)",
+      "post": "trimmed to alpha bbox, padded square with the base on the bottom edge",
+      "prompt_summary": "octagonal white-and-cream wooden garden gazebo, teal domed roof, golden finial, climbing pink roses, stone base with two steps (4 m). Orthographic 30-degree down view, light from upper left, transparent background, no ground, no shadow, no text. Storybook hand-painted pixel-art-inspired style with controlled crisp small clusters and dark selective outlines, not blurry, not vector, not photorealistic."
+    },
+    {
+      "file": "Textures/Lavender.png",
+      "transparent_background": true,
+      "created": "2026-11-10",
+      "generator": "ChatGPT image generation (chatgpt.com)",
+      "post": "trimmed to alpha bbox, padded square with the base on the bottom edge",
+      "prompt_summary": "single compact rounded lavender bush, violet flower spikes over silvery sage-green leaves (0.8 m). Orthographic 30-degree down view, light from upper left, transparent background, no ground, no shadow, no text. Storybook hand-painted pixel-art-inspired style with controlled crisp small clusters and dark selective outlines, not blurry, not vector, not photorealistic."
+    },
+    {
+      "file": "Textures/Windmill.png",
+      "transparent_background": true,
+      "created": "2026-11-10",
+      "generator": "ChatGPT image generation (chatgpt.com)",
+      "post": "trimmed to alpha bbox, padded square with the base on the bottom edge",
+      "prompt_summary": "small countryside windmill, cream plaster and pink stone tower, teal shingle cone roof, four lattice sails, ivy (6 m). Orthographic 30-degree down view, light from upper left, transparent background, no ground, no shadow, no text. Storybook hand-painted pixel-art-inspired style with controlled crisp small clusters and dark selective outlines, not blurry, not vector, not photorealistic."
+    },
+    {
+      "file": "Textures/Rotunda.png",
+      "transparent_background": true,
+      "created": "2026-11-10",
+      "generator": "ChatGPT image generation (chatgpt.com)",
+      "post": "trimmed to alpha bbox, padded square with the base on the bottom edge",
+      "prompt_summary": "grand classical stone rotunda belvedere: eight cream marble columns on a three-tiered pink limestone podium, verdigris copper dome with gilded lantern, garland cornice, wisteria, statue inside (9 m). Orthographic 30-degree down view, transparent background, no ground, no shadow, no text. Storybook hand-painted pixel-art-inspired style with crisp small clusters and dark selective outlines."
+    },
+    {
+      "file": "Textures/WeatheredPaving.png",
+      "transparent_background": false,
+      "created": "2026-11-10",
+      "generator": "Derived from Textures/RosePaving.png with Python (numpy): 90% luminance tinted warm grey (1, .98, .94) + 10% original colour, contrast x1.08, brightness x0.9"
     }
   ],
   "reused": [

@@ -81,3 +81,17 @@ Unity 6000.6.6f1 Editor에서 확인했다.
 ![실제 게임 카메라](game-camera.png)
 
 ![구역 전체](overview.png)
+
+## 동쪽 확장 (2026-11-10)
+
+South bank 동쪽에 돌 바닥 구역 두 개를 이었다. 빌더: `Art/WillowCourt/Editor/WillowCourtBuilder.East.cs` (메뉴 **DG Village → Willow Court → Build east extension**, SquareScene 을 연 상태에서 실행; 그룹 12·13 을 지우고 다시 만든다).
+
+| 그룹 | 범위 | 내용 |
+|---|---|---|
+| 12 • East meadow | x 21..47, z -46..-20, 바닥 y 0 (회갈색 포장) | South bank 와 아치형 돌다리(남쪽 다리 복제, x 13..21, z -33.4)로 연결. 원형 광장, 가제보, 라벤더 화단(돌 테두리), 풍차, 나무는 잔디 구덩이(tree pit) 안 |
+| 13 • East heights | x 21..47, z -20..2, 바닥 y 4.54 (회갈색 포장) | 3단 대계단(8계단 × 3, 폭 10 m, 층계참 2개, z -26..-14). 위쪽 두 단은 언덕을 파낸 홈(x 29..39, z -20..-14) 안. 남·서쪽 벽에 버트레스와 코니스. 원형 신전(로툰다), 화단 2개, 전망 벤치, 사방 난간 |
+
+- 동쪽 바닥 = `Materials/EastPaving.mat` + `Textures/WeatheredPaving.png` (RosePaving 의 채도를 낮춘 회갈색 버전, Python 으로 생성). 다리 위 길은 남쪽 다리 복제라 분홍 그대로.
+- 새 그림(ChatGPT 생성, 프롬프트는 `generation.json`): `Textures/Gazebo.png`, `Lavender.png`, `Windmill.png`, `Rotunda.png`.
+- `11/Boundaries` 의 동쪽 투명 벽(x 13.5)은 꺼 두고, 다리 자리만 비운 벽 두 개를 12 그룹에 새로 넣었다.
+- 검증: Raycast 로 바닥 높이(다리 최고 0.8 m, 계단 0 → 1.5 → 3.0 → 4.54 m)와 계단 옆벽·난간·경계 벽을 확인. Play 모드 걷기 테스트는 하지 않았다.

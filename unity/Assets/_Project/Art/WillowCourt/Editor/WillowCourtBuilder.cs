@@ -9,7 +9,7 @@ using UnityEngine.Rendering.Universal;
 using Object = UnityEngine.Object;
 
 // Authored meshes and materials persist as assets; no generator runs in a build.
-public static class WillowCourtBuilder
+public static partial class WillowCourtBuilder
 {
     private const string Project="Assets/_Project/";
     private const string Art=Project+"Art/WillowCourt/";
