@@ -35,6 +35,9 @@ public class PlayerSpawner : MonoBehaviour
         var y = _socket.MyCharacter.last_y;
         var z = _socket.MyCharacter.last_z;
         Vector3 spawnPosition = new Vector3(x, y, z);
+        var squarePlacement = FindAnyObjectByType<SquareSpawnPlacement>();
+        if (squarePlacement != null)
+            spawnPosition = squarePlacement.Resolve(spawnPosition);
         GameObject player = Instantiate(_playerPrefab, spawnPosition, Quaternion.identity);
         CharacterSpriteSet spriteSet = _catalog.Find(_socket.MyCharacter.sprite_set_id);
         player.GetComponentInChildren<CharacterSpriteView>().SetSpriteSet(spriteSet);

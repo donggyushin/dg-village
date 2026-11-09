@@ -30,7 +30,11 @@ public class PlayerMovement : MonoBehaviour
 
         if (transform.position.y < -20)
         {
-            transform.position = new Vector3(0f, 0f, 0f);
+            var squarePlacement = FindAnyObjectByType<SquareSpawnPlacement>();
+            transform.position = squarePlacement != null
+                ? squarePlacement.Resolve(Vector3.zero)
+                : Vector3.zero;
+            _rigidbody.linearVelocity = Vector3.zero;
         }
     }
 
