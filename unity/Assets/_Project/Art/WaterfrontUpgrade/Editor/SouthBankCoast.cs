@@ -229,7 +229,7 @@ public static class SouthBankCoast
 
     private static Vector3 L(Transform t,Vector3 world)=>t.InverseTransformPoint(world);
 
-    private static Mesh MeshAsset(string name)
+    internal static Mesh MeshAsset(string name)
     {
         string path=Art+"Meshes/"+name+".asset";
         var m=AssetDatabase.LoadAssetAtPath<Mesh>(path);
@@ -237,7 +237,7 @@ public static class SouthBankCoast
         m=new Mesh{name=name};AssetDatabase.CreateAsset(m,path);return m;
     }
 
-    private static Material CliffMaterial()
+    internal static Material CliffMaterial()
     {
         string path=Art+"Materials/Coast cliff.mat";
         var m=AssetDatabase.LoadAssetAtPath<Material>(path);
@@ -248,7 +248,7 @@ public static class SouthBankCoast
         AssetDatabase.CreateAsset(m,path);return m;
     }
 
-    private static Texture2D Texture(string file,bool alpha)
+    internal static Texture2D Texture(string file,bool alpha)
     {
         string path=Art+"Textures/"+file;
         var importer=(TextureImporter)AssetImporter.GetAtPath(path);
@@ -339,7 +339,7 @@ public static class SouthBankCoast
         return true;
     }
 
-    private static float DistToSegment(Vector2 p,Vector2 a,Vector2 b)
+    internal static float DistToSegment(Vector2 p,Vector2 a,Vector2 b)
     {
         var ab=b-a;float t=ab.sqrMagnitude<1e-6f?0:Mathf.Clamp01(Vector2.Dot(p-a,ab)/ab.sqrMagnitude);
         return Vector2.Distance(p,a+ab*t);
@@ -417,7 +417,7 @@ public static class SouthBankCoast
         return false;
     }
 
-    private static Mesh BottomQuad()
+    internal static Mesh BottomQuad()
     {
         string path=Art+"Meshes/BottomQuad.asset";
         var q=AssetDatabase.LoadAssetAtPath<Mesh>(path);if(q)return q;
@@ -426,7 +426,7 @@ public static class SouthBankCoast
         q.RecalculateNormals();q.RecalculateBounds();AssetDatabase.CreateAsset(q,path);return q;
     }
 
-    private static Material PropMaterial(string name)
+    internal static Material PropMaterial(string name)
     {
         string path=Art+"Materials/"+name+".mat";
         var m=AssetDatabase.LoadAssetAtPath<Material>(path);if(m)return m;
