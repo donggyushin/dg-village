@@ -344,6 +344,13 @@ public static partial class WillowCourtBuilder
         });
         var sprite=new GameObject("Painted canopy",typeof(MeshFilter),typeof(MeshRenderer));sprite.transform.SetParent(root,false);
         sprite.transform.localRotation=Quaternion.Euler(30,45,0);sprite.transform.localScale=new Vector3(width,height,1);
+        // 2026-11-10: sink trees so their spread roots hide under the ground (the ground cuts the quad).
+        // Fraction of the picture height that is root flare; tree_* prefabs carry the same offset on their Sprite child.
+        // Move along the quad's own up axis so the ground line stays at the root origin (contact shadow centre).
+        if(name=="Willow"){
+            sprite.transform.localPosition=-(sprite.transform.localRotation*Vector3.up)*(.09f*height);
+            RootTufts(root,height*.1f,-.05f*width); // the trunk base sits 5 % left of the picture centre
+        }
         sprite.GetComponent<MeshFilter>().sharedMesh=mesh;
         var renderer=sprite.GetComponent<MeshRenderer>();renderer.sharedMaterial=m;renderer.shadowCastingMode=ShadowCastingMode.Off;
         if(collide){
@@ -351,6 +358,22 @@ public static partial class WillowCourtBuilder
             sprite.AddComponent<Occluder>();
         }
         Shadow(root,width*.6f,width*.38f,collide?.22f:.12f);
+    }
+
+    // Grass tufts in front of a sunken trunk hide the straight line where the ground cuts the picture.
+    public static void RootTufts(Transform tree,float halfWidth,float centre=0)
+    {
+        var old=tree.Find("Root tufts");if(old)Object.DestroyImmediate(old.gameObject);
+        var group=new GameObject("Root tufts").transform;group.SetParent(tree,false);
+        var grass=AssetDatabase.LoadAssetAtPath<GameObject>(Project+"Art/Square/Props/grass_tall.prefab");
+        var right=new Vector3(.7071f,0,-.7071f);var toCamera=new Vector3(-.7071f,0,-.7071f);
+        float[] along={-1f,-.45f,.05f,.55f,1f},depth={.08f,.3f,.12f,.28f,.06f},scale={.62f,.48f,.58f,.5f,.6f};
+        for(int i=0;i<along.Length;i++){
+            var t=(GameObject)PrefabUtility.InstantiatePrefab(grass,group);
+            t.transform.localPosition=right*(centre+along[i]*halfWidth)+toCamera*depth[i];t.transform.localScale=Vector3.one*scale[i];
+            var s=t.transform.Find("Sprite");if(i%2==1)s.localScale=new Vector3(-s.localScale.x,s.localScale.y,1);
+            t.transform.Find("Blob").gameObject.SetActive(false);
+        }
     }
 
     private static void Shadow(Transform parent,float width,float depth,float alpha)
