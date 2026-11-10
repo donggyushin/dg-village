@@ -56,6 +56,7 @@ GameObject:
   - component: {fileID: 7284983613833783489}
   - component: {fileID: 1848075213322815332}
   - component: {fileID: 6798098012411221428}
+  - component: {fileID: 2801588540095452489}
   m_Layer: 0
   m_Name: Rain
   m_TagString: Untagged
@@ -780,15 +781,33 @@ ParticleSystem:
     flipU: 0
     flipV: 0
   VelocityModule:
-    enabled: 0
+    enabled: 1
     x:
       serializedVersion: 3
       minMaxState: 0
-      scalar: 0
+      scalar: 7
       minScalar: 0
       maxCurve:
         serializedVersion: 2
-        m_Curve: []
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0.33333334
+          outWeight: 0.33333334
+        - serializedVersion: 3
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0.33333334
+          outWeight: 0.33333334
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
@@ -818,11 +837,29 @@ ParticleSystem:
     z:
       serializedVersion: 3
       minMaxState: 0
-      scalar: 0
+      scalar: -7
       minScalar: 0
       maxCurve:
         serializedVersion: 2
-        m_Curve: []
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0.33333334
+          outWeight: 0.33333334
+        - serializedVersion: 3
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0.33333334
+          outWeight: 0.33333334
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
@@ -968,7 +1005,7 @@ ParticleSystem:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
-    inWorldSpace: 0
+    inWorldSpace: 1
   InheritVelocityModule:
     enabled: 0
     m_Mode: 0
@@ -2343,6 +2380,19 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
+--- !u!114 &2801588540095452489
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1345252015106464244}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 810437586db8f4628bfdbc9e4d6839d7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FollowCameraTarget
+  _camera: {fileID: 0}
 --- !u!1 &3267132737025485337
 GameObject:
   m_ObjectHideFlags: 0

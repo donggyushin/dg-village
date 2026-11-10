@@ -383508,6 +383508,10 @@ PrefabInstance:
       propertyPath: _sun
       value: 
       objectReference: {fileID: 203844588}
+    - target: {fileID: 2801588540095452489, guid: 8218b0dcd7d924b9e805cd4d56a80ff7, type: 3}
+      propertyPath: _camera
+      value: 
+      objectReference: {fileID: 477201307}
     - target: {fileID: 3043519477781640919, guid: 8218b0dcd7d924b9e805cd4d56a80ff7, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
