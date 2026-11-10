@@ -10,8 +10,7 @@ using Object = UnityEngine.Object;
 
 // 2026-11-10: the Academy terrace becomes natural ground like the north garden lawn.
 // - The pink terrace paving turns into lawn (Moss, world-space UVs so it lines up with the north garden).
-//   A paved forecourt stays between the grand stair and the academy door, and stepping stones lead
-//   round the academy to the north garden paths.
+//   (A paved apron and stepping stones were tried and removed on the owner's request: plain lawn looks better.)
 // - The straight west wall + stone balustrade become a grassy rim with a natural rock cliff (like
 //   "17 • East heights cliffs"). The rim tapers to nothing at both ends: south where the lower court
 //   wall continues, north where the north garden's rock coast starts.
@@ -40,7 +39,7 @@ public static class AcademyTerraceCoast
         var group=new GameObject(GroupName).transform;group.SetParent(root,false);group.position=Vector3.zero;
         Outline();
         RemoveOldEdge(root);
-        Lawn(root,group);
+        Lawn(root);
         var cliff=new GameObject("Cliff rim",typeof(MeshFilter),typeof(MeshRenderer),typeof(MeshCollider));
         cliff.transform.SetParent(group,false);GameObjectUtility.SetStaticEditorFlags(cliff,(StaticEditorFlags)~0);
         BuildMesh(cliff);
@@ -115,7 +114,7 @@ public static class AcademyTerraceCoast
         return b;
     }
 
-    // ---------- lawn, forecourt and stepping stones ----------
+    // ---------- lawn ----------
     private static Mesh MeshAsset(string name)
     {
         string path=Art+"Meshes/"+name+".asset";
@@ -124,7 +123,7 @@ public static class AcademyTerraceCoast
         m=new Mesh{name=name};AssetDatabase.CreateAsset(m,path);return m;
     }
 
-    private static void Lawn(Transform root,Transform group)
+    private static void Lawn(Transform root)
     {
         var moss=AssetDatabase.LoadAssetAtPath<Material>(Project+"Art/WillowCourt/Materials/Moss.mat");
         var terraces=root.Find("01 • Terraces, stairs & foundations");
@@ -143,35 +142,6 @@ public static class AcademyTerraceCoast
         paving.GetComponent<MeshRenderer>().sharedMaterial=moss;
         paving.name="Terrace lawn";
         Log.Add("terrace paving → lawn");
-
-        // Paved apron from the top of the grand stair to the threshold inlay in front of the academy door.
-        var stone=AssetDatabase.LoadAssetAtPath<Material>(Art+"Materials/Garden stepping stone.mat");
-        const float x0=-7.45f,x1=4.21f,z0=ZS,z1=7.21f,y=Top+.004f;
-        var fc=MeshAsset("Academy forecourt");
-        fc.SetVertices(new List<Vector3>{new(x0,y,z0),new(x1,y,z0),new(x0,y,z1),new(x1,y,z1)});
-        fc.SetUVs(0,new List<Vector2>{new(x0,z0),new(x1,z0),new(x0,z1),new(x1,z1)});
-        fc.SetTriangles(new[]{0,2,1,1,2,3},0);fc.RecalculateNormals();fc.RecalculateTangents();fc.RecalculateBounds();EditorUtility.SetDirty(fc);
-        var court=new GameObject("Academy forecourt",typeof(MeshFilter),typeof(MeshRenderer));court.transform.SetParent(group,false);
-        court.GetComponent<MeshFilter>().sharedMesh=fc;court.GetComponent<MeshRenderer>().sharedMaterial=AssetDatabase.LoadAssetAtPath<Material>(Project+"Art/WillowCourt/Materials/Paving.mat");
-
-        // Stepping stones round the academy to the north garden loop (which starts at x -13 / 7, z 21.3).
-        var stones=new GameObject("Terrace stepping stones").transform;stones.SetParent(group,false);
-        var west=new[]{new Vector2(-7.9f,7.6f),new Vector2(-12f,7.2f),new Vector2(-16.6f,8.4f),new Vector2(-17.4f,13f),new Vector2(-16.8f,17.8f),new Vector2(-14.2f,20.4f),new Vector2(-13f,21.3f)};
-        var east=new[]{new Vector2(4.6f,7.6f),new Vector2(3.1f,11f),new Vector2(2.9f,15.5f),new Vector2(4.4f,19.2f),new Vector2(7f,21.3f)};
-        int count=0;
-        foreach(var path in new[]{west,east}){
-            float step=.78f;
-            for(int i=0;i<path.Length-1;i++){
-                var a=path[i];var b=path[i+1];int k=Mathf.Max(1,Mathf.RoundToInt(Vector2.Distance(a,b)/step));
-                for(int j=0;j<k;j++){
-                    var p=Vector2.Lerp(a,b,(float)j/k)+new Vector2(.12f*Mathf.Sin(count*1.7f),.1f*Mathf.Cos(count*2.3f));
-                    var g=GameObject.CreatePrimitive(PrimitiveType.Cylinder);g.name="Garden stepping stone";g.transform.SetParent(stones,false);
-                    g.transform.position=new Vector3(p.x,Top+.016f,p.y);g.transform.localScale=new Vector3(.82f,.018f,.58f);g.transform.rotation=Quaternion.Euler(0,p.x*29,0);
-                    g.GetComponent<Renderer>().sharedMaterial=stone;Object.DestroyImmediate(g.GetComponent<Collider>());count++;
-                }
-            }
-        }
-        Log.Add($"forecourt + {count} stepping stones");
     }
 
     // ---------- cliff mesh ----------

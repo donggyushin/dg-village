@@ -7,7 +7,7 @@ SquareScene의 `The waterside academy` 북쪽에 기존 테라스와 이어지�
 - academy와 기존 건물의 위치·크기는 그대로 유지했다. 건물 뒤쪽 바닥 장식까지 새 땅이 받쳐준다.
 - 나무 울타리: 해안선에서 약 0.7m 안쪽, 기둥·두 단 가로대와 연속적인 BoxCollider 50개. 양끝은 기존 석재 난간에 연결된다.
 - 기존 북쪽 석재 난간과 북쪽 invisible boundary는 삭제하지 않고 비활성화했다. 기존 동서 district boundary는 북쪽 끝을 줄여 정원을 가로막지 않게 했다.
-- 잔디 위에 디딤돌 산책로, 나무 8그루, 꽃·관목·벤치·램프를 배치했다. academy 양옆으로 진입할 수 있다.
+- 잔디 위에 나무 8그루, 꽃·관목·벤치·램프를 배치했다. academy 양옆으로 진입할 수 있다. (분홍 디딤돌 산책로는 2026-11-10 오너 요청으로 삭제했다.)
 - 새 지면 MeshCollider를 `SquareSpawnPlacement._surfaces`에 추가해 정원에서의 저장 위치 복원도 지원한다. 런타임 C# 코드는 변경하지 않았다.
 - 수변 거리맵과 물 Material은 이 폴더에 별도 복제·확장했고 Scene의 물에 연결했다. 원본 수변 에셋은 덮어쓰지 않았다.
 
@@ -32,7 +32,7 @@ SquareScene의 `The waterside academy` 북쪽에 기존 테라스와 이어지�
 `Academy terrace`(x -20.25..17.01, z 4.86..21.06, 윗면 y 2.74)를 북쪽 정원처럼 자연 지형으로 바꿨다. 생성기는 `Editor/AcademyTerraceCoast.cs`이고, 메뉴는 **DG Village/Waterfront/Academy terrace cliffs**이다. 다시 실행하면 그룹 `19 • Academy terrace cliffs`를 새로 만든다.
 
 - 바닥: 분홍 `Terrace paving`을 `Terrace lawn`(Moss)으로 바꿨다. 메시 `Meshes/Academy terrace lawn`은 원래 박스와 모양이 같고, UV만 월드 좌표로 옮겨 북쪽 잔디와 무늬를 맞췄다. 콜라이더는 그대로다.
-- 대계단 위에서 academy 문 앞 `Threshold inlay`까지 분홍 돌 포장(`Academy forecourt`)을 남겼다. academy 양옆에는 디딤돌 50개를 놓아 북쪽 정원 산책로(x -13 / 7, z 21.3)와 이었다.
+- 계단 위 분홍 돌 포장(apron)과 디딤돌을 시험했다. 오너가 "없는 게 더 예쁘다"고 해서 모두 지웠다. 테라스와 북쪽 정원의 디딤돌도 함께 지웠다. 바닥은 잔디만 남는다.
 - 서쪽 가장자리: 직선 석축 위 돌 난간을 삭제했다. 그 자리에 폭 0.8–3.8 m의 풀밭 가장자리와 물속(y -2.9)까지 내려가는 바위 절벽(`Cliff rim`)을 만들었다. East heights의 `Cliff rim`과 같은 방식이다. 가장자리 폭은 양 끝에서 0으로 줄어든다. 남쪽 끝은 Lower court 석축과, 북쪽 끝은 북쪽 정원 바위 해안과 이어진다.
 - `Cliff rim` MeshCollider를 `SquareSpawnPlacement._surfaces`에 추가했다. 서쪽 `Invisible district boundary`는 z 5.61에서 끝나게 줄였다. 그 북쪽은 가장자리 0.45 m 안쪽의 투명 벽 12개가 막는다.
 - 풀·야생화·고사리 6개와 절벽 덩굴 3개를 배치했다. 텍스처는 WaterfrontUpgrade의 Cliff*.png를 재사용했다. `Textures/NorthShoreDistance.png`에 새 절벽 발치를 기존 값과의 min으로 구웠다.

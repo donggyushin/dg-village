@@ -45,7 +45,7 @@ public static class AcademyGardenBuilder
         OpenOldBoundary(village);
         Fence();
         Planting();
-        Paths();
+        // Paths() (pink stepping stones) was removed from the scene on 2026-11-10 at the owner's request.
         ShoreMap(village);
         var placement = village.GetComponent<SquareSpawnPlacement>();
         if (placement) {
