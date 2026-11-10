@@ -38,4 +38,6 @@ SquareScene의 `The waterside academy` 북쪽에 기존 테라스와 이어지�
 - 풀·야생화·고사리 6개와 절벽 덩굴 3개를 배치했다. 텍스처는 WaterfrontUpgrade의 Cliff*.png를 재사용했다. `Textures/NorthShoreDistance.png`에 새 절벽 발치를 기존 값과의 min으로 구웠다.
 - 동쪽 난간, Lower court, 플랜터, 건물은 그대로다.
 
-검증: 경계 안쪽 하향 Raycast 2,969회에서 바닥 누락 0, 서쪽으로 향하는 수평 Raycast 162회에서 투명 벽 누락 0. 게임 카메라 각도로 렌더해 확인했다(`docs/visual-reviews/academy-garden/terrace-cliffs.png`). Play 모드 걷기 테스트는 하지 않았다.
+주의: `Willow Court` 루트는 y 1.2에 있다. 그래서 생성기는 그룹을 월드 원점에 둔다. 첫 버전(5052f0f)은 이것을 빠뜨려 `Cliff rim`과 apron이 1.2 m 떠 있었다.
+
+검증: 경계 안쪽 하향 Raycast 2,969회에서 2,533회가 y 2.74 바닥에 닿았다. 나머지 436회는 화단 위에 닿았고, 바닥 누락은 0이다. 서쪽으로 향하는 수평 Raycast 162회에서 투명 벽 누락 0. 게임 카메라 각도와 낮은 원근 시점으로 렌더해 확인했다(`docs/visual-reviews/academy-garden/terrace-cliffs.png`). Play 모드 걷기 테스트는 하지 않았다.

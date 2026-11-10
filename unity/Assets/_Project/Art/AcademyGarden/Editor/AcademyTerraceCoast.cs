@@ -36,7 +36,8 @@ public static class AcademyTerraceCoast
         var root=GameObject.Find("Willow Court")?.transform;
         if(!root)throw new InvalidOperationException("Open SquareScene first (Willow Court root missing).");
         var old=root.Find(GroupName);if(old)Object.DestroyImmediate(old.gameObject);
-        var group=new GameObject(GroupName).transform;group.SetParent(root,false);
+        // Willow Court sits at y 1.2: put the group at the world origin so the world-space meshes line up.
+        var group=new GameObject(GroupName).transform;group.SetParent(root,false);group.position=Vector3.zero;
         Outline();
         RemoveOldEdge(root);
         Lawn(root,group);
