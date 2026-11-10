@@ -1,13 +1,49 @@
+using System.Collections;
+using Newtonsoft.Json;
 using UnityEngine;
+using UnityEngine.Networking;
+using UnityEngine.SceneManagement;
 
 public class WeatherManager : MonoBehaviour
 {
 
-    [SerializeField] private ParticleSystem _rain;
-    void Awake()
+    private class WeatherInfo
     {
-        // Python server 에 현재 날씨 물어보기. 아직은 호출할 필요 x. 눈, 비 등 모든 날씨 구현 이후에 연결할 예정.
+        public string weather;
     }
+
+    [SerializeField] private ParticleSystem _rain;
+
+    void Start()
+    {
+        StartCoroutine(FetchWeather());
+    }
+
+    private IEnumerator FetchWeather()
+    {
+        string scene = SceneManager.GetActiveScene().name;
+        string url = $"{ServerConfig.BaseUrl}/scenes/{scene}/weather";
+
+        using (UnityWebRequest request = UnityWebRequest.Get(url))
+        {
+            yield return request.SendWebRequest();
+
+            if (request.result != UnityWebRequest.Result.Success)
+            {
+                Debug.LogWarning($"날씨 요청 실패: {request.error}");
+                Normal();
+                yield break;
+            }
+
+            WeatherInfo info = JsonConvert.DeserializeObject<WeatherInfo>(request.downloadHandler.text);
+
+            if (info.weather == "rain")
+                Rain();
+            else
+                Normal();
+        }
+    }
+
     [ContextMenu("Rain")]
     public void Rain()
     {
