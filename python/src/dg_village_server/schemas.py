@@ -6,6 +6,8 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
+from .weather import Weather
+
 # Hangul syllables, ASCII letters and digits. No spaces, so names can't look alike by spacing.
 Nickname = Annotated[
     str, StringConstraints(strip_whitespace=True, pattern=r"^[0-9A-Za-z가-힣]{2,12}$")
@@ -49,6 +51,19 @@ class ServerOut(BaseModel):
 
     id: int = Field(description="Server id", examples=[1])
     name: str = Field(description="Server name shown to players", examples=["square"])
+
+
+class WeatherOut(BaseModel):
+    """The weather of a scene for the current period. Same answer for every client."""
+
+    scene: SceneName = Field(description="Scene the weather is for", examples=["SquareScene"])
+    weather: Weather = Field(
+        description="`sunny` (햇빛), `rain` (비) or `snow` (눈)", examples=["rain"]
+    )
+    starts_at: datetime = Field(description="When this weather started (UTC)")
+    ends_at: datetime = Field(
+        description="When the next weather starts (UTC). Ask again after this time"
+    )
 
 
 class CharacterIn(BaseModel):

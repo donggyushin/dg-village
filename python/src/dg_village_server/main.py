@@ -5,12 +5,14 @@ import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import (
     FastAPI,
     Header,
     HTTPException,
+    Path,
     Request,
     WebSocket,
     WebSocketDisconnect,
@@ -40,7 +42,17 @@ from .protocol import (
     ScenePlayersOut,
     WelcomeOut,
 )
-from .schemas import AccountOut, CharacterIn, CharacterOut, CredentialsIn, HealthOut, ServerOut
+from .schemas import (
+    AccountOut,
+    CharacterIn,
+    CharacterOut,
+    CredentialsIn,
+    HealthOut,
+    SceneName,
+    ServerOut,
+    WeatherOut,
+)
+from .weather import weather_at
 
 AccountId = Annotated[
     uuid.UUID,
@@ -218,6 +230,26 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 raise HTTPException(status.HTTP_409_CONFLICT, "Character is in the game")
             await session.delete(character)
             await session.commit()
+
+    @app.get(
+        "/scenes/{scene}/weather",
+        summary="Get scene weather",
+        responses={422: {"description": "Unknown scene name"}},
+    )
+    async def get_weather(
+        scene: Annotated[
+            SceneName,
+            Path(description="Unity scene name, as in change_scene", examples=["SquareScene"]),
+        ],
+    ) -> WeatherOut:
+        """The current weather of a scene: `sunny`, `rain` or `snow`.
+
+        The weather changes every 20 minutes (`PERIOD` in `weather.py`). It is picked
+        from the scene name and the time alone, so every client gets the same weather for
+        the same scene, and no sign-in is needed. Poll again after `ends_at`.
+        """
+        weather, starts_at, ends_at = weather_at(scene, datetime.now(UTC))
+        return WeatherOut(scene=scene, weather=weather, starts_at=starts_at, ends_at=ends_at)
 
     async def send_error(websocket: WebSocket, code: ErrorCode, message: str) -> None:
         await websocket.send_text(ErrorOut(code=code, message=message).model_dump_json())
