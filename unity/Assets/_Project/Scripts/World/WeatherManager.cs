@@ -15,9 +15,12 @@ public class WeatherManager : MonoBehaviour
 
     [SerializeField] private ParticleSystem _rain;
     [SerializeField] private Volume _rainVolume;
-
     [SerializeField] private float _fadeDuration = 3f;
+    [SerializeField] private AudioSource _rainSound;
+    [SerializeField, Range(0f, 1f)] private float _rainSoundVolume = 0.5f;
+
     private float _targetWeight;
+    private float _targetVolume;
 
     void Start()
     {
@@ -27,6 +30,14 @@ public class WeatherManager : MonoBehaviour
     void Update()
     {
         _rainVolume.weight = Mathf.MoveTowards(_rainVolume.weight, _targetWeight, Time.deltaTime / _fadeDuration);
+
+        // (기존 _rainVolume.weight 줄은 그대로)
+
+        _rainSound.volume = Mathf.MoveTowards(
+            _rainSound.volume, _targetVolume, Time.deltaTime / _fadeDuration);
+
+        if (_targetVolume == 0f && _rainSound.volume == 0f && _rainSound.isPlaying)
+            _rainSound.Stop();   // 다 작아진 뒤에야 멈춤
     }
 
     private IEnumerator FetchWeather()
@@ -60,6 +71,13 @@ public class WeatherManager : MonoBehaviour
         // 비오는 날씨
         _rain.Play();
         _targetWeight = 0.8f;
+
+        if (!_rainSound.isPlaying)
+        {
+            _rainSound.volume = 0f;   // 0 에서 시작해 서서히 커지게
+            _rainSound.Play();
+        }
+        _targetVolume = _rainSoundVolume;
     }
 
     [ContextMenu("Normal")]
@@ -68,5 +86,6 @@ public class WeatherManager : MonoBehaviour
         // 평범한 날씨
         _rain.Stop();
         _targetWeight = 0;
+        _targetVolume = 0f;
     }
 }

@@ -18,6 +18,14 @@ dg-village 에 쓰인 외부 에셋과 라이선스. 새 에셋을 넣을 때마
 |---|---|---|---|---|
 | Galmuri11, Galmuri11 Bold | Lee Minseo (quiple) | [SIL OFL 1.1](https://openfontlicense.org) | [GitHub](https://github.com/quiple/galmuri) | `unity/Assets/_Project/Fonts/` (전문: `Galmuri-LICENSE.txt`) |
 
+## 사운드
+
+| 에셋 | 제작자 | 라이선스 | 출처 | 사용 위치 |
+|---|---|---|---|---|
+| Slowly Raining Loop | [unfa](https://freesound.org/people/unfa/) | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) | [Freesound #177479](https://freesound.org/people/unfa/sounds/177479/) | `unity/Assets/_Project/Audio/Ambience/RainLoop.wav` (비 오는 날 배경음) |
+
+수정 사항: FLAC → WAV 변환, 루프 이음매 0.5초 크로스페이드, 음량 -26 LUFS 로 맞춤 (2026-11-11). 제작자는 이 소리를 생성형 AI 학습에 쓰는 것에 동의하지 않는다고 밝힘.
+
 ## 텍스처 (테스트용)
 
 | 에셋 | 라이선스 | 비고 |
