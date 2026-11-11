@@ -64942,7 +64942,7 @@ GameObject:
   - component: {fileID: 378493423}
   - component: {fileID: 378493424}
   m_Layer: 5
-  m_Name: BGMSlider
+  m_Name: AmbienceSlider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -109553,7 +109553,7 @@ MonoBehaviour:
   _toggleButton: {fileID: 1610480915}
   _masterSlider: {fileID: 1430416468}
   _bgmSlider: {fileID: 1780121330}
-  _ambinceSlider: {fileID: 0}
+  _ambinceSlider: {fileID: 378493424}
   _mixer: {fileID: 24100000, guid: 58b0dd1ed5a9c4c9986d040cbea0a1f8, type: 2}
   _panel: {fileID: 569730235}
 --- !u!1001 &619163012
