@@ -567,7 +567,8 @@ public static class SacredIsleBuilder
         if (glow > 0)
         {
             m.EnableKeyword("_EMISSION"); m.SetTexture("_EmissionMap", m.mainTexture); m.SetColor("_EmissionColor", Color.white * glow);
-            m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
+            // With flags None, URP validation strips _EMISSION again during builds.
+            m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
         }
         else m.DisableKeyword("_EMISSION");
         EditorUtility.SetDirty(m); return m;
