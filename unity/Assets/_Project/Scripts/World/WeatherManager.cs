@@ -2,6 +2,7 @@ using System.Collections;
 using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 
 public class WeatherManager : MonoBehaviour
@@ -13,10 +14,19 @@ public class WeatherManager : MonoBehaviour
     }
 
     [SerializeField] private ParticleSystem _rain;
+    [SerializeField] private Volume _rainVolume;
+
+    [SerializeField] private float _fadeDuration = 3f;
+    private float _targetWeight;
 
     void Start()
     {
         StartCoroutine(FetchWeather());
+    }
+
+    void Update()
+    {
+        _rainVolume.weight = Mathf.MoveTowards(_rainVolume.weight, _targetWeight, Time.deltaTime / _fadeDuration);
     }
 
     private IEnumerator FetchWeather()
@@ -49,6 +59,7 @@ public class WeatherManager : MonoBehaviour
     {
         // 비오는 날씨
         _rain.Play();
+        _targetWeight = 0.8f;
     }
 
     [ContextMenu("Normal")]
@@ -56,5 +67,6 @@ public class WeatherManager : MonoBehaviour
     {
         // 평범한 날씨
         _rain.Stop();
+        _targetWeight = 0;
     }
 }
