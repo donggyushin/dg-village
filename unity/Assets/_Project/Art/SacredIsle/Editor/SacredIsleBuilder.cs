@@ -37,7 +37,9 @@ public static class SacredIsleBuilder
     private const float IsleBandIn = .6f, IsleBandOut = 3.6f;
     // Piers and ferry berths. The ferry lies on the north-east (starboard-of-route) side of both piers, so it sails
     // a straight line between the berths; its port side opening meets each pier at distance GangT from the pier start.
-    private const float PierLen = 12f, GangT = 9f, BoatOff = 3.5f;
+    private const float PierLen = 16f, GangT = 14f;
+    private static float BoatOff => FerryBuilder.BerthOffset;
+    private static float FerryY => DeckY + FerryBuilder.DeckAbovePier;
     private static Vector2 RouteRight => new(ToIsle.y, -ToIsle.x);
     private static Vector2[] _berths = Array.Empty<Vector2>();
 
@@ -164,12 +166,14 @@ public static class SacredIsleBuilder
             // back to the gangway, across onto the ferry, to the bow and back towards the deckhouse
             main.Add(_docks[0].start + _docks[0].dir * GangT);
             main.Add(_berths[0]);
-            main.Add(_berths[0] + RouteRight * .9f + ToIsle * 1.2f);   // pass the mast on the starboard side
-            main.Add(_berths[0] + RouteRight * .9f + ToIsle * 3.4f);
-            main.Add(_berths[0] + ToIsle * 4f);
-            main.Add(_berths[0] + RouteRight * .9f + ToIsle * 2.8f);
-            main.Add(_berths[0] + RouteRight * .9f + ToIsle * 1.0f);
-            main.Add(_berths[0] - ToIsle * 2f);
+            // pass the masts on the starboard side: bow, then aft to the stern castle door
+            main.Add(_berths[0] + RouteRight * 1.2f + ToIsle * 1.5f);
+            main.Add(_berths[0] + RouteRight * 1.2f + ToIsle * 7f);
+            main.Add(_berths[0] + ToIsle * 6.7f);   // cargo crates fill the very bow
+            main.Add(_berths[0] + RouteRight * 1.2f + ToIsle * 6f);
+            main.Add(_berths[0] + RouteRight * 1.2f - ToIsle * 2f);
+            main.Add(_berths[0] + RouteRight * 1.2f - ToIsle * 4.2f);
+            main.Add(_berths[0] - ToIsle * 4.8f);
             var lawn = G(1.83f, -2.5f);
             report.Add(Walk("garden -> pier end", main, new Vector3(lawn.x, GardenTop, lawn.y)));
             // Island: pier end -> beach -> ramp -> tree.
@@ -200,10 +204,10 @@ public static class SacredIsleBuilder
             }
             for (float th = 0; th < 6.28f; th += .5f) Push(BeachC, Dir(th), WaterY - .2f);
             // ferry deck: starboard, bow, stern corners, and the port side away from the opening
-            foreach (float a in new[] { -2.5f, 0f, 2.5f }) Push(_berths[0] + ToIsle * a, RouteRight, DeckY - .5f);
-            Push(_berths[0], ToIsle, DeckY - .5f);
-            Push(_berths[0] + ToIsle * 3f, -RouteRight, DeckY - .5f);
-            Push(_berths[0] - ToIsle * 2.2f, -RouteRight, DeckY - .5f);
+            foreach (float a in new[] { -4.5f, -1f, 3f, 7f }) Push(_berths[0] + ToIsle * a, RouteRight, FerryY - .5f);
+            Push(_berths[0] + RouteRight * 1.2f, ToIsle, FerryY - .5f);
+            Push(_berths[0] - RouteRight * 1.2f + ToIsle * 6f, ToIsle, FerryY - .5f);
+            foreach (float a in new[] { -4.5f, 3f, 6.5f }) Push(_berths[0] + ToIsle * a, -RouteRight, FerryY - .5f);
             // pier side away from the ferry
             for (float t = 2; t < PierLen; t += 2) Push(_docks[0].start + _docks[0].dir * t, -RouteRight, DeckY - .5f);
             report.Add($"wall pushes: {pushes}, escapes: {escapes}");
@@ -286,7 +290,7 @@ public static class SacredIsleBuilder
         foreach (var c in _berths)
         {
             var v = p - c; float along = Mathf.Abs(Vector2.Dot(v, ToIsle)), lat = Mathf.Abs(Vector2.Dot(v, RouteRight));
-            float w = (1 - SS(7.0f, 8.5f, along)) * (1 - SS(2.6f, 3.8f, lat));
+            float w = (1 - SS(FerryBuilder.HalfLength + .8f, FerryBuilder.HalfLength + 2.5f, along)) * (1 - SS(FerryBuilder.MaxHalfBeam + .4f, FerryBuilder.MaxHalfBeam + 1.6f, lat));
             if (w > 0) h = Mathf.Min(h, Mathf.Lerp(h, Floor - .1f, w));
         }
         return h;
@@ -711,10 +715,10 @@ public static class SacredIsleBuilder
         foreach (var (name, b) in new[] { ("Garden berth", _berths[0]), ("Isle berth", _berths[1]) })
         {
             var m = new GameObject(name).transform; m.SetParent(route, false);
-            m.SetPositionAndRotation(new Vector3(b.x, DeckY, b.y), rot);
+            m.SetPositionAndRotation(new Vector3(b.x, FerryY, b.y), rot);
         }
         var ferry = (GameObject)PrefabUtility.InstantiatePrefab(prefab, group);
-        ferry.transform.SetPositionAndRotation(new Vector3(_berths[0].x, DeckY, _berths[0].y), rot);
+        ferry.transform.SetPositionAndRotation(new Vector3(_berths[0].x, FerryY, _berths[0].y), rot);
         Log.Add($"ferry at garden berth {_berths[0]}, isle berth {_berths[1]}, route {Vector2.Distance(_berths[0], _berths[1]):0.0} m");
         return ferry.transform.Find("Deck").GetComponent<Collider>();
     }
