@@ -27,12 +27,19 @@ public static class SacredIsleBuilder
     private const float GapA0 = 1.72f, GapA1 = 1.94f;
     private static readonly Vector2 BeachC = new(-21.3f, 33.2f);
     // Island.
-    private static readonly Vector2 IsleC = new(-52f, 62f);
+    // 2026-11-12: moved far out (88 m from the garden beach, straight screen-left) so the ferry ride means something.
+    private const float IsleDistance = 88f;
+    private static readonly Vector2 IsleC = BeachC + new Vector2(-1, 1).normalized * IsleDistance;
     private static readonly Vector2 ToIsle = (IsleC - BeachC).normalized;
     private static float ThetaDock => Mathf.Atan2(-ToIsle.y, -ToIsle.x);
     private static float Theta0 => ThetaDock - .32f;      // ramp foot
     private const float RampSpan = 1.7f;                   // radians climbed clockwise
     private const float IsleBandIn = .6f, IsleBandOut = 3.6f;
+    // Piers and ferry berths. The ferry lies on the north-east (starboard-of-route) side of both piers, so it sails
+    // a straight line between the berths; its port side opening meets each pier at distance GangT from the pier start.
+    private const float PierLen = 12f, GangT = 9f, BoatOff = 3.5f;
+    private static Vector2 RouteRight => new(ToIsle.y, -ToIsle.x);
+    private static Vector2[] _berths = Array.Empty<Vector2>();
 
     private static readonly List<string> Log = new();
     private static (Vector2 start, Vector2 dir, float length)[] _docks = Array.Empty<(Vector2, Vector2, float)>();
@@ -61,6 +68,7 @@ public static class SacredIsleBuilder
         BuildGardenTable();
         // Docks first: the terrain raises the sand under each pier's landward end.
         ComputeDocks();
+        EnsureSea(village);
 
         var surfaces = new List<Collider>();
         var mats = Materials();
@@ -77,8 +85,9 @@ public static class SacredIsleBuilder
         Railing(group, "Ramp railing", MainlandRail(), MainlandHeight);
         Railing(group, "Isle path railing", IsleRail(), IsleHeight);
         var piers = new GameObject("Piers").transform; piers.SetParent(group, false);
-        surfaces.Add(Dock(piers, "Garden pier", _docks[0]));
-        surfaces.Add(Dock(piers, "Isle pier", _docks[1]));
+        surfaces.Add(Dock(piers, "Garden pier", _docks[0], +1));
+        surfaces.Add(Dock(piers, "Isle pier", _docks[1], -1));
+        surfaces.Add(Ferry(group));
         Dressing(group);
         ShoreMap(village, new[] { mainland, isle });
 
@@ -152,6 +161,15 @@ public static class SacredIsleBuilder
             for (float a = 1.95f; a <= ARampEnd; a += .05f) main.Add(G(a, 2.0f));
             main.Add(_docks[0].start - _docks[0].dir * 1.5f);
             main.Add(_docks[0].start + _docks[0].dir * (_docks[0].length - .6f));
+            // back to the gangway, across onto the ferry, to the bow and back towards the deckhouse
+            main.Add(_docks[0].start + _docks[0].dir * GangT);
+            main.Add(_berths[0]);
+            main.Add(_berths[0] + RouteRight * .9f + ToIsle * 1.2f);   // pass the mast on the starboard side
+            main.Add(_berths[0] + RouteRight * .9f + ToIsle * 3.4f);
+            main.Add(_berths[0] + ToIsle * 4f);
+            main.Add(_berths[0] + RouteRight * .9f + ToIsle * 2.8f);
+            main.Add(_berths[0] + RouteRight * .9f + ToIsle * 1.0f);
+            main.Add(_berths[0] - ToIsle * 2f);
             var lawn = G(1.83f, -2.5f);
             report.Add(Walk("garden -> pier end", main, new Vector3(lawn.x, GardenTop, lawn.y)));
             // Island: pier end -> beach -> ramp -> tree.
@@ -181,6 +199,13 @@ public static class SacredIsleBuilder
                 Push(d.start + d.dir * t, right, DeckY - .5f);
             }
             for (float th = 0; th < 6.28f; th += .5f) Push(BeachC, Dir(th), WaterY - .2f);
+            // ferry deck: starboard, bow, stern corners, and the port side away from the opening
+            foreach (float a in new[] { -2.5f, 0f, 2.5f }) Push(_berths[0] + ToIsle * a, RouteRight, DeckY - .5f);
+            Push(_berths[0], ToIsle, DeckY - .5f);
+            Push(_berths[0] + ToIsle * 3f, -RouteRight, DeckY - .5f);
+            Push(_berths[0] - ToIsle * 2.2f, -RouteRight, DeckY - .5f);
+            // pier side away from the ferry
+            for (float t = 2; t < PierLen; t += 2) Push(_docks[0].start + _docks[0].dir * t, -RouteRight, DeckY - .5f);
             report.Add($"wall pushes: {pushes}, escapes: {escapes}");
         }
         finally { EditorSceneManager.ClosePreviewScene(scene); }
@@ -189,11 +214,12 @@ public static class SacredIsleBuilder
 
     private static void ComputeDocks()
     {
-        _docks = Array.Empty<(Vector2, Vector2, float)>();
+        _docks = Array.Empty<(Vector2, Vector2, float)>(); _berths = Array.Empty<Vector2>();
         var mainStart = March(BeachC, ToIsle, MainlandHeight) - ToIsle * 1.6f;
         var isleDir = -ToIsle;
         var isleStart = March(IsleC + isleDir * 4f, isleDir, IsleHeight) - isleDir * 1.6f;
-        _docks = new[] { (mainStart, ToIsle, 7.5f), (isleStart, isleDir, 6.5f) };
+        _docks = new[] { (mainStart, ToIsle, PierLen), (isleStart, isleDir, PierLen) };
+        _berths = new[] { mainStart + ToIsle * GangT + RouteRight * BoatOff, isleStart + isleDir * GangT + RouteRight * BoatOff };
     }
 
     // ---------------- math helpers ----------------
@@ -253,6 +279,18 @@ public static class SacredIsleBuilder
         }
         return h;
     }
+    /// <summary>Deepens only the underwater ground under the two ferry berths so the hull never meets the sea floor.</summary>
+    private static float BerthCarve(Vector2 p, float h)
+    {
+        if (h >= WaterY - .05f) return h;
+        foreach (var c in _berths)
+        {
+            var v = p - c; float along = Mathf.Abs(Vector2.Dot(v, ToIsle)), lat = Mathf.Abs(Vector2.Dot(v, RouteRight));
+            float w = (1 - SS(7.0f, 8.5f, along)) * (1 - SS(2.6f, 3.8f, lat));
+            if (w > 0) h = Mathf.Min(h, Mathf.Lerp(h, Floor - .1f, w));
+        }
+        return h;
+    }
     private static bool InDock(Vector2 p, float margin)
     {
         foreach (var (start, dir, len) in _docks)
@@ -290,7 +328,7 @@ public static class SacredIsleBuilder
             float edge = Mathf.Max((s - RampW) / 1.5f, Mathf.Max((ALand0 - a) * arc / 1.4f, (a - ARampEnd) * arc / 2.5f));
             if (edge < 1) h = Mathf.Max(h, Mathf.Lerp(rh, Floor, SS(0, 1, edge)));
         }
-        h = DockRaise(p, h);
+        h = BerthCarve(p, DockRaise(p, h));
         // jitter only on low sand so the beach does not look machined
         if (h < 0 && h > Floor + .1f) h += (Noise(p.x * .7f, p.y * .7f) - .5f) * .06f;
         return h;
@@ -356,7 +394,7 @@ public static class SacredIsleBuilder
         float ends = SS(-.6f / arcLen, 0, u) * (1 - SS(1, 1 + 1.2f / arcLen, u));
         float m = band * ends;
         if (m > 0) h = Mathf.Lerp(h, IsleRampHeight(u), m);
-        h = DockRaise(p, h);
+        h = BerthCarve(p, DockRaise(p, h));
         if (h < 0 && h > Floor + .1f) h += (Noise(p.x * .7f, p.y * .7f) - .5f) * .06f;
         return h;
     }
@@ -616,7 +654,7 @@ public static class SacredIsleBuilder
             prev = p;
         }
     }
-    private static Collider Dock(Transform parent, string name, (Vector2 start, Vector2 dir, float length) d)
+    private static Collider Dock(Transform parent, string name, (Vector2 start, Vector2 dir, float length) d, int ferrySide)
     {
         var root = new GameObject(name).transform; root.SetParent(parent, false);
         var fwd = new Vector3(d.dir.x, 0, d.dir.y); var rot = Quaternion.LookRotation(fwd); var right = rot * Vector3.right;
@@ -639,15 +677,57 @@ public static class SacredIsleBuilder
         var box = deck.AddComponent<BoxCollider>(); box.size = new Vector3(2.2f, .3f, d.length + 1.2f);
         foreach (float side in new[] { -1.2f, 1.2f })
         {
-            var w = new GameObject("Invisible pier rail"); w.transform.SetParent(root, false);
-            w.transform.SetPositionAndRotation(s + fwd * (d.length + .3f) / 2 + right * side + Vector3.up * 1.2f, rot);
-            w.AddComponent<BoxCollider>().size = new Vector3(.2f, 3, d.length - .3f);
+            // the ferry side is open where the gangway meets the pier
+            var spans = Mathf.Sign(side) == ferrySide
+                ? new[] { (.3f, GangT - .7f), (GangT + .7f, d.length) }
+                : new[] { (.3f, d.length) };
+            foreach (var (t0, t1) in spans)
+            {
+                var w = new GameObject("Invisible pier rail"); w.transform.SetParent(root, false);
+                w.transform.SetPositionAndRotation(s + fwd * (t0 + t1) / 2 + right * side + Vector3.up * 1.2f, rot);
+                w.AddComponent<BoxCollider>().size = new Vector3(.2f, 3, t1 - t0);
+            }
+        }
+        // mooring bollards either side of the gangway
+        foreach (float t in new[] { GangT - 1.3f, GangT + 1.3f })
+        {
+            var b = s + fwd * t + right * (ferrySide * .95f);
+            Box(root, "Mooring bollard", b + Vector3.up * .22f, new Vector3(.2f, .44f, .2f), OakCap, rot);
         }
         var endWall = new GameObject("Invisible pier end"); endWall.transform.SetParent(root, false);
         endWall.transform.SetPositionAndRotation(s + fwd * (d.length + .1f) + Vector3.up * 1.2f, rot);
         endWall.AddComponent<BoxCollider>().size = new Vector3(2.6f, 3, .2f);
         Log.Add($"{name}: start {d.start}, length {d.length}");
         return box;
+    }
+
+    // ---------------- ferry ----------------
+    /// <summary>Places the ferry prefab at the garden berth and marks both berths for the future sailing script.</summary>
+    private static Collider Ferry(Transform group)
+    {
+        var prefab = FerryBuilder.BuildPrefab();
+        var rot = Quaternion.LookRotation(new Vector3(ToIsle.x, 0, ToIsle.y));
+        var route = new GameObject("Ferry route").transform; route.SetParent(group, false);
+        foreach (var (name, b) in new[] { ("Garden berth", _berths[0]), ("Isle berth", _berths[1]) })
+        {
+            var m = new GameObject(name).transform; m.SetParent(route, false);
+            m.SetPositionAndRotation(new Vector3(b.x, DeckY, b.y), rot);
+        }
+        var ferry = (GameObject)PrefabUtility.InstantiatePrefab(prefab, group);
+        ferry.transform.SetPositionAndRotation(new Vector3(_berths[0].x, DeckY, _berths[0].y), rot);
+        Log.Add($"ferry at garden berth {_berths[0]}, isle berth {_berths[1]}, route {Vector2.Distance(_berths[0], _berths[1]):0.0} m");
+        return ferry.transform.Find("Deck").GetComponent<Collider>();
+    }
+
+    /// <summary>The far island needs more sea: grow the water plane (world-space shader, so scaling is safe).</summary>
+    private static void EnsureSea(Transform village)
+    {
+        var water = village.Find("05 • Canal & bridge/Canal water");
+        const float scale = 1.8f;
+        if (water.localScale.x < scale) { water.localScale = new Vector3(scale, 1, scale); Log.Add($"sea scaled to {scale}x"); }
+        var mat = water.GetComponent<Renderer>().sharedMaterial;
+        var rect = mat.GetVector("_MapRect");
+        if (rect.z < 300) Log.Add($"WARNING shore map rect {rect} is too small for the far island");
     }
 
     // ---------------- props ----------------
