@@ -28,7 +28,8 @@ public static class SacredIsleBuilder
     private static readonly Vector2 BeachC = new(-21.3f, 33.2f);
     // Island.
     // 2026-11-12: moved far out (88 m from the garden beach, straight screen-left) so the ferry ride means something.
-    private const float IsleDistance = 88f;
+    // 2026-11-13: 88 → 130 m (owner wanted it much farther). ~135 m is the limit of the water _MapRect.
+    private const float IsleDistance = 130f;
     private static readonly Vector2 IsleC = BeachC + new Vector2(-1, 1).normalized * IsleDistance;
     private static readonly Vector2 ToIsle = (IsleC - BeachC).normalized;
     private static float ThetaDock => Mathf.Atan2(-ToIsle.y, -ToIsle.x);
