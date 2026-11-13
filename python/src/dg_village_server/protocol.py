@@ -39,6 +39,23 @@ class MoveIn(BaseModel):
     z: float = Field(allow_inf_nan=False, examples=[-3.25])
 
 
+# A platform is something players stand on that moves by itself (a ferry, later a lift): its
+# position is shared by everyone, so a rider's position is sent relative to it. Ids are fixed
+# strings known to both sides; the server also checks them against PLATFORMS (platforms.py).
+PlatformId = Annotated[str, StringConstraints(pattern=r"^[a-z0-9_]{1,40}$")]
+
+
+class RideMoveIn(BaseModel):
+    """The player is standing on a platform: its position in that platform's local
+    coordinates. Sent instead of move while on board; the next move means it got off."""
+
+    type: Literal["ride_move"]
+    platform: PlatformId = Field(description="Platform id", examples=["ferry_willow"])
+    x: float = Field(allow_inf_nan=False, examples=[1.2])
+    y: float = Field(allow_inf_nan=False, examples=[0.0])
+    z: float = Field(allow_inf_nan=False, examples=[-3.0])
+
+
 # Control characters are refused: a line break would fake extra chat lines.
 ChatText = Annotated[
     str,
@@ -56,7 +73,7 @@ class ChatIn(BaseModel):
 
 
 ClientMessage = TypeAdapter(
-    Annotated[JoinIn | ChangeSceneIn | MoveIn | ChatIn, Field(discriminator="type")]
+    Annotated[JoinIn | ChangeSceneIn | MoveIn | RideMoveIn | ChatIn, Field(discriminator="type")]
 )
 
 
@@ -78,6 +95,15 @@ class SceneChangedOut(BaseModel):
     z: float = Field(examples=[-3.25])
 
 
+class RidingOut(BaseModel):
+    """Where a player stands on a platform, in the platform's local coordinates."""
+
+    platform: str = Field(examples=["ferry_willow"])
+    x: float = Field(examples=[1.2])
+    y: float = Field(examples=[0.0])
+    z: float = Field(examples=[-3.0])
+
+
 class PlayerOut(BaseModel):
     """Another player as the players in the same scene see it."""
 
@@ -89,6 +115,11 @@ class PlayerOut(BaseModel):
     x: float = Field(examples=[1.5])
     y: float = Field(examples=[0.0])
     z: float = Field(examples=[-3.25])
+    riding: RidingOut | None = Field(
+        default=None,
+        description="Set while on a platform; then x, y, z are the last world position "
+        "before boarding and should be ignored",
+    )
 
 
 class ScenePlayersOut(BaseModel):
@@ -113,6 +144,17 @@ class PlayerMovedOut(BaseModel):
     x: float = Field(examples=[1.5])
     y: float = Field(examples=[0.0])
     z: float = Field(examples=[-3.25])
+
+
+class PlayerRideMovedOut(BaseModel):
+    """Someone in my scene sent a ride_move. Relayed as is, like player_moved."""
+
+    type: Literal["player_ride_moved"] = "player_ride_moved"
+    id: int = Field(description="Character id", examples=[3])
+    platform: str = Field(examples=["ferry_willow"])
+    x: float = Field(examples=[1.2])
+    y: float = Field(examples=[0.0])
+    z: float = Field(examples=[-3.0])
 
 
 class PlayerLeftOut(BaseModel):
@@ -140,6 +182,7 @@ ErrorCode = Literal[
     "character_not_found",  # No such character, or it belongs to another account
     "already_connected",  # The character is already in the game on another connection
     "chat_too_fast",  # Chat sent within CHAT_MIN_INTERVAL_SECONDS of the previous one
+    "unknown_platform",  # ride_move with a platform id that isn't in the player's scene
 ]
 
 

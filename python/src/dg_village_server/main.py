@@ -25,6 +25,7 @@ from sqlalchemy.exc import IntegrityError
 from .config import Settings
 from .db import Account, Character, Server, create_engine, create_sessionmaker
 from .passwords import hash_password, verify_password
+from .platforms import is_platform
 from .protocol import (
     ChangeSceneIn,
     ChatIn,
@@ -38,6 +39,9 @@ from .protocol import (
     PlayerLeftOut,
     PlayerMovedOut,
     PlayerOut,
+    PlayerRideMovedOut,
+    RideMoveIn,
+    RidingOut,
     SceneChangedOut,
     ScenePlayersOut,
     WelcomeOut,
@@ -82,13 +86,22 @@ class Player:
     # Latest position in the current scene's world coordinates. Starts at the saved position.
     # Moves are too frequent to save, so it reaches the database on disconnect.
     position: tuple[float, float, float]
+    # Set while standing on a platform (ride_move): its id and the local position on it.
+    # `position` then stays at the last world position, so a disconnect on board saves that.
+    riding: RidingOut | None = None
     # time.monotonic() of the last accepted chat, to refuse flooding.
     last_chat_at: float = float("-inf")
 
     def to_out(self) -> PlayerOut:
         x, y, z = self.position
         return PlayerOut(
-            id=self.id, nickname=self.nickname, sprite_set_id=self.sprite_set_id, x=x, y=y, z=z
+            id=self.id,
+            nickname=self.nickname,
+            sprite_set_id=self.sprite_set_id,
+            x=x,
+            y=y,
+            z=z,
+            riding=self.riding,
         )
 
 
@@ -375,6 +388,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                         old_scene = player.scene
                         player.scene = scene
                         player.position = (x, y, z)
+                        player.riding = None
                         left = PlayerLeftOut(id=player.id)
                         await broadcast(player.server_id, old_scene, left, exclude=player)
                         changed = SceneChangedOut(scene=scene, x=x, y=y, z=z)
@@ -382,8 +396,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                         await enter_scene(player)
                     case MoveIn(x=x, y=y, z=z):
                         player.position = (x, y, z)
+                        player.riding = None  # A world-space move means off any platform.
                         moved = PlayerMovedOut(id=player.id, x=x, y=y, z=z)
                         await broadcast(player.server_id, player.scene, moved, exclude=player)
+                    case RideMoveIn(platform=platform, x=x, y=y, z=z):
+                        if not is_platform(player.scene, platform):
+                            await send_error(
+                                websocket, "unknown_platform", f"No platform {platform!r} here"
+                            )
+                            continue
+                        player.riding = RidingOut(platform=platform, x=x, y=y, z=z)
+                        ride = PlayerRideMovedOut(id=player.id, platform=platform, x=x, y=y, z=z)
+                        await broadcast(player.server_id, player.scene, ride, exclude=player)
                     case ChatIn(text=chat_text):
                         now = time.monotonic()
                         if now - player.last_chat_at < CHAT_MIN_INTERVAL_SECONDS:

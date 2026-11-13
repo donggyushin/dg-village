@@ -24,11 +24,13 @@
    │◀─────────────────────── scene_players ─│  새 씬에 이미 있는 사람들
    │                                       │
    │── move ──────────────────────────────▶│  내 좌표 (나에겐 답 없음)
+   │── ride_move ─────────────────────────▶│  발판(배 등) 위 내 좌표 (나에겐 답 없음)
    │── chat ──────────────────────────────▶│  채팅 (저장 안 함)
    │◀────────────────────── chat_message ─│  나를 포함한 같은 씬 전원에게
    │                                       │
    │◀───────────────────── player_joined ─│  같은 씬의 다른 사람이
    │◀────────────────────── player_moved ─│  들어오고 / 움직이고 /
+   │◀───────────────── player_ride_moved ─│  발판 위에서 움직이고 /
    │◀─────────────────────── player_left ─│  나갈 때
 ```
 
@@ -80,6 +82,29 @@
 | 필드 | 타입 | 설명 |
 |---|---|---|
 | `x`, `y`, `z` | float | Unity 월드 좌표 (m). `NaN`/`Infinity`는 `invalid_message` |
+
+### `ride_move`
+
+내가 발판(platform) 위에 서 있을 때 `move` 대신 보낸다. 발판은 스스로 움직이고 플레이어가 그 위를 걸어 다니는 것(배, 나중에 엘리베이터 등)이다. 좌표는 **발판 기준 로컬 좌표**다 (Unity `platform.transform.InverseTransformPoint(월드 좌표)`). 서버는 나에게 답하지 않고, 같은 씬 사람들에게 `player_ride_moved`로 그대로 전달한다. 설계 배경: [`design/platform-riding.md`](design/platform-riding.md).
+
+- 발판에서 내린 뒤 보내는 첫 `move`가 "내렸다"는 뜻이다. 내리는 메시지는 따로 없다.
+- 서버는 `ride_move`로 월드 좌표를 바꾸지 않는다. 발판 위에서 연결이 끊기면 DB에는 타기 직전의 마지막 `move` 좌표가 저장된다.
+- `change_scene`을 하면 탑승 상태는 풀린다.
+
+```json
+{"type": "ride_move", "platform": "ferry_willow", "x": 1.2, "y": 0.0, "z": -3.0}
+```
+
+| 필드 | 타입 | 설명 |
+|---|---|---|
+| `platform` | string | 발판 id. 소문자·숫자·`_` 1~40자, 아니면 `invalid_message`. 형식은 맞지만 지금 씬에 없는 id면 `unknown_platform` |
+| `x`, `y`, `z` | float | 발판 기준 로컬 좌표 (m). `NaN`/`Infinity`는 `invalid_message` |
+
+발판 id 목록은 서버 `python/src/dg_village_server/platforms.py`의 `PLATFORMS`이고, 클라이언트의 발판 오브젝트에 같은 id를 적는다.
+
+| 씬 | id | 무엇 |
+|---|---|---|
+| `SquareScene` | `ferry_willow` | 정원 선착장 ↔ Sacred isle 여객선 |
 
 ### `chat`
 
@@ -149,6 +174,7 @@
 | `nickname` | string | 닉네임 |
 | `sprite_set_id` | string | 클라이언트 `CharacterSpriteSet` id |
 | `x`, `y`, `z` | float | 마지막 `move` 좌표. 씬에 들어온 뒤 아직 안 움직였으면 시작 좌표 (`welcome`의 저장된 좌표 또는 `change_scene`의 좌표) |
+| `riding` | object 또는 `null` | 발판 위에 있으면 `{"platform", "x", "y", "z"}` (마지막 `ride_move`의 로컬 좌표). 이때 `x`, `y`, `z`는 타기 전 좌표이므로 무시하고 `riding`으로 위치를 정한다. 땅 위면 `null` |
 
 ### `player_joined`
 
@@ -164,6 +190,14 @@
 
 ```json
 {"type": "player_moved", "id": 8, "x": 3.0, "y": 0.0, "z": 4.0}
+```
+
+### `player_ride_moved`
+
+내 씬의 다른 플레이어가 `ride_move`를 보냈다. 클라이언트는 그 id의 발판을 찾아 `platform.transform.TransformPoint(x, y, z)`로 월드 위치를 구한다. 모르는 발판 id면 무시한다. 다음에 그 플레이어의 `player_moved`가 오면 발판에서 내린 것이다.
+
+```json
+{"type": "player_ride_moved", "id": 8, "platform": "ferry_willow", "x": 1.2, "y": 0.0, "z": -3.0}
 ```
 
 ### `player_left`
@@ -205,3 +239,4 @@
 | `already_connected` | 그 캐릭터가 이미 다른 연결로 게임 안에 있음 | 종료 |
 | `already_joined` | `welcome`을 받은 연결에서 `join`을 또 보냄 | 유지 |
 | `chat_too_fast` | 이전 채팅 후 0.5초 안에 `chat`을 또 보냄 | 유지 |
+| `unknown_platform` | `ride_move`의 `platform`이 지금 씬의 발판 id가 아님 | 유지 |
