@@ -136,6 +136,7 @@ GameObject:
   - component: {fileID: 2796475195913328887}
   - component: {fileID: 7165879433434243072}
   - component: {fileID: 230416642038639942}
+  - component: {fileID: 3261317309847605594}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -241,6 +242,20 @@ MonoBehaviour:
   _targetHeight: 0.8
   _rayLength: 50
   _fadeTemplate: {fileID: 2100000, guid: 4274e62f4ab6a4302bc43518a66a0011, type: 2}
+--- !u!114 &3261317309847605594
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5487802403737884262}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 429483a758728438093a91f3a3301477, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlatformDetector
+  _rayStartHeight: 0.5
+  _rayLength: 0.8
 --- !u!1 &8968784458236834575
 GameObject:
   m_ObjectHideFlags: 0
