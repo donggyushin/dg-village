@@ -89,8 +89,8 @@ Vector3 pos = Vector3.Lerp(fromBerth.position, toBerth.position, Mathf.SmoothSte
 
 | # | 작업 | 상태 |
 |---|---|---|
-| 1 | 서버: `ride_move` / `player_ride_moved` / `riding` / `PLATFORMS` | 2026-11-13 완료 (커밋·배포 전) |
-| 2 | 클라이언트: 발판 컴포넌트 + 발 아래 Raycast 로 "탔음/내렸음" 로그만 | |
+| 1 | 서버: `ride_move` / `player_ride_moved` / `riding` / `PLATFORMS` | 2026-11-13 완료·배포 (8a9636a) |
+| 2 | 클라이언트: 발판 컴포넌트 + 발 아래 Raycast 로 "탔음/내렸음" 로그만 | 2026-11-13 완료 (`Platform`, `PlatformDetector`) |
 | 3 | 클라이언트: 로컬 좌표 계산해 로그로 확인 | |
 | 4 | 클라이언트: 배 위면 `ride_move` 보내기, `player_ride_moved`·`riding` 받아 그리기 | |
 | 5 | 클라이언트만으로 배 움직이기(키 입력 + 공식) + 내 캐릭터 태우기 | |
