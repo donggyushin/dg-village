@@ -182125,10 +182125,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1629711539}
     m_Modifications:
-    - target: {fileID: 319807335321559899, guid: 45de058c43efd485b9af2d7e2de11cfc, type: 3}
-      propertyPath: _platformId
-      value: ferry_willow
-      objectReference: {fileID: 0}
     - target: {fileID: 861609576182361898, guid: 45de058c43efd485b9af2d7e2de11cfc, type: 3}
       propertyPath: m_Name
       value: Ferry
